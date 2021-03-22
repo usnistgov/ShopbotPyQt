@@ -1,0 +1,166 @@
+&slideW = 25.00
+&slideH = 75.00
+&margin = 5.00
+&spacing = 5.00
+&nd = 0.91
+&downdisp = 0.00
+VD , , 1
+VU, 157.480315, 157.480315, -157.480315
+MS, 5
+JS, 20
+SO, 4, 1
+M2, &margin, &margin
+JZ, 2*&margin - 25
+SO, 1, 1
+MX, &margin + 15.0
+MY, &margin + &spacing
+MX, &margin
+MY, &margin + 2*&spacing
+MX, &margin + 15.0
+MY, &margin + 3.0*&spacing
+MX, &margin
+MY, &margin + 4.0*&spacing
+MX, &margin + 15.0
+MY, &margin + 5.0*&spacing
+MX, &margin
+MY, &margin + 6.0*&spacing
+MX, &margin + 15.0
+MY, &margin + 7.0*&spacing
+MX, &margin
+MY, &margin + 8.0*&spacing
+MX, &margin + 15.0
+MY, &margin + 9.0*&spacing
+MX, &margin
+MY, &margin + 10.0*&spacing
+MX, &margin + 15.0
+MY, &margin + 11.0*&spacing
+MX, &margin
+SO, 1, 0
+M2, &margin - &nd, &margin - &nd + 11.0*&spacing
+JZ, 2*&margin - 25
+SO, 1, 1
+MX, &margin - &nd + 15.0
+MY, &margin +&nd + 10.0*&spacing
+MX, &margin - &nd
+MY, &margin -&nd + 9.0*&spacing
+MX, &margin - &nd + 15.0
+MY, &margin +&nd + 8.0*&spacing
+MX, &margin - &nd
+MY, &margin -&nd + 7.0*&spacing
+MX, &margin - &nd + 15.0
+MY, &margin +&nd + 6.0*&spacing
+MX, &margin - &nd
+MY, &margin -&nd + 5.0*&spacing
+MX, &margin - &nd + 15.0
+MY, &margin +&nd + 4.0*&spacing
+MX, &margin - &nd
+MY, &margin -&nd + 3.0*&spacing
+MX, &margin - &nd + 15.0
+MY, &margin +&nd + 2.0*&spacing
+MX, &margin - &nd
+MY, 1.0*&margin -&nd +&spacing
+MX, &margin - &nd + 15.0
+MY, &margin +&nd
+MX, &margin - &nd
+SO, 1, 0
+M2, &margin + &nd, &margin -&nd
+JZ, 2*&margin - 25
+SO, 1, 1
+MX, &margin + &nd + 15.0
+MY, &margin +&nd + &spacing
+MX, &margin + &nd
+MY, &margin -&nd + 2*&spacing
+MX, &margin + &nd + 15.0
+MY, &margin +&nd + 3.0*&spacing
+MX, &margin + &nd
+SO, 1, 0
+M2, &margin + 2*&nd, &margin + 3.5*&spacing
+JZ, 2*&margin - 25
+SO, 1, 1
+MY, &margin + 7.5*&spacing
+MX, &margin + 2*&nd + &spacing
+MY, &margin + 3.5*&spacing
+MX, &margin + 2*&nd + 2*&spacing
+MY, &margin + 7.5*&spacing
+SO, 1, 0
+JZ, 2*&margin + 2*&nd + &spacing - 25
+JY, &margin + 8.0*&spacing
+JX, 1.0*&downdisp + &margin - &nd + 2.0
+JZ, 2*&margin - 2.0*&nd -&spacing - 25
+JX, &margin - &nd + 2.0
+SO, 1, 1
+MZ, 2*&margin + 2*&nd + &spacing - 25
+SO, 1, 0
+JX, 1.0*&downdisp + &margin - &nd + 7.0
+JZ, 2*&margin - 2.0*&nd -&spacing - 25
+JX, &margin - &nd + 7.0
+SO, 1, 1
+MZ, 2*&margin + 2*&nd + &spacing - 25
+SO, 1, 0
+JX, 1.0*&downdisp + &margin - &nd + 12.0
+JZ, 2*&margin - 2.0*&nd -&spacing - 25
+JX, &margin - &nd + 12.0
+SO, 1, 1
+MZ, 2*&margin + 2*&nd + &spacing - 25
+SO, 1, 0
+JY, &margin + 9.0*&spacing
+JX, -&downdisp + &margin - &nd + 12.0
+JZ, 2*&margin - 2.0*&nd -&spacing - 25
+JX, &margin - &nd + 12.0
+SO, 1, 1
+MZ, 2*&margin + 2*&nd + &spacing - 25
+SO, 1, 0
+JX, -&downdisp + &margin - &nd + 7.0
+JZ, 2*&margin - 2.0*&nd -&spacing - 25
+JX, &margin - &nd + 7.0
+SO, 1, 1
+MZ, 2*&margin + 2*&nd + &spacing - 25
+SO, 1, 0
+JX, -&downdisp + &margin - &nd + 2.0
+JZ, 2*&margin - 2.0*&nd -&spacing - 25
+JX, &margin - &nd + 2.0
+SO, 1, 1
+MZ, 2*&margin + 2*&nd + &spacing - 25
+SO, 1, 0
+JY, &margin + 10.0*&spacing
+JX, 1.0*&downdisp + &margin - &nd + 2.0
+JZ, 2*&margin - 2.0*&nd -&spacing - 25
+JX, &margin - &nd + 2.0
+SO, 1, 1
+MZ, 2*&margin + 2*&nd + &spacing - 25
+SO, 1, 0
+JX, 1.0*&downdisp + &margin - &nd + 7.0
+JZ, 2*&margin - 2.0*&nd -&spacing - 25
+JX, &margin - &nd + 7.0
+SO, 1, 1
+MZ, 2*&margin + 2*&nd + &spacing - 25
+SO, 1, 0
+JX, 1.0*&downdisp + &margin - &nd + 12.0
+JZ, 2*&margin - 2.0*&nd -&spacing - 25
+JX, &margin - &nd + 12.0
+SO, 1, 1
+MZ, 2*&margin + 2*&nd + &spacing - 25
+SO, 1, 0
+JY, &margin + 11.0*&spacing
+JX, -&downdisp + &margin - &nd + 12.0
+JZ, 2*&margin - 2.0*&nd -&spacing - 25
+JX, &margin - &nd + 12.0
+SO, 1, 1
+MZ, 2*&margin + 2*&nd + &spacing - 25
+SO, 1, 0
+JX, -&downdisp + &margin - &nd + 7.0
+JZ, 2*&margin - 2.0*&nd -&spacing - 25
+JX, &margin - &nd + 7.0
+SO, 1, 1
+MZ, 2*&margin + 2*&nd + &spacing - 25
+SO, 1, 0
+JX, -&downdisp + &margin - &nd + 2.0
+JZ, 2*&margin - 2.0*&nd -&spacing - 25
+JX, &margin - &nd + 2.0
+SO, 1, 1
+MZ, 2*&margin + 2*&nd + &spacing - 25
+SO, 1, 0
+SO, 4, 0
+JZ, 10.00
+JY, 150.00
+JX, 80.00
