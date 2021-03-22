@@ -14,6 +14,7 @@ import winreg
 import subprocess
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
+from config import cfg
 
 
 import Fluigent.SDK as fgt
@@ -27,16 +28,16 @@ except:
     pass
 
 
-
+APPID = 'leanfried.sbgui.v0.4'
 
 
 
 #################################################
 
-DEFAULTFOLDER = r'C:\Users\lmf1\OneDriveNIST\NIST\data\shopbot\software\SBP files'
+DEFAULTFOLDER = cfg.sbp
 if not os.path.exists(DEFAULTFOLDER):
     DEFAULTFOLDER = r'C:\\'
-INITSAVEFOLDER = r'C:\Users\lmf1\Videos\Shopbot videos'
+INITSAVEFOLDER = cfg.vid
 if not os.path.exists(INITSAVEFOLDER):
     INITSAVEFOLDER = r'C:\\'
 
@@ -1723,7 +1724,7 @@ class MainProgram(qtw.QWidget):
         app.setWindowIcon(QtGui.QIcon('icons/sfcicon.ico'))
         app.exec_()
         
-        myappid = 'leanfried.sbgui.v0.0' # arbitrary string
+        myappid = APPID # arbitrary string
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
       
         
