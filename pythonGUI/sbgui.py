@@ -13,6 +13,8 @@ import os
 import winreg
 import subprocess
 from typing import List, Dict, Tuple, Union, Any, TextIO
+import logging
+
 
 import Fluigent.SDK as fgt
 
@@ -21,12 +23,17 @@ try:
     from pypylon import genicam
     from pypylon import pylon
 except:
-    print('Pylon SDK not installed')
+    logging.warning('Pylon SDK not installed')
     pass
+
+
+
+
+
 
 #################################################
 
-DEFAULTFOLDER = r'C:\Users\lmf1\OneDriveNIST\NIST\data\shopbot\SBP files'
+DEFAULTFOLDER = r'C:\Users\lmf1\OneDriveNIST\NIST\data\shopbot\software\SBP files'
 if not os.path.exists(DEFAULTFOLDER):
     DEFAULTFOLDER = r'C:\\'
 INITSAVEFOLDER = r'C:\Users\lmf1\Videos\Shopbot videos'
@@ -34,6 +41,8 @@ if not os.path.exists(INITSAVEFOLDER):
     INITSAVEFOLDER = r'C:\\'
 
 ################################################
+
+    
 
 # FileDialog opens a dialog to select a file for reading
 # startDir is the directory to start in, e.g. r'C:\Documents'
@@ -135,8 +144,8 @@ class genBox(qtw.QGroupBox):
     def __init__(self, sbWin:qtw.QMainWindow):
         super(genBox, self).__init__()
         self.sbWin = sbWin
-        self.layout = qtw.QGridLayout()
-        
+        self.layout = qtw.QGridLayout()        
+
         self.appendName = qtw.QLineEdit()
         self.appendName.setText('')
         
@@ -145,15 +154,17 @@ class genBox(qtw.QGroupBox):
         
         self.saveButt = qtw.QPushButton('Set export folder')
         self.saveButt.clicked.connect(self.setSaveFolder)
-        self.saveButt.setFixedSize(200, 40)
+        self.openButt = qtw.QPushButton('Open export folder')
+        self.openButt.clicked.connect(self.openSaveFolder)
         self.saveFolder = INITSAVEFOLDER
         self.saveFolderLabel = qtw.QLabel('Export to ' + self.saveFolder)
         
-        self.layout.addWidget(self.saveButt, 1, 0)
-        self.layout.addWidget(self.saveFolderLabel, 1, 1)
-        self.layout.addWidget(self.appendLabel, 2, 0)
-        self.layout.addWidget(self.appendName, 2, 1)
-        
+        self.layout.addWidget(self.openButt, 1, 0)
+        self.layout.addWidget(self.saveButt, 1, 1)
+        self.layout.addWidget(self.saveFolderLabel, 1, 2)
+        self.layout.addWidget(self.appendLabel, 2, 0, 1, 2)
+        self.layout.addWidget(self.appendName, 2, 2)
+       
         self.setLayout(self.layout)
     
     # set the folder to save all the files we generate from the whole gui
@@ -164,8 +175,14 @@ class genBox(qtw.QGroupBox):
             startFolder = INITSAVEFOLDER
         sf = FileDialog(startFolder, '', True)
         if os.path.exists(sf):
-            self.saveFolder = sf
+            self.saveFolder = sf.replace(r"/", "\\")
+            logging.info('Changed save folder to %s' % self.saveFolder)
             self.saveFolderLabel.setText('Export to ' + self.saveFolder)
+            
+    def openSaveFolder(self) -> None:
+        cmd = r'explorer "' + self.saveFolder + '"'
+        subprocess.Popen(cmd)
+
 
 
             
@@ -182,12 +199,14 @@ class connectBox(qtw.QGroupBox):
         super(connectBox, self).__init__()
         self.connectAttempts = 0
         self.connected = False
+        self.diag=1
 
     # if the computer is still trying to connect, show this waiting screen
     def connectingLayout(self) -> None:
         if self.connectAttempts>0:
             self.resetLayout()
         self.layout = qtw.QVBoxLayout()
+        logging.info('Connecting to %s' % self.bTitle)
         self.layout.addWidget(qtw.QLabel('Connecting to '+self.bTitle))
         self.setLayout(self.layout)  
 
@@ -197,6 +216,7 @@ class connectBox(qtw.QGroupBox):
         self.resetLayout()
         self.layout = qtw.QVBoxLayout()
         lstr = self.bTitle+' not connected. Connect attempts: '+str(self.connectAttempts)
+        logging.warning(lstr)
         self.label = qtw.QLabel(lstr)            
         self.resetButt = qtw.QPushButton('Connect to ' + self.bTitle)
         self.resetButt.clicked.connect(self.connect) 
@@ -216,11 +236,15 @@ class connectBox(qtw.QGroupBox):
         deleteLayoutItems(self.layout)
         
     # update the displayed device status
-    def updateStatus(self, st) -> None:
+    def updateStatus(self, st, log) -> None:
         try:
             self.status.setText(st)
         except:
-            print(st)
+            if self.diag>0:
+                logging.info(st)
+        else:
+            if log and self.diag>0:
+                logging.info(st)
 
 ################################################################
 # this is a gui box for the shopbot buttons
@@ -252,7 +276,7 @@ class sbBox(connectBox):
             self.keyConnected = True
         except:
             self.keyConnected = False
-            self.updateStatus('Failed to connect to Shopbot')
+            self.updateStatus('Failed to connect to Shopbot', True)
     
     # layout if we found the sb3 files and windows registry keys
     def successLayout(self) -> None:
@@ -325,12 +349,13 @@ class sbBox(connectBox):
                     # are 0-indexed, so when it means change channel 1, 
                     # we want to change channels[0]
                     li = int(line.split(',')[1])-1
-                    if li not in self.channelsTriggered:
+                    if li not in self.channelsTriggered and not li==3:
                         self.channelsTriggered.append(li) 
-        if len(self.channelsTriggered)==0:
-            return 0
-        else:
-            return 8  
+#         if len(self.channelsTriggered)==0:
+#             return 0
+#         else:
+#             return 8  
+        return 0
     
     # run this function continuously during print to watch the shopbot status
     def getSBFlag(self) -> int:
@@ -340,7 +365,7 @@ class sbBox(connectBox):
             # if we fail to get the registry key, we have no way of knowing 
             # if the print is over, so just stop it now
             self.triggerEndOfPrint()
-            self.updateStatus('Failed to connect to Shopbot keys')
+            self.updateStatus('Failed to connect to Shopbot keys', True)
             self.keyConnected = False
             
         # if the flag has reached a critical value that signals the 
@@ -352,15 +377,18 @@ class sbBox(connectBox):
     # runFile sends a file to the shopbot, starts camera recordings, 
     # and starts the fluigent watching for triggers to change pressure
     def runFile(self) -> None:
+        if not os.path.exists(self.sbpName):
+            self.updateStatus('SBP file does not exist: ' + self.sbpName, True)
+            return
         self.allowEnd = False
         self.abortButt.setEnabled(True)
-        self.updateStatus('Running SBP file')
-        if not os.path.exists(self.sbpName):
-            return
         
+
         self.critFlag = self.getCritFlag()
         if self.critFlag==0:
             self.allowEnd = True
+            
+        self.updateStatus('Running SBP file ' + self.sbpName + ', critFlag = '+str(self.critFlag), True)
 
         # send the file to the shopbot via command line
         appl = self.sb3File
@@ -416,15 +444,17 @@ class sbBox(connectBox):
             self.sbWin.fluBox.resetAllChannels(-1)
         self.runningSBP = False
         self.abortButt.setEnabled(False)
-        self.updateStatus('Ready')
+        self.updateStatus('Ready', False)
             
     # goes inside the wait for start timer function
     # checks the shopbot flags and triggers the watch 
     # for pressure triggers if the test has started
     def waitForStart(self) -> None:
         sbFlag = self.getSBFlag()
-        self.updateStatus('Waiting to start file, Shopbot output flag = ' + str(sbFlag) + ', start at ' + str(self.critFlag))
-        if sbFlag==self.critFlag:
+#         cf = self.critFlag
+        cf = 8 + 2**(self.channelsTriggered[0])
+        self.updateStatus('Waiting to start file, Shopbot output flag = ' + str(sbFlag) + ', start at ' + str(cf), False)
+        if sbFlag==cf:
             self.triggerWatch()
     
     # this is the function we use when we're waiting for the nozzle to start extruding
@@ -439,7 +469,7 @@ class sbBox(connectBox):
     # pressure if the flags have changed    
     def watchSBFlags(self) -> None:
         sbFlag = self.getSBFlag()
-        self.updateStatus('Running file, Shopbot output flag = ' + str(sbFlag) + ', end at ' + str(self.critFlag))
+        self.updateStatus('Running file, Shopbot output flag = ' + str(sbFlag) + ', end at ' + str(self.critFlag), False)
         
         # allowEnd is a failsafe measure because when the shopbot
         # starts running a file that changes output flags, it asks
@@ -493,7 +523,7 @@ class sbBox(connectBox):
         except:
             pass
         else:
-            print('Shopbot timer stopped')
+            logging.info('Shopbot timer stopped')
             
 #########################################################
 #########################################################
@@ -520,15 +550,17 @@ def mode2title(mode:int) -> str:
 class vrSignals(QtCore.QObject):
     
     finished = QtCore.pyqtSignal()
-    error = QtCore.pyqtSignal(tuple)
-    result = QtCore.pyqtSignal(object)
-    progress = QtCore.pyqtSignal(int)  
+    error = QtCore.pyqtSignal(int, str)
+    progress = QtCore.pyqtSignal(int)
+    prevFrame = QtCore.pyqtSignal(np.ndarray)
+
+    
 
 #########################################################
 # The vidRecorder creates a cv2.VideoWriter object at initialization, and it takes frames in the queue and writes them to file. This is a failsafe, so if the videowriter writes slower than the timer reads frames, then we can store those extra frames in memory until the vidRecorder object can write them to the HD
 # QRunnables run in the background. Trying to directly modify the GUI from inside the QRunnable will make everything catastrophically slow, but you can pass messages back to the GUI using vrSignals.
 class vidRecorder(QtCore.QRunnable):
-    def __init__(self, fn, vidvars, frames):
+    def __init__(self, fn:str, vidvars, frames:List[np.ndarray], cam):
         super(vidRecorder, self).__init__()        
         self.vFilename = fn
         self.vw = cv2.VideoWriter(fn, vidvars['fourcc'], vidvars['fps'], (vidvars['imw'], vidvars['imh']))
@@ -536,6 +568,7 @@ class vidRecorder(QtCore.QRunnable):
         self.frames = frames
         self.vidvars = vidvars
         self.recording = True
+        self.cam = cam
     
     def run(self) -> None:
         # this loops until we receive a frame that is a string
@@ -545,14 +578,137 @@ class vidRecorder(QtCore.QRunnable):
                 # this gives the GUI enough time to start adding frames before we start saving, otherwise we get stuck in infinite loop where it's immediately checking again and again if there are frames
             while len(self.frames)>0:
                 # remove the first frame once it's written
-                frame = self.frames.pop()
+                frame = self.frames.pop(0)
                 if type(frame)==str:
                     self.vw.release()
                     self.signals.finished.emit()
                     return
                 self.vw.write(frame) 
-                if len(self.frames) % 10==1:
+                if self.cam.diag>1:
+                    logging.debug(self.cam.cameraName+'\twrite\t'+str(len(self.frames)))
+                if len(self.frames) % 100==1:
                     self.signals.progress.emit(len(self.frames))
+        
+                    
+                    
+###############################################
+# vidReader puts frame collection into the background, so frames from different cameras can be collected in parallel
+
+                    
+class vidReader(QtCore.QRunnable):
+    def __init__(self, cam, vrid, frames:List[np.ndarray], lastFrame:List[np.ndarray]):
+        super(vidReader, self).__init__()
+        self.cam = cam
+        self.lastFrame = lastFrame
+        self.signals = vrSignals()  
+        self.frames = frames
+        self.vrid = vrid
+        
+    def run(self) -> None:
+        # get an image
+        try:
+            frame = self.cam.readFrame()
+        except:
+            frame = self.lastFrame[0]
+            self.signals.error.emit(2, 'Error collecting frame')
+        # update the preview
+        if self.cam.previewing:
+            # downsample preview frames
+            if self.cam.framesSincePrev==self.cam.critFramesToPrev:
+                if type(frame)==np.ndarray:
+                    self.signals.prevFrame.emit(frame)
+                    self.cam.framesSincePrev=0
+                else:
+                    self.signals.error.emit(3, 'Frame is empty')
+            else:
+                self.cam.framesSincePrev+=1
+        # save the frame
+        if self.cam.recording:
+            # if we've skipped at least 2 frames, fill that space with duplicate frames
+            # if we have two vidReaders going at once, only do this with the first one
+            if len(self.cam.vridlist)==0 or self.vrid == min(self.cam.vridlist):
+                self.timerCheckDrop() 
+                
+            self.saveFrame(frame) 
+            
+            # remove this vidreader id from the list of ids
+            if self.vrid in self.cam.vridlist:
+                self.cam.vridlist.remove(self.vrid)
+        
+        
+    # save the frame to the video file
+    # frames are in cv2 format
+    def saveFrame(self, frame:np.ndarray) -> None:
+        try:
+            self.frames.append(frame)
+        except:
+            # stop recording if we can't write
+            self.signals.error.emit(1, 'Error writing to video')
+            
+        else:
+            # display the time recorded
+            self.cam.timeRec = self.cam.timeRec+self.cam.mspf/1000
+            self.cam.totalFrames+=1
+            self.cam.updateRecordStatus()
+ 
+    # this function checks to see if the timer has skipped steps 
+    # and fills the missing frames with duplicates        
+    def timerCheckDrop(self) -> None:
+        dnow = datetime.datetime.now()
+        if self.cam.startTime==0:
+            self.cam.startTime = dnow
+            if self.cam.diag>1:
+                self.cam.lastTime = dnow
+        else:
+            timeElapsed = (dnow-self.cam.startTime).total_seconds()
+            if (timeElapsed - self.cam.timeRec)>2*self.cam.mspf/1000:
+                # if we've skipped at least 2 frames, fill that space with duplicate frames
+                numfill = int(np.floor((timeElapsed-self.cam.timeRec)/(self.cam.mspf/1000)))
+                for i in range(numfill):
+                    if self.cam.diag>1:
+                        logging.debug(self.cam.cameraName+'\t'+str(self.vrid)+ '\tPAD\t\t\t\t '+'%2.3f'%self.cam.timeRec)
+                    self.cam.framesDropped+=1
+                    self.saveFrame(self.lastFrame[0])
+            if self.cam.diag>1:
+                frameElapsed = ((dnow-self.cam.lastTime).total_seconds())*1000
+                s = self.cam.cameraName+'\t'+str(self.vrid)+'\t'
+                for si in ['%2.3f'%t for t in [len(self.frames), frameElapsed, self.cam.mspf, timeElapsed, self.cam.timeRec]]:
+                    s = s+si+'\t'
+                logging.debug(s)
+                self.cam.lastTime = dnow
+   
+ ###########################
+    # snapshots
+class snapSignals(QtCore.QObject):
+    result = QtCore.pyqtSignal(str, bool)
+
+class camSnap(QtCore.QRunnable):
+    def __init__(self, cam, readnew, lastFrame):
+        super(camSnap, self).__init__()
+        self.cam = cam
+        self.readnew = readnew
+        self.signals = snapSignals()
+        self.lastFrame = lastFrame
+        
+    def run(self):
+        if self.readnew:
+            try:
+                frame = self.cam.readFrame()
+                # frame needs to be in cv2 format
+            except:
+                return
+        else:
+            frame = self.lastFrame[0]
+        self.signals.result.emit(exportFrame(self.cam, frame), True)
+            
+def exportFrame(cam, frame:np.ndarray) -> str:
+    fullfn = cam.getFilename('.png')
+    try:
+        cv2.imwrite(fullfn, frame)
+    except:
+        return('Error saving frame')
+    else:
+        return('File saved to ' + fullfn) 
    
 
  #########################################################        
@@ -575,6 +731,8 @@ class camera:
         self.cam = None
         self.resetVidStats()
         self.framesSincePrev = 0
+        self.errorFrames = 0
+        self.diag = 1
 
         self.fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
         self.prevWindow = qtw.QLabel()
@@ -589,7 +747,8 @@ class camera:
             except:
                 pass
             else:
-                print(self.cameraName + ' timer stopped')
+                if self.diag>0:
+                    logging.info(self.cameraName + ' timer stopped')
                 
     # update the status box when we're done recording        
     def doneRecording(self) -> None:
@@ -606,7 +765,7 @@ class camera:
             self.sbWin.genBox.setSaveFolder()
             folder = self.sbWin.saveFolderLabel.text()
         if not os.path.exists(folder):
-            self.updateStatus('Invalid folder name. Image not saved.')
+            self.updateStatus('Invalid folder name. Image not saved.', True)
             return
         
         # determine if we should include the shopbot file name in the file
@@ -631,41 +790,25 @@ class camera:
         self.totalFrames = 0
         self.fleft = 0
         self.frames = []
-        
-    # save the frame to the video file
-    # frames are in cv2 format
-    def saveFrame(self, frame) -> None:
-        try:
-            self.frames.append(frame)
-        except:
-            # stop recording if we can't write
-            self.updateStatus('Error writing to video')
-            self.recording = False
-            self.stopTimer()
-        else:
-            # display the time recorded
-            self.timeRec = self.timeRec+self.mspf/1000
-            self.totalFrames+=1
-            self.updateRecordStatus()
+        self.lastFrame = []
+        self.vridlist = []
+    
     
     # take a single snapshot and save it
     def snap(self) -> None:
-        fullfn = self.getFilename('.png')
-        try:
-            frame = self.readFrame()
-            # frame needs to be in cv2 format
-        except:
-            return
-        try:
-            cv2.imwrite(fullfn, frame)
-        except:
-            self.updateStatus('Error saving frame')
+        if self.previewing or self.recording:
+            last = True
         else:
-            self.updateStatus('File saved to ' + fullfn) 
+            last = False
+        snapthread = camSnap(self, last, self.lastFrame)
+        snapthread.signals.result.connect(self.updateStatus)
+        QtCore.QThreadPool.globalInstance().start(snapthread)
+            
+            
     
     #---------------------------------
     # start preview
-    def start(self) -> None:    
+    def startPreview(self) -> None:    
         # this counter reduces the display frame rate, 
         # so only have to update the display at a comfortable viewing rate.
         # if the camera is at 200 fps, the video will be saved at full rate but
@@ -676,7 +819,7 @@ class camera:
         self.startTimer() # this only starts the timer if a timer doesn't already exist
 
     # stop preview
-    def stop(self) -> None:
+    def stopPreview(self) -> None:
         self.previewing = False
         self.stopTimer() # this only stops the timer if we are neither recording nor previewing
  
@@ -685,17 +828,20 @@ class camera:
     def startRecording(self) -> None:
         self.recording = True
         self.writing = True
-        self.resetVidStats()
+        self.resetVidStats() # this resets the frame list, and other vars
         fn = self.getFilename('.avi')
         self.vFilename = fn
         vidvars = {'fourcc':self.fourcc, 'fps':self.fps, 'imw':self.imw, 'imh':self.imh, 'cameraName':self.cameraName}
         self.frames = []
-        recthread = vidRecorder(fn, vidvars, self.frames)
+        recthread = vidRecorder(fn, vidvars, self.frames, self)
         recthread.signals.finished.connect(self.doneRecording)
         recthread.signals.progress.connect(self.writingRecording)
-        self.updateStatus('Recording ' + self.vFilename + ' ... ')
-        self.sbWin.threadPool.start(recthread)
+        self.updateStatus('Recording ' + self.vFilename + ' ... ', True)
+#         self.sbWin.threadPool.start(recthread)
+        QtCore.QThreadPool.globalInstance().start(recthread)
         self.startTimer() # this only starts the timer if a timer doesn't already exist
+        if self.diag>1:
+            logging.debug('Camera name\tID\t# frames\tFrame time (ms)\tms/frame\tTotal time (s)')
     
     # stop recording
     def stopRecording(self) -> None:
@@ -714,60 +860,35 @@ class camera:
             self.timer.setTimerType(QtCore.Qt.PreciseTimer)
             self.timer.start(self.mspf)
             self.timerRunning = True
+            if self.diag>0:
+                logging.info(self.cameraName + ': Starting timer')
+        
+    def readError(self, errnum:int, errstr:str) -> None:
+        self.updateStatus(errstr, True)
+        if errnum==1:
+            self.recording = False  
     
     # this only stops the timer if we are neither recording nor previewing
     def stopTimer(self) -> None:
         if not self.recording and not self.previewing:
             self.timer.stop()
             self.timerRunning = False
+            if self.diag>0:
+                logging.info(self.cameraName + ': Stopping timer')
     
-    # run this function continuously if we are recording or previewing
     def timerFunc(self) -> None:
-        
-        # get an image
-        try:
-            frame = self.readFrame()
-        except:
-            frame = self.lastFrame
-            print(self.cameraname, ': Error collecting frame')
-        # update the preview
-        if self.previewing:
-            # downsample preview frames
-            if self.framesSincePrev==self.critFramesToPrev:
-                self.updatePrevFrame(frame)
-                self.framesSincePrev = 0
-            else:
-                self.framesSincePrev+=1
-        # save the frame
-        if self.recording:
-            self.timerCheckDrop() # if we've skipped at least 2 frames, fill that space with duplicate frames
-            self.saveFrame(frame) 
-    
-    # this function checks to see if the timer has skipped steps and fills the missing frames with duplicates        
-    def timerCheckDrop(self) -> None:
-        diag = False
-        dnow = datetime.datetime.now()
-        if self.startTime==0:
-            self.startTime = dnow
-            if diag:
-                self.lastTime = dnow
+        if len(self.vridlist)==0:
+            vrid = 1
         else:
-            timeElapsed = (dnow-self.startTime).total_seconds()
-            if (timeElapsed - self.timeRec)>2*self.mspf/1000:
-                # if we've skipped at least 2 frames, fill that space with duplicate frames
-                numfill = int(np.floor((timeElapsed-self.timeRec)/(self.mspf/1000)))
-                for i in range(numfill):
-                    #print('PADDING ', self.timeRec)
-                    self.framesDropped+=1
-                    self.saveFrame(self.lastFrame)
-            if diag:
-                elasped = ((dnow-self.lastTime).total_seconds())*1000
-                print(self.cameraName, ['%2.3f'%t for t in [elasped, self.mspf, timeElapsed, self.timeRec]])
-                self.lastTime = dnow
+            vrid = max(self.vridlist)+1
+        self.vridlist.append(vrid)
+        runnable = vidReader(self, vrid, self.frames, self.lastFrame)
+        runnable.signals.prevFrame.connect(self.updatePrevFrame)
+        QtCore.QThreadPool.globalInstance().start(runnable)
     
     #---------------------------------
     # update the preview window
-    def updatePrevFrame(self, frame) -> None:
+    def updatePrevFrame(self, frame:np.ndarray) -> None:
         
         try:
             if self.convertColors:
@@ -777,31 +898,34 @@ class camera:
             image = QtGui.QImage(frame2, frame2.shape[1], frame2.shape[0], QtGui.QImage.Format_RGB888)
             pixmap = QtGui.QPixmap.fromImage(image)
             self.prevWindow.setPixmap(pixmap)
-        except:
+        except Exception as e:
             # stop previewing if we can't preview
-            self.updateStatus('Error displaying frame')
+            self.updateStatus('Error displaying frame', True)
             self.previewing = False
             self.stopTimer()
 
-    # updates the status of the widget that this camera belongs to            
-    def updateStatus(self, st:str) -> None:
-        self.guiBox.updateStatus(st)
+    # updates the status of the widget that this camera belongs to    
+    # log determines whether to write to log
+    def updateStatus(self, st:str, log:bool) -> None:
+        self.guiBox.updateStatus(st, log)
     
     # updates the status during recording and during save
     def updateRecordStatus(self) -> None:
+        log = False
         if self.recording:
             s = 'Recording '
         elif self.writing:
             s = 'Writing '
         else:
             s = 'Recorded '
+            log = True
         s+=self.vFilename
         s+= ' : %2.2f s' % self.timeRec + ', '
         if self.writing and not self.recording:
             s+= str(self.fleft) + '/' + str(self.totalFrames) + ' frames left'
         else:
             s+= str(self.framesDropped) + '/' + str(self.totalFrames) +' frames dropped'
-        self.updateStatus(s)
+        self.updateStatus(s, log)
         
     # fleft is the number of frames left to record
     # this function updates the status to say that the video is still being saved
@@ -820,8 +944,8 @@ class webcam(camera):
 
         # connect to webcam
         try:
-            self.cam = cv2.VideoCapture(guiBox.mode-1)
-            self.lastFrame = self.readFrame()
+            self.camdevice = cv2.VideoCapture(guiBox.mode-1)
+            self.readFrame()
         except:
             self.connected = False
             return
@@ -829,10 +953,10 @@ class webcam(camera):
             self.connected = True
         
         # get image stats
-        self.fps = self.cam.get(cv2.CAP_PROP_FPS)/2 # frames per second
+        self.fps = self.camdevice.get(cv2.CAP_PROP_FPS)/2 # frames per second
         self.mspf = int(round(1000./self.fps))  # ms per frame
-        self.imw = int(self.cam.get(3)) # image width (px)
-        self.imh = int(self.cam.get(4)) # image height (px)
+        self.imw = int(self.camdevice.get(3)) # image width (px)
+        self.imh = int(self.camdevice.get(4)) # image height (px)
         
         self.convertColors = True
         
@@ -841,14 +965,15 @@ class webcam(camera):
     # get a frame from the webcam    
     def readFrame(self):
         try:
-            rval, frame = self.cam.read()
+            rval, frame = self.camdevice.read()
         except:
-            self.updateStatus('Error reading frame')
+            self.updateStatus('Error reading frame', True)
             raise Exception
         if not rval:
             raise Exception
         else:
-            self.lastFrame = frame
+            # if we successfully read the frame, keep it in lastFrame
+            self.lastFrame = [frame]
             return frame
  
     #-----------------------------------------
@@ -856,13 +981,14 @@ class webcam(camera):
     # this gets triggered when the whole window is closed
     def close(self) -> None:
         self.closeCam()
-        if not self.cam==None:
+        if not self.camdevice==None:
             try:
-                self.cam.release()
+                self.camdevice.release()
             except:
                 pass
             else:
-                print(self.cameraName + ' camera closed')
+                if self.diag>0:
+                    logging.info(self.cameraName + ' closed')
     
 
 #########################################      
@@ -879,24 +1005,26 @@ class bascam(camera):
         # connect to the camera
         try:
             self.tlf = pylon.TlFactory.GetInstance()
-            self.cam = pylon.InstantCamera(self.tlf.CreateFirstDevice())
+            self.camdevice = pylon.InstantCamera(self.tlf.CreateFirstDevice())
         except Exception as e:
-            self.guiBox.updateStatus(e)
+            if self.diag>0:
+                logging.error(e)
+            self.guiBox.updateStatus(e, False)
             self.connected = False
             return
         
         # open camera
         try:
-            self.cam.Open()
+            self.camdevice.Open()
             
-            self.cam.StartGrabbing(pylon.GrabStrategy_OneByOne)
-            #self.cam.StartGrabbing(pylon.GrabStrategy_LatestImageOnly)
-            #self.cam.Gain.SetValue(12)
-            #self.cam.AutoTargetValue.SetValue(128)  ## this doesn't work
+            self.camdevice.StartGrabbing(pylon.GrabStrategy_OneByOne)
+            #self.camdevice.StartGrabbing(pylon.GrabStrategy_LatestImageOnly)
+            #self.camdevice.Gain.SetValue(12)
+            #self.camdevice.AutoTargetValue.SetValue(128)  ## this doesn't work
     
             self.connected = True
             # update the GUI display to show camera model
-            self.guiBox.model = self.cam.GetDeviceInfo().GetModelName()
+            self.guiBox.model = self.camdevice.GetDeviceInfo().GetModelName()
             self.guiBox.updateBoxTitle()
             
             # converter converts pylon images into cv2 images
@@ -905,21 +1033,24 @@ class bascam(camera):
             self.converter.OutputBitAlignment = pylon.OutputBitAlignment_MsbAligned
             
             # get camera stats
-            self.fps = self.cam.ResultingFrameRate.GetValue() # frames per s
+            self.fps = self.camdevice.ResultingFrameRate.GetValue() # frames per s
             #self.fps = 120
             self.mspf = int(round(1000./self.fps))  # ms per frame
             f1 = self.readFrame()
             self.imw = len(f1[0]) # image width (px)
             self.imh = len(f1) # image height (px)
             
-            self.lastFrame = self.readFrame()
+            # if we successfully read the frame, keep it in lastFrame
+            self.lastFrame = [f1]
 
         except Exception as e:
             try:
-                self.cam.Close() # close camera if we've already opened it
+                self.camdevice.Close() # close camera if we've already opened it
             except:
                 pass
-            self.guiBox.updateStatus(e)
+            if self.diag>0:
+                logging.error(e)
+            self.guiBox.updateStatus(e, False)
             self.connected = False
             return   
         
@@ -927,9 +1058,10 @@ class bascam(camera):
         
     # get a frame from the Basler camera
     def readFrame(self):
+        
         try:            
-            grabResult = self.cam.RetrieveResult(5000, pylon.TimeoutHandling_ThrowException)
-        except:
+            grabResult = self.camdevice.RetrieveResult(5000, pylon.TimeoutHandling_ThrowException)
+        except Exception as e:
             return self.grabError('Error collecting grab')
         if not grabResult.GrabSucceeded():
             return self.grabError('Error: Grab failed')
@@ -943,12 +1075,16 @@ class bascam(camera):
             grabResult.Release()
         except:
             pass
-        self.lastFrame = img
-        return img       
+        if type(img)==np.ndarray:
+            # if we successfully read the frame, keep it in lastFrame
+            self.lastFrame = [img]
+            return img  
+        else:
+            return self.grabError('Error: Frame is not array')
     
     # update the status box when there's an error grabbing the frame
     def grabError(self, status:str) -> None:
-        self.updateStatus(status)
+        raise Exception(status)
     
     
     #-----------------------------------------
@@ -957,14 +1093,51 @@ class bascam(camera):
     def close(self) -> None:
         self.closeCam()
         try:
-            self.cam.StopGrabbing()
-            self.cam.Close()
+            self.camdevice.StopGrabbing()
+            self.camdevice.Close()
         except:
             pass
         else:
-            print('Basler camera closed')
+            if self.diag>0:
+                logging.info('Basler camera closed')
             
 ################################################
+        
+class settingsDialog(QtGui.QDialog):
+    def __init__(self, parent, bTitle, camObj):
+        super().__init__(parent)  
+        self.camObj = camObj
+        self.layout = qtw.QVBoxLayout()
+        
+        self.diagRow = qtw.QHBoxLayout()
+        self.diagLabel = qtw.QLabel('Log')
+        self.diag1 = qtw.QRadioButton('None')
+        self.diag2 = qtw.QRadioButton('Just critical')
+        self.diag2.setChecked(True)
+        self.diag3 = qtw.QRadioButton('All frames')
+        self.diaggroup = qtw.QButtonGroup()
+        self.diaggroup.addButton(self.diag1, 0)
+        self.diaggroup.addButton(self.diag2, 1)
+        self.diaggroup.addButton(self.diag3, 2)
+        self.diaggroup.buttonClicked.connect(self.changeDiag)
+        self.diagRow.addWidget(self.diagLabel)
+        self.diagRow.addWidget(self.diag1)
+        self.diagRow.addWidget(self.diag2)
+        self.diagRow.addWidget(self.diag3)
+        self.layout.addLayout(self.diagRow)
+        
+#         self.reset = qtw.QPushButton('Reset camera')
+#         self.reset.clicked.connect(parent.connect)
+#         self.layout.addWidget(self.reset)
+    
+        self.setLayout(self.layout)
+        self.setWindowTitle(bTitle + " settings")
+
+#         self.resize(900, 400)
+        
+    def changeDiag(self, diagbutton):
+        self.camObj.diag = self.diaggroup.id(diagbutton)      
+
 
 # this is the widget object that holds camera objects and displays buttons and preview frames
 class cameraBox(connectBox):
@@ -979,15 +1152,27 @@ class cameraBox(connectBox):
         self.imh=0
         self.img = []
         self.bTitle = mode2title(mode)
-        self.connect(sbWin) # try to connect to the camera
+        self.sbWin = sbWin
+        self.connect() # try to connect to the camera
         self.updateBoxTitle()
         if self.connected:
-            print(self.bTitle, ' ', self.camObj.fps, ' fps')
+            if self.camObj.diag>0:
+                logging.info(self.bTitle, ' ', self.camObj.fps, ' fps')
 
     # try to connect to the camera
-    def connect(self, sbWin:qtw.QMainWindow) -> None:
+    def connect(self) -> None:
+        sbWin = self.sbWin
         self.connectingLayout() # inherited from connectBox
         self.connectAttempts+=1
+        
+        # if we've already defined a camera object, delete it
+        try:
+            self.camObj.close()
+            self.resetLayout()
+        except:
+            pass
+        
+        # define a new camera object
         if self.mode==0:
             self.camObj = bascam(sbWin, self)
         else:
@@ -999,6 +1184,7 @@ class cameraBox(connectBox):
             
     # this is the layout if we successfully connected to the camera
     def successLayout(self) -> None:
+        
         self.resetLayout()
         self.layout = qtw.QVBoxLayout()
         self.camButts = qtw.QHBoxLayout()
@@ -1018,6 +1204,10 @@ class cameraBox(connectBox):
         self.camPic.clicked.connect(self.cameraPic)
         self.camPic.setIcon(QtGui.QIcon('icons/camera.png'))
         
+        self.settings = qtw.QPushButton('Settings')
+        self.settings.clicked.connect(self.openSettings)
+        self.settingsDialog = settingsDialog(self, self.bTitle, self.camObj)
+        
         self.status = qtw.QLabel('Ready')
         self.status.setFixedSize(600, 50)
         self.status.setWordWrap(True)
@@ -1027,6 +1217,7 @@ class cameraBox(connectBox):
         self.camButts.addWidget(self.camPrev)
         self.camButts.addWidget(self.camRec)
         self.camButts.addWidget(self.camPic)
+        self.camButts.addWidget(self.settings)
         self.camButts.setSpacing(10) # spacing between buttons
         
         self.layout.addItem(self.camButts)
@@ -1047,10 +1238,10 @@ class cameraBox(connectBox):
     def cameraPrev(self) -> None:
         if self.previewing:
             # we're already previewing: stop the preview
-            self.camObj.stop()
+            self.camObj.stopPreview()
             self.setPrevButtStart()
         else:
-            self.camObj.start()
+            self.camObj.startPreview()
             self.setPrevButtStop()
         self.previewing = not self.previewing
         
@@ -1087,6 +1278,10 @@ class cameraBox(connectBox):
         self.camRec.setStyleSheet('background-color:black; color:white;')
         self.camRec.setIcon(QtGui.QIcon('icons/recordstop.png'))
         
+    def openSettings(self) -> None:
+        self.settingsDialog.show()
+        self.settingsDialog.raise_()
+
     #------------------------------------------------
     
     # this updates the title of widget box
@@ -1170,18 +1365,83 @@ class fluChannel:
         if runtime<0:
             return
         runpressure = int(self.constBox.text())
-        self.fluBox.updateStatus('Setting channel '+str(self.chanNum)+' to '+str(runpressure)+' for '+str(runtime)+' s')
+        self.fluBox.updateStatus('Setting channel '+str(self.chanNum)+' to '+str(runpressure)+' for '+str(runtime)+' s', True)
         fgt.fgt_set_pressure(self.chanNum, runpressure)
         QtCore.QTimer.singleShot(runtime*1000, self.zeroChannel) 
             # QTimer wants time in milliseconds
     
     # zero the channel pressure
     def zeroChannel(self) -> None:
-        self.fluBox.updateStatus('Setting channel '+str(self.chanNum)+' to 0')
+        self.fluBox.updateStatus('Setting channel '+str(self.chanNum)+' to 0', True)
         fgt.fgt_set_pressure(self.chanNum, 0)
 
         
 ##############################  
+
+class fluSignals(QtCore.QObject):
+    
+    finished = QtCore.pyqtSignal()
+    error = QtCore.pyqtSignal(int, str)
+    progress = QtCore.pyqtSignal()
+    
+
+#########################################################
+
+class plotWatch:
+    def __init__(self, numChans):
+        self.stop = False
+        self.numChans = numChans
+        self.initializePList()
+        
+            # initialize the pressure list
+    def initializePList(self) -> None:
+        # initialize the time range
+        self.dt = 200 # ms
+        self.time = list(np.arange(-60*1, 0, self.dt/1000)) 
+               
+        # initialize pressures. assume 0 before we initialized the gui    
+        self.pressures = []
+        
+        for i in range(self.numChans):
+            press = [0 for _ in range(len(self.time))]
+            self.pressures.append(press)
+
+
+# plotRunnable updates the list of times and pressures
+class plotRunnable(QtCore.QRunnable):
+    def __init__(self, pw):
+        super(plotRunnable, self).__init__()   
+        self.pw = pw # plotWatch object
+        self.numChans = pw.numChans
+        self.signals = fluSignals() 
+        self.dprev = datetime.datetime.now()
+
+    
+    def run(self) -> None:
+        while not self.pw.stop:
+            try:
+                newtime = self.pw.time
+                newpressures = self.pw.pressures
+                # update the plot and displayed pressure
+                newtime = newtime[1:]  # Remove the first y element.
+                dnow = datetime.datetime.now()
+                dt = (dnow-self.dprev).total_seconds()
+                self.dprev = dnow
+                newtime.append(newtime[-1] + dt) # Add the next time.
+                for i in range(self.numChans):
+                    newpressures[i] = newpressures[i][1:]
+                    pnew = checkPressure(i)
+                    # update the plot
+                    newpressures[i].append(pnew)
+            except Exception as e:
+                self.signals.error.emit(1, 'Error reading pressure')
+            else:
+                self.pw.time = newtime
+                self.pw.pressures = newpressures   
+                self.signals.progress.emit()
+            time.sleep(200/1000)
+
+
 
 # pcolors is a list of colors, e.g. ['#FFFFFF', '#000000']
 # fluBox is a pointer to the fluigent box that contains this plot
@@ -1192,79 +1452,61 @@ class fluPlot:
         self.fluBox = fb # parent box
         self.numChans = self.fluBox.numChans
         
+        
         # create the plot
         self.graphWidget = pg.PlotWidget() 
         self.graphWidget.setYRange(-10, 7100, padding=0) 
             # set the range from 0 to 7000 mbar
         self.graphWidget.setBackground('w')         
         self.pcolors = pcolors
-        self.initializePList()
         
+        self.pw = plotWatch(self.numChans)
+
+        self.datalines = []
         for i in range(self.numChans):
-            press = self.pressures[i]
+            press = self.pw.pressures[i]
             pen = pg.mkPen(color=pcolors[i], width=2)
             cname = 'Channel '+str(i+1)
-            dl = self.graphWidget.plot(self.time, press, pen=pen, name=cname)
+            dl = self.graphWidget.plot(self.pw.time, press, pen=pen, name=cname)
             self.datalines.append(dl)
         
         self.graphWidget.setLabel('left', 'Pressure (mBar)')
         self.graphWidget.setLabel('bottom', 'Time (s)')
-        
-        self.timer = QtCore.QTimer()
-        self.timer.setInterval(self.dt)
-        self.timer.timeout.connect(self.update)
-        self.timer.start()
-    
-    # initialize the pressure list
-    def initializePList(self) -> None:
-        # initialize the time range
-        self.dt = 200 # ms
-        self.time = list(np.arange(-60*1, 0, self.dt/1000)) 
-               
-        # initialize pressures. assume 0 before we initialized the gui    
-        self.pressures = []
-        self.datalines = []
-        for i in range(self.numChans):
-            press = [0 for _ in range(len(self.time))]
-            self.pressures.append(press)
+
+        # create a thread to update the pressure list
+        plotThread = plotRunnable(self.pw)
+        plotThread.signals.progress.connect(self.update)
+        QtCore.QThreadPool.globalInstance().start(plotThread)   
+
     
     # read the pressure and update the plot display
     def update(self) -> None:
         try:
-            newtime = self.time
-            newpressures = self.pressures
-            # update the plot and displayed pressure
-            newtime = newtime[1:]  # Remove the first y element.
-            newtime.append(newtime[-1] + self.dt/1000) # Add the next time.
             for i in range(self.numChans):
-                newpressures[i] = newpressures[i][1:]
-                pnew = self.fluBox.checkPressure(i)
-                # update the plot
-                newpressures[i].append(pnew)
-        except Exception as e:
-            print(e)
-            self.fluBox.updateStatus('Error reading pressure')
-        else:
-            self.time = newtime
-            self.pressures = newpressures   
-            for i in range(self.numChans):
-                self.datalines[i].setData(self.time, self.pressures[i])
+                self.datalines[i].setData(self.pw.time, self.pw.pressures[i])
                 # update the pressure reading
-                self.fluBox.updateReading(i, str(pnew)) 
+                self.fluBox.updateReading(i, str(self.pw.pressures[i][-1])) 
+        except:
+            pass
     
     #-----------------------------------------
     
     # this gets triggered when the window is closed
     def close(self) -> None:
-        try:
-            self.fluPlot.timer.stop()       
+        try: 
+            self.pw.stop = True
         except:
             pass
         else:
-            print('Fluigent timer deleted')
+            logging.info('Fluigent timer deleted')
     
     
-##############################    
+############################## 
+
+# this reads the pressure of a given channel
+def checkPressure(channel:int) -> int:
+    pressure = int(fgt.fgt_get_pressure(channel))
+    return pressure
 
 
 # sbWin is a pointer to the parent window
@@ -1296,11 +1538,7 @@ class fluBox(connectBox):
             self.successLayout()
         else:
             self.failLayout()
-            
-#     # this tells us which Shopbot flag to watch for this channel
-#     def setCritFlag(self, flag:int) -> None:
-#         if self.connected:
-#             self.fluPlot.critFlag = flag
+
     
     # display if we successfully connected to the fluigent
     def successLayout(self) -> None:
@@ -1330,16 +1568,11 @@ class fluBox(connectBox):
         
     #-----------------------------------------
     
-    # this reads the pressure of a given channel
-    def checkPressure(self, channel:int) -> None:
-        pressure = int(fgt.fgt_get_pressure(channel))
-        return pressure 
-    
     # this reads the pressure of all channels
     def readPressures(self) -> List[int]:
         plist = []
         for i in range(self.numChans):
-            plist.append(self.checkPressure(i))
+            plist.append(checkPressure(i))
         return plist
     
     # exclude is a channel that we want to keep on. Input -1 or any other unused value to turn everything off
@@ -1365,9 +1598,46 @@ class fluBox(connectBox):
             except:
                 pass
             else:
-                print('Fluigent closed')  
+                logging.info('Fluigent closed')  
             # stop the timer used to create the fluigent plot
             self.fluPlot.close()
+            
+            
+            
+########### logging window
+
+
+class QPlainTextEditLogger(logging.Handler):
+    def __init__(self, parent):
+        super().__init__()
+        self.widget = QtGui.QPlainTextEdit(parent)
+        self.widget.setReadOnly(True)    
+
+    def emit(self, record):
+        msg = self.format(record)
+        self.widget.appendPlainText(msg)    
+
+
+class logDialog(QtGui.QDialog):
+    def __init__(self, parent):
+        super().__init__(parent)  
+        
+        
+
+        logTextBox = QPlainTextEditLogger(self)
+        # You can format what is printed to text box
+        logTextBox.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+        logging.getLogger().addHandler(logTextBox)
+        # You can control the logging level
+        logging.getLogger().setLevel(logging.DEBUG)
+
+        layout = QtGui.QVBoxLayout()
+        # Add the new logging box widget to the layout
+        layout.addWidget(logTextBox.widget)
+        self.setLayout(layout) 
+        
+        self.setWindowTitle("Shopbot/Fluigent/Camera log")
+        self.resize(900, 400)
 
         
 ####################### the whole window
@@ -1383,7 +1653,14 @@ class SBwindow(qtw.QMainWindow):
         self.setWindowTitle("Shopbot/Fluigent/Camera")
         self.setStyleSheet('background-color:white;')
         self.resize(1600, 1800)
+        
+        self.createMenu()
+        self.createGrid()
+        
+        logging.info('Window created')
 
+        
+    def createGrid(self):
         self.genBox = genBox(self)
         self.sbBox = sbBox(self)
         self.basBox = cameraBox(0, self)
@@ -1409,32 +1686,43 @@ class SBwindow(qtw.QMainWindow):
 
         self.central_widget.setLayout(self.fullLayout)
         
-        self.threadPool = QtCore.QThreadPool()
-        
-#     def setCritFlag(self, flag:int) -> None:
-#         self.fluBox.setCritFlag(flag) 
-    
-    
-#     def triggerEndOfPrint(self) -> None:
-#         self.sbBox.endOfPrint()
-    
-#     # determines if the shopbot is currently running a file that was sent from this GUI
-#     def sbpRunning(self) -> bool:
-#         return self.sbBox.runningSBP
+    def createMenu(self):
+        menubar = self.menuBar()
+        self.setupLog()
+        menubar.addAction(self.logButt)
+
       
     # this runs when the window is closed
     def closeEvent(self, event):
         for o in [self.sbBox, self.basBox, self.nozBox, self.ledBox, self.fluBox]:
             o.close()
+        for handler in logging.root.handlers[:]:
+            logging.root.removeHandler(handler)
+            
+    def setupLog(self):        
+        self.logDialog = logDialog(self)
+#         self.logfile = setUpLog()
+        self.logButt = qtw.QAction('Open log', self)
+        self.logButt.triggered.connect(self.openLog)
+                
+    def openLog(self) -> None:
+#         cmd = r'notepad.exe "' + self.logfile + '"'
+#         subprocess.Popen(cmd)
+
+        self.logDialog.show()
+        self.logDialog.raise_()
 
 class MainProgram(qtw.QWidget):
     def __init__(self): 
         app = qtw.QApplication(sys.argv)
+        sansFont = QtGui.QFont("Arial", 9)
+        app.setFont(sansFont)
         gallery = SBwindow()
         gallery.show()
         gallery.setWindowIcon(QtGui.QIcon('icons/sfcicon.ico'))
         app.setWindowIcon(QtGui.QIcon('icons/sfcicon.ico'))
         app.exec_()
+        
         myappid = 'leanfried.sbgui.v0.0' # arbitrary string
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
       
