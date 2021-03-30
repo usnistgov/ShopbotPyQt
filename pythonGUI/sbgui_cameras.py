@@ -9,6 +9,7 @@ import time
 import datetime
 import numpy as np
 import os
+import subprocess
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
 
@@ -129,7 +130,8 @@ class vidReader(QtCore.QRunnable):
             frame = self.cam.readFrame()
         except Exception as e:
             frame = self.lastFrame[0]
-            self.signals.error.emit(f'Error collecting frame: {e}', True)
+            if len(str(e))>0:
+                self.signals.error.emit(f'Error collecting frame: {e}', True)
             
         # update the preview
         if self.cam.previewing:
@@ -226,7 +228,8 @@ class camSnap(QtCore.QRunnable):
                 frame = self.cam.readFrame()
                 # frame needs to be in cv2 format
             except Exception as e:
-                self.signals.error.emit(f'Error collecting frame: {e}', True)
+                if len(str(e))>0:
+                    self.signals.error.emit(f'Error collecting frame: {e}', True)
                 return
         else:
             # if we're not previewing, we can use the last frame
@@ -266,9 +269,28 @@ class camera:
         self.resetVidStats()
         self.framesSincePrev = 0  # how many frames we've collected since we updated the live display
         self.diag = 1             # diag tells us which messages to log. 0 means none, 1 means some, 2 means a ton
-
+        self.fps = 0
+        self.exposure =0
         self.fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
         self.prevWindow = qtw.QLabel()
+        
+            
+    def setFrameRate(self, fps:float) -> int:
+        '''Set the frame rate of the camera. Return 0 if value changed, 1 if not'''
+        if self.fps==fps:
+            return 1
+        else:
+            if 1000./fps<self.exposure and self.exposure>0:
+                # requested fps is slower than exposure. reject
+                if self.diag>0:
+                    self.updateStatus(f'Requested frame rate {fps} is slower than exposure {self.exposure}. Frame rate not updated.', True)
+                return 1
+            self.fps = fps
+            self.mspf = int(round(1000./self.fps))  # ms per frame
+            return 0
+        
+    def setFrameRateAuto(self) -> int:
+        return self.setFrameRate(self.getFrameRate())
     
     
     def closeCam(self) -> None:
@@ -511,15 +533,48 @@ class webcam(camera):
             self.connected = True
         
         # get image stats
-        self.getFrameRate()
+        self.setFrameRateAuto()
         self.imw = int(self.camDevice.get(3))               # image width (px)
         self.imh = int(self.camDevice.get(4))               # image height (px)
+        self.getExposure()
         
         self.convertColors = True
         
-    def getFrameRate(self):
-        self.fps = self.camDevice.get(cv2.CAP_PROP_FPS)/2   # frames per second
-        self.mspf = int(round(1000./self.fps))              # ms per frame
+    def getFrameRate(self) -> float:
+        '''Determine the native device frame rate'''
+        return self.camDevice.get(cv2.CAP_PROP_FPS)/2 # frames per second
+
+    def getExposure(self):
+        '''Read the current exposure on the camera'''
+        self.exposure=1000*2**self.camDevice.get(cv2.CAP_PROP_EXPOSURE)
+        
+    def exposureAuto(self):
+        '''Automatically adjust the exposure. https://docs.baslerweb.com/exposure-auto'''
+#         self.camDevice.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
+#         self.getExposure()
+        if self.diag>0:
+            self.updateStatus('Cannot update webcam exposure. Feature in development.', True)
+        return 1
+        
+    def setExposure(self, val:float) -> int:
+        '''Set the exposure time to val'''
+        if self.diag>0:
+            self.updateStatus('Cannot update webcam exposure. Feature in development.', True)
+        return 1
+#         self.camDevice.set(cv2.CAP_PROP_AUTO_EXPOSURE, 0.25)
+#         if self.diag>1:
+#             logging.debug(f'{self.cameraName}: CAP_PROP_EXPOSURE requested: {np.log2(val/1000)}')
+#             logging.debug(f'{self.cameraName}: CAP_PROP_EXPOSURE before: {self.camDevice.get(cv2.CAP_PROP_EXPOSURE)}')
+#         self.camDevice.set(cv2.CAP_PROP_EXPOSURE, np.log2(val/1000))
+#         if self.diag>1:
+#             logging.debug(f'{self.cameraName}: CAP_PROP_EXPOSURE after: {self.camDevice.get(cv2.CAP_PROP_EXPOSURE)}')
+#         self.exposure = val
+#         if self.exposure==val:
+#             return 1
+#         else:
+#             subprocess.check_call("v4l2-ctl -d /dev/video0 -c exposure_absolute="+str(val),shell=True)
+#             self.getExposure()
+#             return 0
         
     #-----------------------------------------
         
@@ -598,10 +653,11 @@ class bascam(camera):
             self.converter.OutputBitAlignment = pylon.OutputBitAlignment_MsbAligned
             
             # get camera stats
-            self.getFrameRate()
+            self.setFrameRateAuto()
             f1 = self.readFrame()
             self.imw = len(f1[0]) # image width (px)
             self.imh = len(f1) # image height (px)
+            self.getExposure()
             
             # if we successfully read the frame, keep it in lastFrame
             self.lastFrame = [f1]
@@ -617,8 +673,48 @@ class bascam(camera):
             return 
         
     def getFrameRate(self):
-        self.fps = self.camDevice.ResultingFrameRate.GetValue() # frames per s
-        self.mspf = int(round(1000./self.fps))  # ms per frame
+        '''Determine the frame rate of the camera'''
+        fps = self.camDevice.ResultingFrameRate.GetValue()
+        return fps
+        
+    def exposureAuto(self) -> int:
+        '''Automatically adjust the exposure. https://docs.baslerweb.com/exposure-auto.  Returns 0 if the value was changed, 1 if not.'''
+        if self.diag>0:
+            self.updateStatus('Cannot set auto exposure. Feature in development.', True)
+        return 1
+#         # Set the &#160;Exposure Auto auto function to its minimum lower limit
+#         # and its maximum upper limit
+#         minLowerLimit = self.camDevice.AutoExposureTimeLowerLimit.GetMin()
+#         maxUpperLimit = self.camDevice.AutoExposureTimeUpperLimit.GetMax()
+#         self.camDevice.AutoExposureTimeLowerLimit.SetValue(minLowerLimit)
+#         self.camDevice.AutoExposureTimeUpperLimit.SetValue(maxUpperLimit)
+#         # Set the target brightness value to 0.6
+#         self.camDevice.AutoTargetBrightness.SetValue(0.6)
+# #         # Select auto function ROI 1
+# #         self.camDevice.AutoFunctionROISelector.SetValue('AutoFunctionROISelector_ROI1');
+#         # Enable the 'Brightness' auto function (Gain Auto + Exposure Auto)
+#         # for the auto function ROI selected
+#         self.camDevice.AutoFunctionROIUseBrightness.SetValue(True)
+#         # Enable Exposure Auto by setting the operating mode to Continuous
+#         self.camDevice.ExposureAuto.SetValue('ExposureAuto_Once')
+        
+    def setExposure(self, val:float) -> int:
+        '''Set the exposure time to val. Returns 0 if the value was changed, 1 if not.'''
+        if self.exposure==val*1000:
+            return 1
+        else:
+            if val>self.mspf:
+                # exposure time is longer than frame rate. reject.
+                if self.diag>0:
+                    self.updateStatus(f'Requested exposure time {val} is higher than frame rate {self.mspf}. Exposure time not updated.', True)
+                return 1
+            self.camDevice.ExposureTime.SetValue(val*1000) # convert from milliseconds to microseconds
+            self.getExposure()
+            return 0
+        
+    def getExposure(self):
+        self.exposure = self.camDevice.ExposureTime.GetValue()/1000 # convert from microseconds to milliseconds
+        
         
     #-----------------------------------------
         
@@ -654,6 +750,8 @@ class bascam(camera):
     def grabError(self, status:str, statusNum:int, exc:bool) -> None:
         '''update the status box when there's an error grabbing the frame. Status is a number representing the type of error. This prevents us from printing the same error over in a loop. exc is true to return an exception and false to return nothing'''
         if exc:
+            if self.diag>1:
+                logging.info(f'errorStatus={self.errorStatus},statusNum={statusNum}')
             if self.errorStatus==statusNum:
                 raise Exception('')
             else:
@@ -662,7 +760,7 @@ class bascam(camera):
         else:
             if not self.errorStatus==statusNum:
                 self.errorStatus=statusNum
-                self.updateStatus(e, self.diag>0)  
+                self.updateStatus(status, self.diag>0)  
     
     
     #-----------------------------------------
@@ -711,25 +809,46 @@ class settingsDialog(QtGui.QDialog):
         self.diagRow.addWidget(self.diag3)
         self.layout.addLayout(self.diagRow)
         
-        self.varGrid = qtw.QGridLayout()
+        
         self.fpsBox = qtw.QLineEdit()
         self.fpsBox.setText(str(self.camObj.fps))
         self.fpsLabel = qtw.QLabel('Frame rate (fps)')
         self.fpsLabel.setBuddy(self.fpsBox)
-        self.fpsBox.returnPressed.connect(self.updateFPS)
+#         self.fpsBox.returnPressed.connect(self.updateFPS)
         self.fpsAutoButt = qtw.QPushButton('Auto')
         self.fpsAutoButt.clicked.connect(self.fpsAuto)
         self.fpsAutoButt.setAutoDefault(False)
         
+        self.exposureBox = qtw.QLineEdit()
+        self.exposureBox.setText(str(self.camObj.exposure))
+        self.exposureLabel = qtw.QLabel('Exposure (ms)')
+        self.exposureLabel.setBuddy(self.exposureBox)
+#         self.exposureBox.returnPressed.connect(self.updateExposure)
+        self.exposureAutoButt = qtw.QPushButton('Auto')
+        self.exposureAutoButt.clicked.connect(self.exposureAuto)
+        self.exposureAutoButt.setAutoDefault(False)
+        self.exposureAutoButt.setEnabled(False)   # exposure auto doesn't work yet
+        if self.camObj.guiBox.mode>0:
+            # webcam. exposure doesn't work
+            self.enableExposureBox = False
+            self.exposureBox.setEnabled(False)
+        else:
+            self.enableExposureBox = True
+        
+        self.varGrid = qtw.QGridLayout()
         self.varGrid.addWidget(self.fpsLabel, 0,0)
         self.varGrid.addWidget(self.fpsBox, 0,1)
         self.varGrid.addWidget(self.fpsAutoButt, 0,2)
+        self.varGrid.addWidget(self.exposureLabel, 1,0)
+        self.varGrid.addWidget(self.exposureBox, 1,1)
+        self.varGrid.addWidget(self.exposureAutoButt, 1,2)
         
         self.layout.addLayout(self.varGrid)
         
         self.goButt = qtw.QPushButton('Save')
         self.goButt.clicked.connect(self.updateVars)
         self.goButt.setFocus()
+        self.goButt.setAutoDefault(True)
         self.layout.addWidget(self.goButt)
         
 #         self.reset = qtw.QPushButton('Reset camera')
@@ -746,14 +865,36 @@ class settingsDialog(QtGui.QDialog):
         
             
     def updateVars(self):
-        '''Update the frame rate'''
+        '''Update the set variables'''
         self.updateFPS()
+        if self.enableExposureBox:
+            self.updateExposure()
+        
+    #--------------------------
+    # fps
+
+    def exposureStatus(self):
+        '''Log the change in exposure time'''
+        if self.camObj.diag>0:
+            self.camObj.updateStatus(f'Changed exposure to {self.camObj.exposure} ms', True)
+        
+    def updateExposure(self):
+        '''Update the exposure used by the GUI to the given exposure'''
+        out = self.camObj.setExposure(float(self.exposureBox.text()))
+        if out==0:
+            self.exposureStatus()
+            
+    def exposureAuto(self):
+        '''Automatically adjust the exposure'''
+        out = self.camObj.exposureAuto()
+        if out==0:
+            self.exposureBox.setText(str(self.camObj.exposure))
+            self.exposureStatus()
         
             
     #--------------------------
     # fps
-    
-    
+
     def fpsStatus(self):
         '''Log the change in fps'''
         if self.camObj.diag>0:
@@ -761,15 +902,16 @@ class settingsDialog(QtGui.QDialog):
         
     def updateFPS(self):
         '''Update the frame rate used by the GUI to the given frame rate'''
-        self.camObj.fps = int(self.fpsBox.text())
-        self.camObj.mspf = int(round(1000./self.camObj.fps))  # ms per frame
-        self.fpsStatus()
+        out = self.camObj.setFrameRate(float(self.fpsBox.text()))
+        if out==0:
+            self.fpsStatus()
             
     def fpsAuto(self):
         '''Automatically adjust the frame rate to the frame rate of the camera'''
-        self.camObj.getFrameRate()
-        self.fpsBox.setText(str(self.camObj.fps))
-        self.fpsStatus()
+        out = self.camObj.setFrameRateAuto()
+        if out==0:
+            self.fpsBox.setText(str(self.camObj.fps))
+            self.fpsStatus()
 
 class cameraBox(connectBox):
     '''widget that holds camera objects and displays buttons and preview frames'''
@@ -997,4 +1139,5 @@ class cameraBox(connectBox):
     def close(self) -> None:
         '''gets triggered when the window is closed. Disconnects GUI from camera.'''
         self.camObj.close()
+        self.settingsDialog.done()
 
