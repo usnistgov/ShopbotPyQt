@@ -460,7 +460,7 @@ class sbBox(connectBox):
                 logging.error(f'{sbpn} does not exist')
             else:
                 self.runButt.setEnabled(True)
-                logging.info(f'Adding file to queue: {sbpn}')
+                logging.debug(f'Adding file to queue: {sbpn}')
                 self.addFile(sbpn)        
             
     ########
@@ -655,8 +655,9 @@ class sbBox(connectBox):
 
     #-----------------------------------------
     
-    # this gets triggered when the whole window is closed
+    
     def close(self):
+        '''this gets triggered when the whole window is closed'''
         try:
             self.timer.stop()
         except:
@@ -672,6 +673,7 @@ class sbBox(connectBox):
 
 
 def mode2title(mode:int) -> str:
+    '''convert a mode number to a camera title'''
     if mode==0:
         return 'Basler camera'
     elif mode==1:
@@ -680,27 +682,30 @@ def mode2title(mode:int) -> str:
         return 'Webcam 2'
     
 #########################################################
-# Defines the signals available from a running worker thread
-# Supported signals are:
-#     finished: No data
-#     error: `tuple` (exctype, value, traceback.format_exc() )
-#     result:`object` data returned from processing, anything
-#     progress: `int` indicating % progress 
+
 class vrSignals(QtCore.QObject):
+    '''Defines the signals available from a running worker thread
+        Supported signals are:
+        finished: No data
+        error: a string message and a bool whether this is worth printing to the log
+        result:`object` data returned from processing, anything
+        progress: `int` indicating % progress '''
     
     finished = QtCore.pyqtSignal()
-    error = QtCore.pyqtSignal(int, str)
+    error = QtCore.pyqtSignal(str, bool)
     progress = QtCore.pyqtSignal(int)
     prevFrame = QtCore.pyqtSignal(np.ndarray)
 
     
 
 #########################################################
-# The vidRecorder creates a cv2.VideoWriter object at initialization, and it takes frames in the queue and writes them to file. This is a failsafe, so if the videowriter writes slower than the timer reads frames, then we can store those extra frames in memory until the vidRecorder object can write them to the HD
-# QRunnables run in the background. Trying to directly modify the GUI from inside the QRunnable will make everything catastrophically slow, but you can pass messages back to the GUI using vrSignals.
-class vidRecorder(QtCore.QRunnable):
+
+class vidWriter(QtCore.QRunnable):
+    '''The vidWriter creates a cv2.VideoWriter object at initialization, and it takes frames in the queue and writes them to file. This is a failsafe, so if the videowriter writes slower than the timer reads frames, then we can store those extra frames in memory until the vidWriter object can write them to the HD. 
+QRunnables run in the background. Trying to directly modify the GUI display from inside the QRunnable will make everything catastrophically slow, but you can pass messages back to the GUI using vrSignals.'''
+    
     def __init__(self, fn:str, vidvars, frames:List[np.ndarray], cam):
-        super(vidRecorder, self).__init__()        
+        super(vidWriter, self).__init__()        
         self.vFilename = fn
         self.vw = cv2.VideoWriter(fn, vidvars['fourcc'], vidvars['fps'], (vidvars['imw'], vidvars['imh']))
         self.signals = vrSignals()  
@@ -710,8 +715,8 @@ class vidRecorder(QtCore.QRunnable):
         self.cam = cam
     
     def run(self) -> None:
-        # this loops until we receive a frame that is a string
-        # the save function will pass STOP to the frame list when we are done recording
+        '''this loops until we receive a frame that is a string
+        the save function will pass STOP to the frame list when we are done recording'''
         while True:
             time.sleep(1) 
                 # this gives the GUI enough time to start adding frames before we start saving, otherwise we get stuck in infinite loop where it's immediately checking again and again if there are frames
@@ -719,37 +724,46 @@ class vidRecorder(QtCore.QRunnable):
                 # remove the first frame once it's written
                 frame = self.frames.pop(0)
                 if type(frame)==str:
+                    # if this frame is a string, the video reader is done, and it's sent us a signal to stop
+                    # we use this explicit signal instead of just stopping when the frame list is empty, just in case the writer is faster than the reader and manages to empty the queue before we're done reading frames
                     self.vw.release()
                     self.signals.finished.emit()
                     return
                 self.vw.write(frame) 
                 if self.cam.diag>1:
+                    # if we're in debug mode for this camera, log that we wrote a frame for this camera
                     logging.debug(self.cam.cameraName+'\twrite\t'+str(len(self.frames)))
                 if len(self.frames) % 100==1:
+                    # on every 100th frame, tell the GUI how many frames we still have to write
                     self.signals.progress.emit(len(self.frames))
         
                     
                     
 ###############################################
-# vidReader puts frame collection into the background, so frames from different cameras can be collected in parallel
+
 
                     
 class vidReader(QtCore.QRunnable):
-    def __init__(self, cam, vrid, frames:List[np.ndarray], lastFrame:List[np.ndarray]):
+    '''vidReader puts frame collection into the background, so frames from different cameras can be collected in parallel'''
+    
+    def __init__(self, cam, vrid:int, frames:List[np.ndarray], lastFrame:List[np.ndarray]):
         super(vidReader, self).__init__()
-        self.cam = cam
-        self.lastFrame = lastFrame
-        self.signals = vrSignals()  
-        self.frames = frames
-        self.vrid = vrid
+        self.cam = cam              # the camera object that called this reader
+        self.lastFrame = lastFrame  # pointer to the list that holds the last frame
+        self.signals = vrSignals()  # signals that let this send messages back to the GUI
+        self.frames = frames        # pointer to the list that holds the frames that haven't been written yet
+        self.vrid = vrid            # vidReader id. Helps prevent duplicate padding.
         
     def run(self) -> None:
+        '''Run this function when this thread is started. Collect a frame, and pad the frame list if we dropped frames.'''
+        
         # get an image
         try:
             frame = self.cam.readFrame()
-        except:
+        except Exception as e:
             frame = self.lastFrame[0]
-            self.signals.error.emit(2, 'Error collecting frame')
+            self.signals.error.emit(f'{self.cam.cameraName}: Error collecting frame: {e}', True)
+            
         # update the preview
         if self.cam.previewing:
             # downsample preview frames
@@ -758,9 +772,10 @@ class vidReader(QtCore.QRunnable):
                     self.signals.prevFrame.emit(frame)
                     self.cam.framesSincePrev=0
                 else:
-                    self.signals.error.emit(3, 'Frame is empty')
+                    self.signals.error.emit(f'{self.cam.cameraName}: Frame is empty', True)
             else:
                 self.cam.framesSincePrev+=1
+                
         # save the frame
         if self.cam.recording:
             # if we've skipped at least 2 frames, fill that space with duplicate frames
@@ -775,14 +790,14 @@ class vidReader(QtCore.QRunnable):
                 self.cam.vridlist.remove(self.vrid)
         
         
-    # save the frame to the video file
-    # frames are in cv2 format
+    
     def saveFrame(self, frame:np.ndarray) -> None:
+        '''save the frame to the video file. frames are in cv2 format. Called by run'''
         try:
             self.frames.append(frame)
         except:
             # stop recording if we can't write
-            self.signals.error.emit(1, 'Error writing to video')
+            self.signals.error.emit(f'{self.cam.cameraName}: Error writing to video', True)
             
         else:
             # display the time recorded
@@ -790,9 +805,9 @@ class vidReader(QtCore.QRunnable):
             self.cam.totalFrames+=1
             self.cam.updateRecordStatus()
  
-    # this function checks to see if the timer has skipped steps 
-    # and fills the missing frames with duplicates        
+          
     def timerCheckDrop(self) -> None:
+        '''check to see if the timer has skipped steps and fills the missing frames with duplicates. Called by run '''
         dnow = datetime.datetime.now()
         if self.cam.startTime==0:
             self.cam.startTime = dnow
@@ -818,29 +833,42 @@ class vidReader(QtCore.QRunnable):
    
  ###########################
     # snapshots
+    
 class snapSignals(QtCore.QObject):
+    '''signal class to send messages back to the GUI during snap collection'''
+    
     result = QtCore.pyqtSignal(str, bool)
+    error = QtCore.pyqtSignal(str, bool)
 
 class camSnap(QtCore.QRunnable):
-    def __init__(self, cam, readnew, lastFrame):
+    '''collects snapshots in the background'''
+    
+    def __init__(self, cam, readNew:bool, lastFrame:List):
         super(camSnap, self).__init__()
-        self.cam = cam
-        self.readnew = readnew
+        self.cam = cam                  # cam is the camera object 
+        self.readNew = readNew          # readnew tells us if we need to read a new frame
         self.signals = snapSignals()
-        self.lastFrame = lastFrame
+        self.lastFrame = lastFrame      # lastFrame is the last frame collected by the camera, as a list of one cv2 frame
         
     def run(self):
-        if self.readnew:
+        '''Get a frame, export it, and return a status string to the GUI.'''
+        
+        if self.readNew:
+            # if we're not currently previewing, we need to collect a new frame.
             try:
                 frame = self.cam.readFrame()
                 # frame needs to be in cv2 format
-            except:
+            except Exception as e:
+                self.signals.error.emit(f'{self.cam.cameraName}: Error collecting frame: {e}', True)
                 return
         else:
+            # if we're not previewing, we can use the last frame
             frame = self.lastFrame[0]
         self.signals.result.emit(exportFrame(self.cam, frame), True)
+        
             
 def exportFrame(cam, frame:np.ndarray) -> str:
+    '''Export a single frame to file as a png'''
     fullfn = cam.getFilename('.png')
     try:
         cv2.imwrite(fullfn, frame)
@@ -851,33 +879,35 @@ def exportFrame(cam, frame:np.ndarray) -> str:
    
 
  #########################################################        
-# a camera object is a generic camera which stores functions and camera
-# info for both pylon cameras and webcams
-# these objects are created by cameraBox objects
-# each type of camera (Basler and webcam) has its own readFrame and close functions
+
 class camera:
+    '''a camera object is a generic camera which stores functions and camera info for both pylon cameras and webcams
+        these objects are created by cameraBox objects
+        each type of camera (Basler and webcam) has its own readFrame and close functions'''
+    
     def __init__(self, sbWin:qtw.QMainWindow, guiBox:connectBox):
         self.previewing = False
-        self.sbWin = sbWin
-        self.guiBox = guiBox
-        self.cameraName = mode2title(guiBox.mode)
-        self.vFilename = ''
-        self.timerRunning = False
-        self.previewing = False
-        self.recording = False
-        self.writing = True
-        self.timer = None
-        self.cam = None
+        self.sbWin = sbWin                        # sbWin is the parent window
+        self.guiBox = guiBox                      # guiBox is the parent box for this camera
+        self.cameraName = mode2title(guiBox.mode) # name of the camera (a string)
+        self.vFilename = ''                       # name of the current video file
+        self.timerRunning = False                 # is the timer that controls frame collection running?
+        self.previewing = False                   # is the live preview on?
+        self.recording = False                    # are we collecting frames for a video?
+        self.writing = True                       # are we writing video frames to file?
+        self.timer = None                         # the timer that controls frame collection
+#         self.cam = None           # 
         self.resetVidStats()
-        self.framesSincePrev = 0
-        self.errorFrames = 0
-        self.diag = 1
+        self.framesSincePrev = 0  # how many frames we've collected since we updated the live display
+#         self.errorFrames = 0 
+        self.diag = 1             # diag tells us which messages to log. 0 means none, 1 means some, 2 means a ton
 
         self.fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
         self.prevWindow = qtw.QLabel()
     
-    # disconnect from the camera when the window is closed
+    
     def closeCam(self) -> None:
+        '''disconnect from the camera when the window is closed'''
         self.recording = False
         self.previewing = False
         if not self.timer==None:
@@ -889,14 +919,16 @@ class camera:
                 if self.diag>0:
                     logging.info(self.cameraName + ' timer stopped')
                 
-    # update the status box when we're done recording        
+          
     def doneRecording(self) -> None:
+        '''update the status box when we're done recording  '''
         self.writing = False
         self.updateRecordStatus()
     
-    # determine the file name for the file we're about to record
-    # ext is the extension
-    def getFilename(self, ext:str) -> str:      
+    
+    def getFilename(self, ext:str) -> str: 
+        '''determine the file name for the file we're about to record. ext is the extension. Uses the timestamp for unique file names. The folder is determined by the saveFolder established in the top box of the GUI.'''
+        
         # determine the folder to save to
         folder = self.sbWin.genBox.saveFolder
         if not os.path.exists(folder):
@@ -921,94 +953,104 @@ class camera:
         fullfn = os.path.join(folder, filename)
         return fullfn
     
-    # reset video stats
+    
     def resetVidStats(self) -> None:
-        self.startTime = 0
-        self.timeRec = 0
-        self.framesDropped = 0
-        self.totalFrames = 0
-        self.fleft = 0
-        self.frames = []
-        self.lastFrame = []
-        self.vridlist = []
+        '''reset video stats, to start a new video'''
+        self.startTime = 0      # the time when we started the video
+        self.timeRec = 0        # how long the video is
+        self.framesDropped = 0  # how many frames we've dropped
+        self.totalFrames = 0    # how many frames are in the video
+        self.fleft = 0          # how many frames we still need to write to file
+        self.frames = []        # frame queue. appended to back, popped from front.
+        self.lastFrame = []     # last frame collected. kept in a list of one cv2 frame to make it easier to pass between functions
+        self.vridlist = []      # list of videoReader ids (list of ints). could be deprecated?
+        
     
-    
-    # take a single snapshot and save it
     def snap(self) -> None:
+        '''take a single snapshot and save it. Put this process in the background through QThreadPool'''
         if self.previewing or self.recording:
+            # if we're currently collecting frames, we can use the last frame
             last = True
         else:
+            # if we're not currently collecting frames, we need to collect a new frame.
             last = False
-        snapthread = camSnap(self, last, self.lastFrame)
-        snapthread.signals.result.connect(self.updateStatus)
-        QtCore.QThreadPool.globalInstance().start(snapthread)
+        snapthread = camSnap(self, last, self.lastFrame)       # create an object to collect and save the snapshot in background
+        snapthread.signals.result.connect(self.updateStatus)   # let the camSnap object send messages to the status bar
+        snapthread.signals.error.connect(self.updateStatus)
+        QtCore.QThreadPool.globalInstance().start(snapthread)  # get snapshot in background thread
             
             
     
     #---------------------------------
-    # start preview
-    def startPreview(self) -> None:    
-        # this counter reduces the display frame rate, 
+    
+    def startPreview(self) -> None: 
+        '''start live preview'''
+        # critFramesToPrev reduces the live display frame rate, 
         # so only have to update the display at a comfortable viewing rate.
         # if the camera is at 200 fps, the video will be saved at full rate but
         # preview will only show at 15 fps
         self.critFramesToPrev = max(round(self.fps/15), 1)
         self.framesSincePrev = self.critFramesToPrev
         self.previewing = True
-        self.startTimer() # this only starts the timer if a timer doesn't already exist
+        self.startTimer()      # this only starts the timer if we're not already recording
 
-    # stop preview
+    
     def stopPreview(self) -> None:
+        '''stop live preview. This freezes the last frame on the screen.'''
         self.previewing = False
-        self.stopTimer() # this only stops the timer if we are neither recording nor previewing
+        self.stopTimer()       # this only stops the timer if we are neither recording nor previewing
  
     #---------------------------------
-    # start recording
+    
     def startRecording(self) -> None:
+        '''start recording a video'''
         self.recording = True
         self.writing = True
-        self.resetVidStats() # this resets the frame list, and other vars
-        fn = self.getFilename('.avi')
+        self.resetVidStats()                       # this resets the frame list, and other vars
+        fn = self.getFilename('.avi')              # generate a new file name for this video
         self.vFilename = fn
         vidvars = {'fourcc':self.fourcc, 'fps':self.fps, 'imw':self.imw, 'imh':self.imh, 'cameraName':self.cameraName}
-        self.frames = []
-        recthread = vidRecorder(fn, vidvars, self.frames, self)
-        recthread.signals.finished.connect(self.doneRecording)
+        self.frames = []                           # list of frames for this video. Frames are appended to back and popped from front.
+        recthread = vidWriter(fn, vidvars, self.frames, self)         # creates a new thread to write frames to file      
+        recthread.signals.finished.connect(self.doneRecording)        # connects vidWriter status updates to the status display
         recthread.signals.progress.connect(self.writingRecording)
-        self.updateStatus('Recording ' + self.vFilename + ' ... ', True)
-#         self.sbWin.threadPool.start(recthread)
-        QtCore.QThreadPool.globalInstance().start(recthread)
-        self.startTimer() # this only starts the timer if a timer doesn't already exist
+        recthread.signals.error.connect(self.updateStatus)
+        self.updateStatus(f'Recording {self.vFilename} ... ', True) 
+        QtCore.QThreadPool.globalInstance().start(recthread)          # start writing in a background thread
+        self.startTimer()                          # this only starts the timer if we're not already previewing
         if self.diag>1:
+                                                   # if we're in super debug mode, print header for the table of frames
             logging.debug('Camera name\tID\t# frames\tFrame time (ms)\tms/frame\tTotal time (s)')
     
-    # stop recording
+    
     def stopRecording(self) -> None:
+        '''stop collecting frames for the video'''
         if not self.recording:
             return
-        self.frames.append('STOP')
-        self.recording = False
-        self.stopTimer()
+        self.frames.append('STOP') # this tells the vidWriter that this is the end of the video
+        self.recording = False     # this helps the frame reader and the status update know we're not reading frames
+        self.stopTimer()           # only turns off the timer if we're not recording or previewing
 
     #---------------------------------
     # start the timer if there is not already a timer
     def startTimer(self) -> None:
         if not self.timerRunning:
             self.timer = QtCore.QTimer()
-            self.timer.timeout.connect(self.timerFunc)
-            self.timer.setTimerType(QtCore.Qt.PreciseTimer)
-            self.timer.start(self.mspf)
+            self.timer.timeout.connect(self.timerFunc)        # run the timerFunc every mspf milliseconds
+            self.timer.setTimerType(QtCore.Qt.PreciseTimer)   # may or may not improve timer accuracy, depending on computer
+            self.timer.start(self.mspf)                       # start timer with frequency milliseconds per frame
             self.timerRunning = True
-            if self.diag>0:
-                logging.info(self.cameraName + ': Starting timer')
+            if self.diag>1:
+                logging.debug(self.cameraName + ': Starting timer')
         
-    def readError(self, errnum:int, errstr:str) -> None:
-        self.updateStatus(errstr, True)
-        if errnum==1:
-            self.recording = False  
+#     def readError(self, errnum:int, errstr:str) -> None:
+#         self.updateStatus(errstr, True)
+#         if errnum==1:
+#             self.recording = False  
     
-    # this only stops the timer if we are neither recording nor previewing
+    
     def stopTimer(self) -> None:
+        '''this only stops the timer if we are neither recording nor previewing'''
         if not self.recording and not self.previewing:
             self.timer.stop()
             self.timerRunning = False
@@ -1016,20 +1058,25 @@ class camera:
                 logging.info(self.cameraName + ': Stopping timer')
     
     def timerFunc(self) -> None:
+        '''Run this continuously when we are recording or previewing. Generates a vidReader object for each frame, letting us collect frames in the background. 
+        vidReader ids (vrid) were implemented as a possible fix for a frame jumbling error. In the rare case where there are two vidReaders running at the same time and we have dropped frames to pad, it only lets one of the vidReaders generate the padded frames. It is possible that the vrids are not necessary, but I have not tried removing them. 
+        We generate a new vidReader for each frame instead of having one continuously running vidReader because there may be a case where the camera can generate frames faster than the computer can read them. If we have a separate thread for each frame, we can have the computer receive multiple frames at once. This is a bit of a simplification because of the way memory is managed, but the multi-thread process lowers the number of dropped frames, compared to a single vidReader thread.'''
         if len(self.vridlist)==0:
             vrid = 1
         else:
             vrid = max(self.vridlist)+1
         self.vridlist.append(vrid)
-        runnable = vidReader(self, vrid, self.frames, self.lastFrame)
-        runnable.signals.prevFrame.connect(self.updatePrevFrame)
+        runnable = vidReader(self, vrid, self.frames, self.lastFrame)  
+        runnable.signals.prevFrame.connect(self.updatePrevFrame)      # let the vidReader send back frames to display
+        runnable.signals.error.connect(self.updateStatus)           # let the vidReader send back error statuses to display
         QtCore.QThreadPool.globalInstance().start(runnable)
     
     #---------------------------------
-    # update the preview window
+    
     def updatePrevFrame(self, frame:np.ndarray) -> None:
-        
+        '''update the live preview window'''
         try:
+            # we need to convert the frame from the OpenCV cv2 format to the Qt QPixmap format
             if self.convertColors:
                 frame2 = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             else:
@@ -1043,13 +1090,17 @@ class camera:
             self.previewing = False
             self.stopTimer()
 
-    # updates the status of the widget that this camera belongs to    
-    # log determines whether to write to log
+    
     def updateStatus(self, st:str, log:bool) -> None:
+        '''updates the status of the widget that this camera belongs to. 
+        st is the status message. 
+        log determines whether to write to log. '''
         self.guiBox.updateStatus(st, log)
     
-    # updates the status during recording and during save
+    
     def updateRecordStatus(self) -> None:
+        '''updates the status bar during recording and during save. 
+        We turn off logging because this updates so frequently that we would flood the log with updates.'''
         log = False
         if self.recording:
             s = 'Recording '
@@ -1066,9 +1117,10 @@ class camera:
             s+= str(self.framesDropped) + '/' + str(self.totalFrames) +' frames dropped'
         self.updateStatus(s, log)
         
-    # fleft is the number of frames left to record
-    # this function updates the status to say that the video is still being saved
-    def writingRecording(self, fleft:int) -> None:      
+    
+    def writingRecording(self, fleft:int) -> None:  
+        '''this function updates the status to say that the video is still being saved. 
+        fleft is the number of frames left to record'''
         if not self.recording:
             self.fleft = fleft
             self.updateRecordStatus()
@@ -1076,14 +1128,16 @@ class camera:
         
 ##################
 
-# webcams are conventional webcams that openCV (cv2) can communicate with
+
 class webcam(camera):
+    '''webcams are objects that hold functions for conventional webcams that openCV (cv2) can communicate with'''
+    
     def __init__(self, sbWin:qtw.QMainWindow, guiBox:connectBox):
         super(webcam, self).__init__(sbWin, guiBox)
 
-        # connect to webcam
+        # connect to webcam through OpenCV
         try:
-            self.camdevice = cv2.VideoCapture(guiBox.mode-1)
+            self.camDevice = cv2.VideoCapture(guiBox.mode-1)
             self.readFrame()
         except:
             self.connected = False
@@ -1092,19 +1146,20 @@ class webcam(camera):
             self.connected = True
         
         # get image stats
-        self.fps = self.camdevice.get(cv2.CAP_PROP_FPS)/2 # frames per second
-        self.mspf = int(round(1000./self.fps))  # ms per frame
-        self.imw = int(self.camdevice.get(3)) # image width (px)
-        self.imh = int(self.camdevice.get(4)) # image height (px)
+        self.fps = self.camDevice.get(cv2.CAP_PROP_FPS)/2   # frames per second
+        self.mspf = int(round(1000./self.fps))              # ms per frame
+        self.imw = int(self.camDevice.get(3))               # image width (px)
+        self.imh = int(self.camDevice.get(4))               # image height (px)
         
         self.convertColors = True
         
     #-----------------------------------------
         
-    # get a frame from the webcam    
+     
     def readFrame(self):
+        '''get a frame from the webcam using cv2 '''
         try:
-            rval, frame = self.camdevice.read()
+            rval, frame = self.camDevice.read()
         except:
             self.updateStatus('Error reading frame', True)
             raise Exception
@@ -1117,12 +1172,14 @@ class webcam(camera):
  
     #-----------------------------------------
     
-    # this gets triggered when the whole window is closed
+    
     def close(self) -> None:
+        '''this gets triggered when the whole window is closed. Disconnects from the cameras'''
+        
         self.closeCam()
-        if not self.camdevice==None:
+        if not self.camDevice==None:
             try:
-                self.camdevice.release()
+                self.camDevice.release()
             except:
                 pass
             else:
@@ -1132,19 +1189,20 @@ class webcam(camera):
 
 #########################################      
       
-# bascams are Basler cameras that require the pypylon SDK to communicate
+
 class bascam(camera):
+    '''bascams are Basler cameras that require the pypylon SDK to communicate'''
+    
     def __init__(self, sbWin:qtw.QMainWindow, guiBox:connectBox):
         super(bascam, self).__init__(sbWin, guiBox)
         self.vFilename = ''
-        # Get the transport layer factory.
         self.connected = False
         self.convertColors = True
         
         # connect to the camera
         try:
             self.tlf = pylon.TlFactory.GetInstance()
-            self.camdevice = pylon.InstantCamera(self.tlf.CreateFirstDevice())
+            self.camDevice = pylon.InstantCamera(self.tlf.CreateFirstDevice())
         except Exception as e:
             if self.diag>0:
                 logging.error(e)
@@ -1154,16 +1212,16 @@ class bascam(camera):
         
         # open camera
         try:
-            self.camdevice.Open()
+            self.camDevice.Open()
             
-            self.camdevice.StartGrabbing(pylon.GrabStrategy_OneByOne)
-            #self.camdevice.StartGrabbing(pylon.GrabStrategy_LatestImageOnly)
-            #self.camdevice.Gain.SetValue(12)
-            #self.camdevice.AutoTargetValue.SetValue(128)  ## this doesn't work
+            self.camDevice.StartGrabbing(pylon.GrabStrategy_OneByOne)
+            #self.camDevice.StartGrabbing(pylon.GrabStrategy_LatestImageOnly)
+            #self.camDevice.Gain.SetValue(12)
+            #self.camDevice.AutoTargetValue.SetValue(128)  ## this doesn't work
     
             self.connected = True
             # update the GUI display to show camera model
-            self.guiBox.model = self.camdevice.GetDeviceInfo().GetModelName()
+            self.guiBox.model = self.camDevice.GetDeviceInfo().GetModelName()
             self.guiBox.updateBoxTitle()
             
             # converter converts pylon images into cv2 images
@@ -1172,8 +1230,7 @@ class bascam(camera):
             self.converter.OutputBitAlignment = pylon.OutputBitAlignment_MsbAligned
             
             # get camera stats
-            self.fps = self.camdevice.ResultingFrameRate.GetValue() # frames per s
-            #self.fps = 120
+            self.fps = self.camDevice.ResultingFrameRate.GetValue() # frames per s
             self.mspf = int(round(1000./self.fps))  # ms per frame
             f1 = self.readFrame()
             self.imw = len(f1[0]) # image width (px)
@@ -1182,9 +1239,10 @@ class bascam(camera):
             # if we successfully read the frame, keep it in lastFrame
             self.lastFrame = [f1]
 
+        # if we failed to connect to the camera, close it, and display a failure state on the GUI
         except Exception as e:
             try:
-                self.camdevice.Close() # close camera if we've already opened it
+                self.camDevice.Close() # close camera if we've already opened it
             except:
                 pass
             if self.diag>0:
@@ -1195,11 +1253,12 @@ class bascam(camera):
         
     #-----------------------------------------
         
-    # get a frame from the Basler camera
+    
     def readFrame(self):
+        '''get a frame from the Basler camera using pypylong'''
         
         try:            
-            grabResult = self.camdevice.RetrieveResult(5000, pylon.TimeoutHandling_ThrowException)
+            grabResult = self.camDevice.RetrieveResult(5000, pylon.TimeoutHandling_ThrowException)
         except Exception as e:
             return self.grabError('Error collecting grab')
         if not grabResult.GrabSucceeded():
@@ -1221,19 +1280,20 @@ class bascam(camera):
         else:
             return self.grabError('Error: Frame is not array')
     
-    # update the status box when there's an error grabbing the frame
+    
     def grabError(self, status:str) -> None:
+        '''update the status box when there's an error grabbing the frame'''
         raise Exception(status)
     
     
     #-----------------------------------------
     
-    # this gets triggered when the whole window is closed
     def close(self) -> None:
+        '''this gets triggered when the whole window is closed'''
         self.closeCam()
         try:
-            self.camdevice.StopGrabbing()
-            self.camdevice.Close()
+            self.camDevice.StopGrabbing()
+            self.camDevice.Close()
         except:
             pass
         else:
@@ -1243,7 +1303,14 @@ class bascam(camera):
 ################################################
         
 class settingsDialog(QtGui.QDialog):
-    def __init__(self, parent, bTitle, camObj):
+    '''This opens a window that holds settings about logging for cameras.'''
+    
+    
+    def __init__(self, parent:connectBox, bTitle:str, camObj:camera):
+        '''parent is the connectBox that this settings dialog belongs to. 
+            bTitle is the box title, e.g. webcam 2. 
+            camObj is the camera object that holds functions and info for a specific camera.'''
+        
         super().__init__(parent)  
         self.camObj = camObj
         self.layout = qtw.QVBoxLayout()
@@ -1271,16 +1338,19 @@ class settingsDialog(QtGui.QDialog):
     
         self.setLayout(self.layout)
         self.setWindowTitle(bTitle + " settings")
-
-#         self.resize(900, 400)
         
     def changeDiag(self, diagbutton):
+        '''Change the diagnostics status on the camera, so we print out the messages we want.'''
         self.camObj.diag = self.diaggroup.id(diagbutton)      
 
 
-# this is the widget object that holds camera objects and displays buttons and preview frames
+
 class cameraBox(connectBox):
+    '''widget that holds camera objects and displays buttons and preview frames'''
+    
     def __init__(self, mode:int, sbWin:qtw.QMainWindow):
+        '''Mode is the type of camera. 0 is a basler camera, 1 is the nozzle camera, and 2 is webcam 2.
+        sbWin is the parent window that this box sits inside of.'''
         super(cameraBox, self).__init__()
         self.mode = mode # 
         self.model = ''   # name of camera
@@ -1298,8 +1368,9 @@ class cameraBox(connectBox):
             if self.camObj.diag>0:
                 logging.info(self.bTitle, ' ', self.camObj.fps, ' fps')
 
-    # try to connect to the camera
+    
     def connect(self) -> None:
+        '''try to connect to the camera'''
         sbWin = self.sbWin
         self.connectingLayout() # inherited from connectBox
         self.connectAttempts+=1
@@ -1321,16 +1392,14 @@ class cameraBox(connectBox):
         else:
             self.failLayout() # inherited from connectBox
             
-    # this is the layout if we successfully connected to the camera
+    
     def successLayout(self) -> None:
+        '''this is the layout if we successfully connected to the camera'''
         
         self.resetLayout()
         self.layout = qtw.QVBoxLayout()
-#         self.camButts = qtw.QHBoxLayout()
-        
-        
-        self.camInclude = qtw.QToolButton()
-        
+
+        self.camInclude = qtw.QToolButton()        
         self.camInclude.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
         self.camInclude.setCheckable(True)
         self.camInclude.clicked.connect(self.updateCamInclude)
@@ -1344,7 +1413,7 @@ class cameraBox(connectBox):
         
         self.camRec = qtw.QToolButton()
         self.camRec.clicked.connect(self.cameraRec)
-        self.camPrev.setCheckable(True)
+        self.camRec.setCheckable(True)
         self.setRecButtStart()
         
         self.camPic = qtw.QToolButton()
@@ -1386,23 +1455,32 @@ class cameraBox(connectBox):
     #------------------------------------------------
     # functions to trigger camera actions and update the GUI
     
-    # capture a single frame
     def cameraPic(self) -> None:
+        '''capture a single frame'''
         self.camObj.snap()
        
-    # start or stop previewing
+    
     def cameraPrev(self) -> None:
+        '''start or stop previewing and update button appearance'''
         if self.previewing:
-            # we're already previewing: stop the preview
+            # we're already previewing: stop the preview and update the button appearance
             self.camObj.stopPreview()
             self.setPrevButtStart()
         else:
+            # we're not previewing: start the preview and update button appearance
             self.camObj.startPreview()
             self.setPrevButtStop()
         self.previewing = not self.previewing
         
-    # start or stop recording
+        # update toggle status if this change was made internally, not by the user clicking the button
+        if self.camPrev.isChecked() and (not self.previewing):
+            self.camPrev.toggle()
+        elif (not self.camPrev.isChecked()) and self.previewing:
+            self.camPrev.toggle()
+        
+    
     def cameraRec(self) -> None:
+        '''start or stop recording and update button appearance'''
         if self.recording:
             self.setRecButtStart()
             self.camObj.stopRecording()
@@ -1411,10 +1489,18 @@ class cameraBox(connectBox):
             self.camObj.startRecording()
         self.recording = not self.recording
         
+        # update toggle status if this change was made internally, not by the user clicking the button
+        if self.camRec.isChecked() and (not self.recording):
+            self.camRec.toggle()
+        elif (not self.camRec.isChecked()) and self.recording:
+            self.camRec.toggle()
+        
     #------------------------------------------------
     #  functions to change appearance of buttons when they're pressed
     
     def clickedBoth(self) -> str:
+        '''appearance of all of the camera box buttons'''
+        
         return 'border:none; \
         padding:3px; \
         border-radius:3px; \
@@ -1422,14 +1508,17 @@ class cameraBox(connectBox):
     
     def clickedSheet(self) -> str:
         '''Stylesheet for clicked camera buttons'''
+        
         return self.clickedBoth()+' background-color:#666666; color:white;'
     
     def unclickedSheet(self) -> str:
         '''Stylesheet for unclicked camera buttons'''
+        
         return self.clickedBoth()+' background-color:#eeeeee;'
         
     
     def updateCamInclude(self) -> None:
+        '''Update the camInclude button appearance to reflect status'''
         if self.camInclude.isChecked():
             self.camInclude.setStyleSheet(self.clickedSheet())
             self.camInclude.setText('Autosave is on')
@@ -1442,51 +1531,62 @@ class cameraBox(connectBox):
             self.camInclude.setToolTip('Export videos with shopbot')
         
     def setPrevButtStart(self) -> None:
+        '''Update preview button appearance to not previewing status'''
         self.camPrev.setStyleSheet(self.unclickedSheet())
 #         self.camPrev.setText('Start preview')
         self.camPrev.setIcon(QtGui.QIcon('icons/closedeye.png'))
         self.camPrev.setToolTip('Start live preview') 
         
     def setPrevButtStop(self) -> None:
+        '''Update preview button appearance to previewing status'''
         self.camPrev.setStyleSheet(self.clickedSheet())
 #         self.camPrev.setText('Stop preview')
         self.camPrev.setIcon(QtGui.QIcon('icons/eye.png'))
         self.camPrev.setToolTip('Stop live preview') 
 
     def setRecButtStart(self) -> None:
+        '''Update record button appearance to not recording status'''
         self.camRec.setStyleSheet(self.unclickedSheet())
         self.camRec.setIcon(QtGui.QIcon('icons/Record.png'))
         self.camRec.setToolTip('Start recording') 
         
     def setRecButtStop(self) -> None:
+        '''Update record button appearance to recording status'''
         self.camRec.setStyleSheet(self.clickedSheet())
         self.camRec.setIcon(QtGui.QIcon('icons/recordstop.png'))
         self.camRec.setToolTip('Stop recording') 
         
     def openSettings(self) -> None:
+        '''Open the camera settings dialog window'''
         self.settingsDialog.show()
         self.settingsDialog.raise_()
 
     #------------------------------------------------
     
-    # this updates the title of widget box
-    def updateBoxTitle(self) -> None:
-        self.setTitle(self.bTitle +"\t"+ self.model)
     
-    # this gets triggered when the window is closed
+    def updateBoxTitle(self) -> None:
+        '''updates the title of widget box'''
+        self.setTitle(f'{self.bTitle}\t{self.model}')
+    
+
     def close(self) -> None:
+        '''gets triggered when the window is closed. Disconnects GUI from camera.'''
         self.camObj.close()
 
 ########################################################
 ################# FLUIGENT #############################
    
-# chanNum is a channel number (e.g. 0)
-# color is a string (e.g. #FFFFFF)
-# this class describes a single channel on the Fluigent
-# fgt functions come from the Fluigent SDK
-# each channel gets a QLayout that can be incorporated into the fluBox widget
+
+
 class fluChannel:
+    '''this class describes a single channel on the Fluigent
+        fgt functions come from the Fluigent SDK
+        each channel gets a QLayout that can be incorporated into the fluBox widget'''
+    
     def __init__(self, chanNum: int, color: str, fluBox:connectBox):
+        '''chanNum is a 0-indexed channel number (e.g. 0)
+        color is a string (e.g. #FFFFFF)
+        fluBox is the parent box that holds the Fluigent GUI display'''
         self.chanNum = chanNum
         self.fluBox = fluBox
         
@@ -1498,7 +1598,7 @@ class fluChannel:
         objValidator.setRange(0, 7000)
         self.setBox.setValidator(objValidator)
 
-        # label is a text label that tells us what channel this box edits
+        # label is a text label that tells us what channel this box edits. For the display, channels are 1-indexed.
         self.label = qtw.QLabel('Channel '+str(chanNum+1)+' (mBar)')
         self.label.setBuddy(self.setBox)
         
@@ -1540,46 +1640,53 @@ class fluChannel:
         # 10 px between the label and input box
         self.layout.setSpacing(10)
     
-    # set the pressure for this channel to the pressure in the setBox
+    
     def setPressure(self) -> None:
+        '''set the pressure for this channel to the pressure in the setBox'''
         fgt.fgt_set_pressure(self.chanNum, int(self.setBox.text()))
     
-    # turn on pressure to the setBox value for a constTimeBox amount of time
+    
     def runConstTime(self) -> None:
+        '''turn on pressure to the setBox value for a constTimeBox amount of time'''
         runtime = int(self.constTimeBox.text())
         if runtime<0:
             return
         runpressure = int(self.constBox.text())
-        self.fluBox.updateStatus('Setting channel '+str(self.chanNum)+' to '+str(runpressure)+' for '+str(runtime)+' s', True)
+        self.fluBox.updateStatus(f'Setting channel {self.chanNum} to {runpressure} mbar for {runtime} s', True)
         fgt.fgt_set_pressure(self.chanNum, runpressure)
         QtCore.QTimer.singleShot(runtime*1000, self.zeroChannel) 
             # QTimer wants time in milliseconds
     
-    # zero the channel pressure
+    
     def zeroChannel(self) -> None:
-        self.fluBox.updateStatus('Setting channel '+str(self.chanNum)+' to 0', True)
+        '''zero the channel pressure'''
+        self.fluBox.updateStatus('Setting channel {self.chanNum} to 0 mbar', True)
         fgt.fgt_set_pressure(self.chanNum, 0)
 
         
 ##############################  
 
 class fluSignals(QtCore.QObject):
+    '''Signals connector that lets us send status updates back to the GUI from the fluPlot object'''
     
     finished = QtCore.pyqtSignal()
-    error = QtCore.pyqtSignal(int, str)
+    error = QtCore.pyqtSignal(str, bool)
     progress = QtCore.pyqtSignal()
     
 
 #########################################################
 
 class plotWatch:
+    '''Holds the pressure/time list for all channels'''
+
     def __init__(self, numChans):
-        self.stop = False
-        self.numChans = numChans
+        self.stop = False          # tells us to stop reading pressures
+        self.numChans = numChans   # number of channels
         self.initializePList()
         
-            # initialize the pressure list
+            
     def initializePList(self) -> None:
+        '''initialize the pressure list and time list'''
         # initialize the time range
         self.dt = 200 # ms
         self.time = list(np.arange(-60*1, 0, self.dt/1000)) 
@@ -1592,48 +1699,52 @@ class plotWatch:
             self.pressures.append(press)
 
 
-# plotRunnable updates the list of times and pressures
+def checkPressure(channel:int) -> int:
+    '''reads the pressure of a given channel, 0-indexed'''
+    pressure = int(fgt.fgt_get_pressure(channel))
+    return pressure
+            
 class plotRunnable(QtCore.QRunnable):
+    '''plotRunnable updates the list of times and pressures and allows us to read pressures continuously in a background thread.'''
+    
     def __init__(self, pw):
         super(plotRunnable, self).__init__()   
-        self.pw = pw # plotWatch object
-        self.numChans = pw.numChans
-        self.signals = fluSignals() 
-        self.dprev = datetime.datetime.now()
+        self.pw = pw                  # plotWatch object (stores pressure list)
+        self.numChans = pw.numChans   # number of channels
+        self.signals = fluSignals()   # lets us send messages and data back to the GUI
+        self.dprev = datetime.datetime.now()  # the last time when we read the pressures
 
     
     def run(self) -> None:
+        '''update the plot and displayed pressure'''
         while not self.pw.stop:
             try:
                 newtime = self.pw.time
-                newpressures = self.pw.pressures
-                # update the plot and displayed pressure
-                newtime = newtime[1:]  # Remove the first y element.
-                dnow = datetime.datetime.now()
+                newpressures = self.pw.pressures        
+                newtime = newtime[1:]                   # Remove the first y element.
+                dnow = datetime.datetime.now()          # Finds current time relative to when the plot was created
                 dt = (dnow-self.dprev).total_seconds()
                 self.dprev = dnow
-                newtime.append(newtime[-1] + dt) # Add the next time.
+                newtime.append(newtime[-1] + dt)         # Add the current time to the list
                 for i in range(self.numChans):
                     newpressures[i] = newpressures[i][1:]
                     pnew = checkPressure(i)
-                    # update the plot
-                    newpressures[i].append(pnew)
+                    newpressures[i].append(pnew)         # Add the current pressure to the list, for each channel
             except Exception as e:
-                self.signals.error.emit(1, 'Error reading pressure')
+                self.signals.error.emit(f'Error reading pressure', True)
             else:
-                self.pw.time = newtime
+                self.pw.time = newtime                   # Save lists to plotWatch object
                 self.pw.pressures = newpressures   
-                self.signals.progress.emit()
-            time.sleep(200/1000)
+                self.signals.progress.emit()             # Tell the GUI to update plot
+            time.sleep(200/1000)                         # Update every 200 ms
 
-
-
-# pcolors is a list of colors, e.g. ['#FFFFFF', '#000000']
-# fluBox is a pointer to the fluigent box that contains this plot
-# this produces a widget that can be put into fluBox
-# this stores the recent times and pressure readings
+            
 class fluPlot:
+    '''produces a plot that can be displayed in fluBox'''
+    
     def __init__(self, pcolors:List[str], fb:connectBox):
+        '''pcolors is a list of colors, e.g. ['#FFFFFF', '#000000']
+        fb is a pointer to the fluigent box that contains this plot'''
         self.fluBox = fb # parent box
         self.numChans = self.fluBox.numChans
         
@@ -1664,8 +1775,8 @@ class fluPlot:
         QtCore.QThreadPool.globalInstance().start(plotThread)   
 
     
-    # read the pressure and update the plot display
     def update(self) -> None:
+        '''read the pressure and update the plot display'''
         try:
             for i in range(self.numChans):
                 self.datalines[i].setData(self.pw.time, self.pw.pressures[i])
@@ -1676,8 +1787,9 @@ class fluPlot:
     
     #-----------------------------------------
     
-    # this gets triggered when the window is closed
+    
     def close(self) -> None:
+        '''gets triggered when the window is closed. It stops the pressure readings.'''
         try: 
             self.pw.stop = True
         except:
@@ -1688,35 +1800,35 @@ class fluPlot:
     
 ############################## 
 
-# this reads the pressure of a given channel
-def checkPressure(channel:int) -> int:
-    pressure = int(fgt.fgt_get_pressure(channel))
-    return pressure
 
 
-# sbWin is a pointer to the parent window
 class fluBox(connectBox):
+    '''The GUI box that holds info about the Fluigent pressure controller.'''
+    
+    
     def __init__(self, sbWin:qtw.QMainWindow):
+        '''sbWin is a pointer to the parent window'''
+        
         super(fluBox, self).__init__()
         
         # this box is a QGroupBox. we are going to create a layout to put in the box
-        self.bTitle = 'Fluigent'
+        self.bTitle = 'Fluigent'    # box title
         self.setTitle(self.bTitle)
-        self.sbWin = sbWin
-        self.pchannels = []
-        self.connected = False
-        self.connect()
+        self.sbWin = sbWin        
+        self.pchannels = []         # list of pressure channels as fluChannel objects
+        self.connected = False      # connected to the fluigent
+        self.connect() 
         
     
-    # try to connect to the Fluigent
+    
     def connect(self) -> None: 
-        self.connectAttempts+=1
-        self.connectingLayout()
-        ########### INITIALIZE FLUIGENT HERE
+        '''try to connect to the Fluigent'''
         
-        fgt.fgt_init() # initialize fluigent
-        self.numChans = fgt.fgt_get_pressureChannelCount()
-        channels = list(range(self.numChans))
+        self.connectAttempts+=1
+        self.connectingLayout()  # temporarily put up a layout saying we're connected
+        
+        fgt.fgt_init()           # initialize fluigent
+        self.numChans = fgt.fgt_get_pressureChannelCount()  # how many Fluigent channels do we have
         
         if self.numChans>0:
             self.connected = True
@@ -1725,56 +1837,62 @@ class fluBox(connectBox):
             self.failLayout()
 
     
-    # display if we successfully connected to the fluigent
+    
     def successLayout(self) -> None:
-        self.resetLayout()
-        self.layout = qtw.QVBoxLayout() ## whole fluigent layout
+        '''display if we successfully connected to the fluigent'''
         
-        self.createStatus(600)
+        self.resetLayout()                  # erase the old layout
+        self.layout = qtw.QVBoxLayout()     # whole fluigent layout
+        
+        self.createStatus(600)              # 600 px wide status bar
         self.layout.addWidget(self.status)
         
-        self.fluButts = qtw.QHBoxLayout()  ### fluigent button row
+        self.fluButts = qtw.QHBoxLayout()   # fluigent button row
         
-        self.pcolors = ['#3f8dd1', '#b0401e', '#3e8a5b', '#b8a665'][0:self.numChans]
+        self.pcolors = ['#3f8dd1', '#b0401e', '#3e8a5b', '#b8a665'][0:self.numChans]  # preset channel colors
         
-        self.pchannels = [] # pchannels is a list of fluChannel objects
+        self.pchannels = []                 # pchannels is a list of fluChannel objects
         for i in range(self.numChans):
             pc = fluChannel(i, self.pcolors[i], self)
             self.pchannels.append(pc)
-            self.fluButts.addItem(pc.layout)
+            self.fluButts.addItem(pc.layout) # add a set of buttons to the layout for each channel
 
-        self.fluButts.setSpacing(40) # 40px between channels
-        self.layout.addItem(self.fluButts) # put the buttons in the layout
+        self.fluButts.setSpacing(40)         # 40px between channel buttons
+        self.layout.addItem(self.fluButts)   # put the buttons in the layout
     
-        self.fluPlot = fluPlot(self.pcolors, self) # create plot
+        self.fluPlot = fluPlot(self.pcolors, self)      # create plot
         self.layout.addWidget(self.fluPlot.graphWidget) # add plot to the layout
         
-        self.setLayout(self.layout) # put the whole layout in the box  
+        self.setLayout(self.layout)          # put the whole layout in the box  
         
     #-----------------------------------------
     
-    # this reads the pressure of all channels
-    def readPressures(self) -> List[int]:
-        plist = []
-        for i in range(self.numChans):
-            plist.append(checkPressure(i))
-        return plist
     
-    # exclude is a channel that we want to keep on. Input -1 or any other unused value to turn everything off
+#     def readPressures(self) -> List[int]:
+#         '''reads the pressure of all channels'''
+#         plist = []
+#         for i in range(self.numChans):
+#             plist.append(checkPressure(i))
+#         return plist
+    
+    
     def resetAllChannels(self, exclude:int) -> None:
+        '''Set all of the channels to 0 except for exclude (0-indexed). exclude is a channel that we want to keep on. Input -1 to turn everything off'''
         for i in range(self.numChans):
             if not i==exclude:
                 fgt.fgt_set_pressure(i,0)
                 
-    # this updates the status box that tells us what pressure this channel is at
+    
     def updateReading(self, channum:int, preading:int) -> None:
+        '''updates the status box that tells us what pressure this channel is at'''
         self.pchannels[channum].readBox.setText(preading)
         
         
     #-----------------------------------------
     
-    # this runs when the window is closed
+    
     def close(self) -> None:
+        '''this runs when the window is closed'''
         # close the fluigent
         if self.connected:      
             try:
@@ -1788,11 +1906,13 @@ class fluBox(connectBox):
             self.fluPlot.close()
             
             
-            
+##################################################          
 ########### logging window
 
 
 class QPlainTextEditLogger(logging.Handler):
+    '''This creates a text box that the log messages go to. Goes inside a logDialog window'''
+    
     def __init__(self, parent):
         super().__init__()
         self.widget = QtGui.QPlainTextEdit(parent)
@@ -1804,114 +1924,134 @@ class QPlainTextEditLogger(logging.Handler):
 
 
 class logDialog(QtGui.QDialog):
+    '''Creates a window that displays log messages.'''
+    
     def __init__(self, parent):
         super().__init__(parent)  
 
         logTextBox = QPlainTextEditLogger(self)
-        # You can format what is printed to text box
-        logTextBox.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
-        logging.getLogger().addHandler(logTextBox)
-        # You can control the logging level
-        logging.getLogger().setLevel(logging.DEBUG)
+        logTextBox.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')) # format what is printed to text box
+        logging.getLogger().addHandler(logTextBox)  # display log messages in text box
+        logging.getLogger().setLevel(logging.DEBUG) # Set logging level to everything.
 
         layout = QtGui.QVBoxLayout()
-        # Add the new logging box widget to the layout
-        layout.addWidget(logTextBox.widget)
+        layout.addWidget(logTextBox.widget)         # Add the new logging box widget to the layout
         self.setLayout(layout) 
         
         self.setWindowTitle("Shopbot/Fluigent/Camera log")
-        self.resize(900, 400)
+        self.resize(900, 400)                       # window is 900 px x 400 px
 
         
 ####################### the whole window
 
 class SBwindow(qtw.QMainWindow):
+    '''The whole GUI window'''
+    
     def __init__(self, parent=None):
         super(SBwindow, self).__init__(parent)
         
+        # initialize all boxes to empty value so if we hit an error during setup and need to disconnect, we aren't trying to call empty variables
+        
+        self.genBox = None
+        self.sbBox = None
+        self.basBox = None
+        self.nozBox = None
+        self.web2Box = None
+        self.fluBox = None
+        self.logDialog = None
+        
         try:
-
-            # define central widget
             self.central_widget = qtw.QWidget()               
-            self.setCentralWidget(self.central_widget) 
+            self.setCentralWidget(self.central_widget)      # create a central widget that everything else goes inside
 
             self.setWindowTitle("Shopbot/Fluigent/Camera")
             self.setStyleSheet('background-color:white;')
-            self.resize(1400, 1800)
+            self.resize(1600, 1800)                         # window size
 
 
-            self.createGrid()
-            self.createMenu()
+            self.createGrid()                               # create boxes to go in main window
+            self.createMenu()                               # create menu bar to go at top of window
 
             logging.info('Window created')
         except:
-            self.closeEvent(0)
+            self.closeEvent(0)                              # if we fail to initialize the GUI, disconnect from everything we connected
 
         
     def createGrid(self):
-        self.genBox = genBox(self)
-        self.sbBox = sbBox(self)
-        self.basBox = cameraBox(0, self)
-        self.nozBox = cameraBox(1, self)
-        self.ledBox = cameraBox(2, self)
-        self.camBoxes = [self.basBox, self.nozBox, self.ledBox]
-        self.fluBox = fluBox(self)
+        '''Create boxes that go inside of window'''
+        self.genBox = genBox(self)           # general file ops
+        self.sbBox = sbBox(self)             # shopbot box
+        self.basBox = cameraBox(0, self)     # basler camera box
+        self.nozBox = cameraBox(1, self)     # nozzle webcam box
+        self.web2Box = cameraBox(2, self)     # webcam 2 box
+        self.camBoxes = [self.basBox, self.nozBox, self.web2Box]
+        self.fluBox = fluBox(self)           # fluigent box
               
         self.fullLayout = qtw.QGridLayout()
-        self.fullLayout.addWidget(self.genBox, 0, 0, 1, 2)
-        self.fullLayout.addWidget(self.sbBox, 1, 0, 1, 2)
+        self.fullLayout.addWidget(self.genBox, 0, 0, 1, 2)  # row 0, col 0, 1 row deep, 2 cols wide
+        self.fullLayout.addWidget(self.sbBox, 1, 0, 1, 2)   # row 1, col 0, 1 row deep, 2 cols wide
         self.fullLayout.addWidget(self.basBox, 2, 0)
-        self.fullLayout.addWidget(self.fluBox, 3, 0)
         self.fullLayout.addWidget(self.nozBox, 2, 1)
-        self.fullLayout.addWidget(self.ledBox, 3, 1)
+        self.fullLayout.addWidget(self.fluBox, 3, 0)
+        self.fullLayout.addWidget(self.web2Box, 3, 1)
         
+        # make the camera rows big so the whole window doesn't resize dramatically when we turn on previews
         self.fullLayout.setRowStretch(0, 1)
         self.fullLayout.setRowStretch(1, 2)
-        self.fullLayout.setRowStretch(2, 6)
+        self.fullLayout.setRowStretch(2, 6)     
         self.fullLayout.setRowStretch(3, 6)
         self.fullLayout.setColumnStretch(0, 1)
         self.fullLayout.setColumnStretch(1, 1)
 
         self.central_widget.setLayout(self.fullLayout)
         
+                
+    def setupLog(self):        
+        self.logDialog = logDialog(self)
+        self.logButt = qtw.QAction('Open log', self)
+        self.logButt.triggered.connect(self.openLog)
+    
+        
     def createMenu(self):
+        '''Create the top menu of the window'''
+        
         menubar = self.menuBar()
-        self.setupLog()
-        menubar.addAction(self.logButt)
+        self.setupLog()                  # create a log window, not open yet
+        menubar.addAction(self.logButt)  # add button to open log window
         
         self.openButt = qtw.QAction('Open video folder')
         self.openButt.triggered.connect(self.genBox.openSaveFolder)
-        menubar.addAction(self.openButt)
-
-      
-    # this runs when the window is closed
+        menubar.addAction(self.openButt)  # add a button to open the folder that videos are saved to in Windows explorer
+    
+    
     def closeEvent(self, event):
+        '''runs when the window is closed. Disconnects everything we connected to.'''
         try:
-            for o in [self.sbBox, self.basBox, self.nozBox, self.ledBox, self.fluBox]:
+            for o in [self.sbBox, self.basBox, self.nozBox, self.web2Box, self.fluBox]:
                 try:
                     o.close()
                 except:
                     pass
             for o in [self.logDialog]:
-                o.done(0)
+                try:
+                    o.done(0)
+                except:
+                    pass
             for handler in logging.root.handlers[:]:
                 logging.root.removeHandler(handler)
         except:
             pass
-            
-    def setupLog(self):        
-        self.logDialog = logDialog(self)
-        self.logButt = qtw.QAction('Open log', self)
-        self.logButt.triggered.connect(self.openLog)
+
                 
     def openLog(self) -> None:
-#         cmd = r'notepad.exe "' + self.logfile + '"'
-#         subprocess.Popen(cmd)
-
+        '''Open the log window'''
+        
         self.logDialog.show()
         self.logDialog.raise_()
 
 class MainProgram(qtw.QWidget):
+    '''The main application widget. Here, we can set fonts, icons, window info'''
+    
     def __init__(self): 
         app = qtw.QApplication(sys.argv)
         sansFont = QtGui.QFont("Arial", 9)
@@ -1924,7 +2064,8 @@ class MainProgram(qtw.QWidget):
         
         myappid = APPID # arbitrary string
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
-      
         
+        
+'''Run the program'''
 if __name__ == "__main__":
     MainProgram()
