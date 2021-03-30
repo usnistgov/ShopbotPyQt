@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+'''Shopbot GUI. 
+
+Coordinating the shopbot with the cameras and Fluigent relies on the output flags that you can see in the Sb3 software. These flags are stored as windows registry keys, usually held in 'Software\\VB and VBA Program Settings\\Shopbot\\UserData'. This is designed for a shopbot with four output flags, a Fluigent with two channels, and three cameras. 
+
+When the shopbot runs a program that sets the output flags, it first turns on output flag 4 (1-indexed). Then, it asks the user to let it turn on the spindle. (You should say yes.) This python GUI will watch those output flags for commands. If flag 3 (1-indexed) is turned on, the checked cameras will take a picture. If flag 1 is turned on, Fluigent channel 1 (1-indexed) will turn on to whatever is inserted into "Run Pressure". If there is a second channel, flag 2 will turn on Fluigent channel 2. When the shopbot is done with the whole file, it will turn off all output flags, and the python GUI will take that as a sign that it is time to stop recording.
+
+'''
+
+
 from PyQt5 import QtCore, QtWidgets, QtGui, QtMultimedia, QtMultimediaWidgets
 import PyQt5.QtWidgets as qtw
 import pyqtgraph as pg
@@ -18,7 +28,6 @@ from config import cfg
 
 
 import Fluigent.SDK as fgt
-
 try:
     os.environ["PYLON_CAMEMU"] = "3"
     from pypylon import genicam
@@ -26,6 +35,15 @@ try:
 except:
     logging.warning('Pylon SDK not installed')
     pass
+
+__author__ = "Leanne Friedrich"
+__copyright__ = "This data is publicly available according to the NIST statements of copyright, fair use and licensing; see https://www.nist.gov/director/copyright-fair-use-and-licensing-statements-srd-data-and-software"
+__credits__ = ["Leanne Friedrich"]
+__license__ = "MIT"
+__version__ = "1.0.4"
+__maintainer__ = "Leanne Friedrich"
+__email__ = "Leanne.Friedrich@nist.gov"
+__status__ = "Development"
 
 
 APPID = 'leanfried.sbgui.v0.4'
@@ -43,13 +61,12 @@ if not os.path.exists(INITSAVEFOLDER):
 
 ################################################
 
-    
 
-# FileDialog opens a dialog to select a file for reading
-# startDir is the directory to start in, e.g. r'C:\Documents'
-# fmt is a string file format, e.g. 'Gcode files (*.gcode *.sbp)'
-# isFolder is bool true to only open folders
-def FileDialog(startDir:str, fmt:str, isFolder:bool) -> str:
+def fileDialog(startDir:str, fmt:str, isFolder:bool) -> str:
+    '''fileDialog opens a dialog to select a file for reading
+    startDir is the directory to start in, e.g. r'C:\Documents'
+    fmt is a string file format, e.g. 'Gcode files (*.gcode *.sbp)'
+    isFolder is bool true to only open folders'''
     dialog = qtw.QFileDialog()
     dialog.setFilter(dialog.filter() | QtCore.QDir.Hidden)
 
@@ -57,7 +74,7 @@ def FileDialog(startDir:str, fmt:str, isFolder:bool) -> str:
     if isFolder:
         dialog.setFileMode(qtw.QFileDialog.DirectoryOnly)
     else:
-        dialog.setFileMode(qtw.QFileDialog.AnyFile)
+        dialog.setFileMode(qtw.QFileDialog.ExistingFiles)
         
     # OPENING OR SAVING
     dialog.setAcceptMode(qtw.QFileDialog.AcceptOpen)
@@ -74,17 +91,18 @@ def FileDialog(startDir:str, fmt:str, isFolder:bool) -> str:
         dialog.setDirectory(str(ROOT_DIR))
 
     if dialog.exec_() == qtw.QDialog.Accepted:
-        path = dialog.selectedFiles()[0]  # returns a list
-        return path
+        paths = dialog.selectedFiles()  # returns a list
+        return paths
     else:
         return ''
 
 #####################################################
-# findFileInFolder finds the full path name for a file in a folder
-# file is the basename string
-# folder is the folder to search in
-# this searches recursively and returns an exception if it doesn't find the file
+
 def findFileInFolder(file:str, folder:str) -> str:
+    '''findFileInFolder finds the full path name for a file in a folder
+    file is the basename string
+    folder is the folder to search in
+    this searches recursively and returns an exception if it doesn't find the file'''
     f1 = os.path.join(folder, file)
     if os.path.exists(f1):
         return f1
@@ -99,17 +117,19 @@ def findFileInFolder(file:str, folder:str) -> str:
                 return file
     raise Exception(file+' not found')
 
-# find the folder that the Sb3 program files are in
+
 def findSb3Folder() -> str:
+    '''find the folder that the Sb3 program files are in'''
     for fold in [r'C:\\Program files', r'C:\\Program files (x86)']:
         for f in os.listdir(fold):
             if 'ShopBot'.lower() in f.lower():
                 return os.path.join(fold, f)
     raise Exception('Shopbot folder not found')
 
-# find the full path name for the Sb3.exe program
-# raises an exception if it doesn't find the file
+
 def findSb3() -> str:
+    '''find the full path name for the Sb3.exe program
+    raises an exception if it doesn't find the file'''
     try:
         fold = findSb3Folder()
     except:
@@ -123,8 +143,9 @@ def findSb3() -> str:
         return sb3File
 
 ##############################################################
-# use this to remove an entire QtLayout and its children from the GUI
+
 def deleteLayoutItems(layout) -> None:
+    '''use this to remove an entire QtLayout and its children from the GUI'''
     if layout is not None:
         try:
             while layout.count():
@@ -140,8 +161,12 @@ def deleteLayoutItems(layout) -> None:
 
 ###############################################################
 
-# this is a gui box for managing files
+def formatExplorer(fn:str) -> str:
+    '''Format the file name for use in subprocess.Popen(explorer)'''
+    return fn.replace(r"/", "\\")
+
 class genBox(qtw.QGroupBox):
+    '''this is a gui box for managing files. It goes at the top of the window'''
     def __init__(self, sbWin:qtw.QMainWindow):
         super(genBox, self).__init__()
         self.sbWin = sbWin
@@ -153,48 +178,56 @@ class genBox(qtw.QGroupBox):
         self.appendLabel = qtw.QLabel('Append to output file names:')
         self.appendLabel.setBuddy(self.appendName)
         
-        self.saveButt = qtw.QPushButton('Set export folder')
+        self.saveButt = qtw.QPushButton('Set video folder')
+        self.saveButt.setIcon(QtGui.QIcon('icons/open.png'))
         self.saveButt.clicked.connect(self.setSaveFolder)
-        self.openButt = qtw.QPushButton('Open export folder')
-        self.openButt.clicked.connect(self.openSaveFolder)
+        
         self.saveFolder = INITSAVEFOLDER
         self.saveFolderLabel = qtw.QLabel('Export to ' + self.saveFolder)
         
-        self.layout.addWidget(self.openButt, 1, 0)
-        self.layout.addWidget(self.saveButt, 1, 1)
-        self.layout.addWidget(self.saveFolderLabel, 1, 2)
-        self.layout.addWidget(self.appendLabel, 2, 0, 1, 2)
-        self.layout.addWidget(self.appendName, 2, 2)
+        self.layout.addWidget(self.saveButt, 1, 0)
+        self.layout.addWidget(self.saveFolderLabel, 1, 1)
+        self.layout.addWidget(self.appendLabel, 2, 0)
+        self.layout.addWidget(self.appendName, 2, 1)
        
         self.setLayout(self.layout)
     
-    # set the folder to save all the files we generate from the whole gui
+    
     def setSaveFolder(self) -> None:
+        '''set the folder to save all the files we generate from the whole gui'''
         if os.path.exists(self.saveFolder):
             startFolder = os.path.dirname(self.saveFolder)
         else:
             startFolder = INITSAVEFOLDER
-        sf = FileDialog(startFolder, '', True)
-        if os.path.exists(sf):
-            self.saveFolder = sf.replace(r"/", "\\")
-            logging.info('Changed save folder to %s' % self.saveFolder)
-            self.saveFolderLabel.setText('Export to ' + self.saveFolder)
+        sf = fileDialog(startFolder, '', True)
+        if len(sf)>0:
+            sf = sf[0]
+            if os.path.exists(sf):
+                self.saveFolder = formatExplorer(sf)
+                
+                logging.info('Changed save folder to %s' % self.saveFolder)
+                self.saveFolderLabel.setText('Export to ' + self.saveFolder)
             
     def openSaveFolder(self) -> None:
-        cmd = r'explorer "' + self.saveFolder + '"'
-        subprocess.Popen(cmd)
+        '''Open the save folder in windows explorer'''
+        
+        if not os.path.exists(self.saveFolder):
+            logging.debug(f'Save folder does not exist: {self.saveFolder}')
+            return
+        logging.debug(f'Opening {self.saveFolder}')
+        cmd = ['explorer',  formatExplorer(self.saveFolder)]
+        
+        subprocess.Popen(cmd, shell=True)
 
 
 
             
 ##############################################################################       
 
-# connectBox is a type of QGroupBox that can be used for cameras and fluigent, 
-# which need to be initialized
-# This gives us the option of showing an error message and reset button
-# if the program doesn't connect
+
 
 class connectBox(qtw.QGroupBox):
+    '''connectBox is a type of QGroupBox that can be used for cameras and fluigent, which need to be initialized. This gives us the option of showing an error message and reset button if the program doesn't connect'''
     
     def __init__(self):
         super(connectBox, self).__init__()
@@ -202,8 +235,9 @@ class connectBox(qtw.QGroupBox):
         self.connected = False
         self.diag=1
 
-    # if the computer is still trying to connect, show this waiting screen
+    
     def connectingLayout(self) -> None:
+        '''if the computer is still trying to connect, show this waiting screen'''
         if self.connectAttempts>0:
             self.resetLayout()
         self.layout = qtw.QVBoxLayout()
@@ -211,9 +245,9 @@ class connectBox(qtw.QGroupBox):
         self.layout.addWidget(qtw.QLabel('Connecting to '+self.bTitle))
         self.setLayout(self.layout)  
 
-    # if the computer fails to connect,
-    # show an error message and a button to try again
+    
     def failLayout(self) -> None:
+        '''if the computer fails to connect, show an error message and a button to try again'''
         self.resetLayout()
         self.layout = qtw.QVBoxLayout()
         lstr = self.bTitle+' not connected. Connect attempts: '+str(self.connectAttempts)
@@ -226,18 +260,21 @@ class connectBox(qtw.QGroupBox):
         self.layout.addWidget(self.resetButt)
         self.setLayout(self.layout)
     
-    # creates a section for displaying the device status
+    
     def createStatus(self, width:int) -> None:
+        '''creates a section for displaying the device status'''
         self.status = qtw.QLabel('Ready')
         self.status.setFixedSize(width, 50)
         self.status.setWordWrap(True)
     
-    # delete all the display items from the box
+    
     def resetLayout(self) -> None:
+        '''delete all the display items from the box'''
         deleteLayoutItems(self.layout)
         
-    # update the displayed device status
+    
     def updateStatus(self, st, log) -> None:
+        '''update the displayed device status'''
         try:
             self.status.setText(st)
         except:
@@ -248,18 +285,26 @@ class connectBox(qtw.QGroupBox):
                 logging.info(st)
 
 ################################################################
-# this is a gui box for the shopbot buttons
+
+
 class sbBox(connectBox):
+    '''Holds shopbot functions and GUI items'''
+    
+    
     ####################  
     ############## initialization functions
     
-    # sbWin is the parent window that all of the widgets are in
+    
     def __init__(self, sbWin:qtw.QMainWindow):
+        '''sbWin is the parent window that all of the widgets are in'''
         super(sbBox, self).__init__()
         self.btitle = 'Shopbot'
         self.sbWin = sbWin
         self.runningSBP = False
         self.setTitle('Shopbot')
+        self.prevFlag = 0
+        self.currentFlag = 0
+        self.sbpName='No file selected'
         try:
             self.sb3File = findSb3()
             self.connectKeys()
@@ -268,8 +313,8 @@ class sbBox(connectBox):
         else:
             self.successLayout()
             
-    # connects to the windows registry keys for the Shopbot flags
     def connectKeys(self) -> None:
+        '''connects to the windows registry keys for the Shopbot flags'''
         try:
             aKey = r'Software\VB and VBA Program Settings\Shopbot\UserData'
             aReg = winreg.ConnectRegistry(None, winreg.HKEY_CURRENT_USER)
@@ -278,19 +323,40 @@ class sbBox(connectBox):
         except:
             self.keyConnected = False
             self.updateStatus('Failed to connect to Shopbot', True)
-    
-    # layout if we found the sb3 files and windows registry keys
+
     def successLayout(self) -> None:
-        self.sbpName='No file loaded'
-        
-        self.layout = qtw.QGridLayout()
+        '''layout if we found the sb3 files and windows registry keys'''
+            
+        self.layout = qtw.QVBoxLayout()
         
         self.createStatus(1200)
-        
-        self.sbpNameLabel = qtw.QLabel(self.sbpName)
-        self.loadButt = qtw.QPushButton('Load file')
+
+        self.loadButt = qtw.QPushButton('Load file(s)')
+        self.loadButt.setIcon(QtGui.QIcon('icons/open.png'))
         self.loadButt.clicked.connect(self.loadFile)
-        self.loadButt.setFixedSize(200, 40)
+        
+        self.deleteButt = qtw.QPushButton('Remove file(s)')
+        self.deleteButt.setIcon(QtGui.QIcon('icons/delete.png'))
+        self.deleteButt.clicked.connect(self.removeFiles)
+        
+        self.loadDelete = qtw.QVBoxLayout()
+        self.loadDelete.addWidget(self.loadButt)
+        self.loadDelete.addWidget(self.deleteButt)
+
+        self.sbpNameList = qtw.QListWidget()
+        self.sbpNameList.setFixedHeight(100)
+        self.addFile(self.sbpName)
+        self.sbpNameList.itemDoubleClicked.connect(self.activate)
+        self.sbpNameList.setAcceptDrops(True)
+        self.sbpNameList.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
+        self.sbpNameList.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
+        self.sbpNameList.setDragEnabled(True)
+       
+        
+        self.fileButts = qtw.QHBoxLayout()
+        self.fileButts.addItem(self.loadDelete)
+        self.fileButts.addWidget(self.sbpNameList)
+        self.fileButts.setSpacing(10)
         
         self.runButt = qtw.QPushButton('Go')
         self.runButt.clicked.connect(self.runFile)
@@ -307,59 +373,103 @@ class sbBox(connectBox):
         self.buttLayout.addWidget(self.abortButt)
         self.buttLayout.setSpacing(50)
         
-        self.layout.addWidget(self.status, 0, 0, 1, 2)
-        self.layout.addWidget(self.loadButt, 1, 0)
-        self.layout.addWidget(self.sbpNameLabel, 1, 1)
-        self.layout.addItem(self.buttLayout, 2, 0, 1, 2)
+        self.layout.addWidget(self.status)
+        self.layout.addItem(self.fileButts)
+        self.layout.addItem(self.buttLayout)
  
-        self.setLayout(self.layout)  
+        self.setLayout(self.layout)
+
+    def sbpNumber(self) -> int:
+        '''Determine the index of the current file. Return -1 if it's not in the list.'''
+        for i in range(self.sbpNameList.count()):
+            if self.sbpNameList.item(i).text()==self.sbpName:
+                return i
+        return -1
     
-    # function to load a shopbot run file
+    
+    def activate(self, item:Union[int, qtw.QListWidgetItem]) -> None:
+        '''set the sbp file that the GUI will run next. Input can be item number or the actual item object.'''
+        
+        # get the actual item if given a number
+        if type(item) is int:
+            if item>=self.sbpNameList.count(): # this item is out of range
+                logging.warning(f'Item out of range: requested {item} out of {self.sbpNameList.count()}')
+            else:
+                item = self.sbpNameList.item(item)
+          
+        # make sure this is a real file
+        if not os.path.exists(item.text()):
+            logging.warning(f'Cannot activate {item.text()}: file not found')
+            return
+        
+        # remove other play icons
+        for i in range(self.sbpNameList.count()):
+            self.sbpNameList.item(i).setIcon(QtGui.QIcon())
+            
+        self.sbpName = item.text() # new run file name
+        item.setIcon(QtGui.QIcon('icons/play.png')) # show that this item is next
+        
+            
+    def activateNext(self) -> None:
+        '''Activate the next file in the list'''
+        if self.sbpNameList.count()==1:
+            # there is only one file in the list, so we're done.
+            return
+        newNum = self.sbpNumber() + 1
+        if newNum>=self.sbpNameList.count(): 
+            # if we're at the end of the list, restart from the beginning
+            newNum = 0
+        self.activate(newNum)
+    
+    def addFile(self, fn) -> None:
+        '''Add this file to the list of files, and remove the original placeholder if it's still there.'''
+        item = qtw.QListWidgetItem(fn) # create an item
+        self.sbpNameList.addItem(item) # add it to the list
+        
+        if self.sbpNameList.count()>1: # if there was already an item in the list
+            item0 = self.sbpNameList.item(0) # take the first item
+            if not os.path.exists(item0.text()): # if the original item isn't a real file
+                self.activate(self.sbpNumber()+1) # activate the next item in the list
+                self.sbpNameList.takeItem(0) # remove bad name from the list                
+        return
+    
+    def removeFiles(self) -> None:
+        '''Remove the selected file from the list'''
+        for item in self.sbpNameList.selectedItems():
+            logging.info(f'Removing file from queue: {item.text()}')
+            if item.text()==self.sbpName:
+                # we're removing the current file. go to the next file.
+                self.activateNext()
+            row = self.sbpNameList.row(item)
+            self.sbpNameList.takeItem(row)
+        if len(self.sbpNameList)==0:
+            # if we've deleted all the files, go back to placeholder text
+            self.sbpName = 'No file selected'
+            self.addFile(self.sbpName)
+        
+        
     def loadFile(self) -> None:
+        '''load a shopbot run file using a standard file selection dialog'''
         if os.path.exists(self.sbpName):
             openFolder = os.path.dirname(self.sbpName)
         else:
             openFolder = DEFAULTFOLDER
-        sbpn = FileDialog(openFolder, 'Gcode files (*.gcode *.sbp)', False)
-        if os.path.exists(sbpn):
-            self.sbpName = sbpn
-            self.sbpNameLabel.setText(self.sbpName)
-            self.runButt.setEnabled(True)
-        else:
-            self.runButt.setEnabled(False)
+        sbpnList = fileDialog(openFolder, 'Gcode files (*.gcode *.sbp)', False)
+        for sbpn in sbpnList:
+            if not os.path.exists(sbpn):
+                logging.error(f'{sbpn} does not exist')
+            else:
+                self.runButt.setEnabled(True)
+                logging.info(f'Adding file to queue: {sbpn}')
+                self.addFile(sbpn)        
             
-    ####################            
-    #### functions to start on run
+    ########
+    # communicating with the shopbot
     
-    # critFlag is a shopbot flag value that indicates that the run is done
-    # we run this function at the beginning of the run to determine what flag will trigger the start of videos, etc.
-    def getCritFlag(self) -> int:
-        # go through the file and determine if the 
-        # output flags get turned on more than once. 
-        # If they do, we should wait until the end 
-        # of the whole file to stop watching the 
-        # flags, so critFlag = 0. If they only change 
-        # twice, we only extrude once, so we can stop
-        # watching the flags and turn off the videos
-        # when the flag is 8
-        self.channelsTriggered = []
-        with open(self.sbpName, 'r') as f:
-            for line in f:
-                if line.startswith('SO') and (line.endswith('1') or line.endswith('1\n')):
-                    # the shopbot flags are 1-indexed, while our channels
-                    # are 0-indexed, so when it means change channel 1, 
-                    # we want to change channels[0]
-                    li = int(line.split(',')[1])-1
-                    if li not in self.channelsTriggered and not li==3:
-                        self.channelsTriggered.append(li) 
-#         if len(self.channelsTriggered)==0:
-#             return 0
-#         else:
-#             return 8  
-        return 0
     
-    # run this function continuously during print to watch the shopbot status
     def getSBFlag(self) -> int:
+        '''run this function continuously during print to watch the shopbot status'''
+        self.prevFlag = self.currentFlag
         try:
             sbFlag, _ = winreg.QueryValueEx(self.aKey, 'OutPutSwitches')
         except:  
@@ -372,53 +482,89 @@ class sbBox(connectBox):
         # if the flag has reached a critical value that signals the 
         # shopbot is done printing, stop tracking pressures and recording vids
         sbFlag = int(sbFlag)
+        self.currentFlag = sbFlag
         return sbFlag
-    
             
-    # runFile sends a file to the shopbot, starts camera recordings, 
-    # and starts the fluigent watching for triggers to change pressure
+            
+    ####################            
+    #### functions to start on run
+    
+    ### set up the run
+    
+    def getCritFlag(self) -> int:
+        '''Identify which channels are triggered during the run. critFlag is a shopbot flag value that indicates that the run is done. We always set this to 0. If you want the video to shut off after the first flow is done, set this to 8. We run this function at the beginning of the run to determine what flag will trigger the start of videos, etc.'''
+        self.channelsTriggered = []
+        with open(self.sbpName, 'r') as f:
+            for line in f:
+                if line.startswith('SO') and (line.endswith('1') or line.endswith('1\n')):
+                    '''the shopbot flags are 1-indexed, while our channels list is 0-indexed, 
+                    so when it says to change flag 1, we want to change channels[0]'''
+                    li = int(line.split(',')[1])-1
+                    if li not in self.channelsTriggered and not li==3:
+                        self.channelsTriggered.append(li) 
+        return 0
+    
+    
+    ### start/stop
+    
     def runFile(self) -> None:
+        '''runFile sends a file to the shopbot and tells the GUI to wait for next steps'''
         if not os.path.exists(self.sbpName):
             self.updateStatus('SBP file does not exist: ' + self.sbpName, True)
             return
-        self.allowEnd = False
+        
         self.abortButt.setEnabled(True)
         
-
+        ''' allowEnd is a failsafe measure because when the shopbot starts running a file that changes output flags, it asks the user to allow spindle movement to start. While it is waiting for the user to hit ok, only flag 4 would be up, giving a flag value of 8. If critFlag=8 (i.e. we want to stop running after the first extrusion step), this means the GUI will think the file is done before it even starts. We create an extra trigger to say that if we're extruding, we have to wait for extrusion to start before we can let the tracking stop'''
         self.critFlag = self.getCritFlag()
         if self.critFlag==0:
             self.allowEnd = True
+        else:
+            self.allowEnd = False
             
-        self.updateStatus('Running SBP file ' + self.sbpName + ', critFlag = '+str(self.critFlag), True)
+        self.updateStatus(f'Running SBP file {self.sbpName}, critFlag = {self.critFlag}', True)
 
         # send the file to the shopbot via command line
         appl = self.sb3File
         arg = self.sbpName + ', ,4, ,0,0,0"'
         subprocess.Popen([appl, arg])
         
-        # wait 10 seconds after we send the command 
-        # to the shopbot to make sure the running flags are on    
+        # wait to start videos and fluigent
         self.runningSBP = True
         self.triggerWait()
         
-
-
-    # timerFunc runs continuously while we are printing
-    def timerFunc(self) -> None:
-        # update the pressure if the shopbot state has changed
-        if self.runningSBP and self.keyConnected:
-            self.watchSBFlags()
-        else:
-            self.triggerEndOfPrint()
     
-    # start the timer to watch for the start of print
+    ### wait to start videos and fluigent
+    
     def triggerWait(self) -> None:
+        '''start the timer that watches for the start of print'''
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.waitForStartTimerFunc)
         self.timer.start(100) # update every 100 ms
+        
     
-    # start the timer to watch for changes in pressure
+    def waitForStartTimerFunc(self) -> None:
+        '''Loop this when we're waiting for the extrude command. If the run has been aborted, trigger the end.'''
+        if self.runningSBP and self.keyConnected:
+            self.waitForStart()
+        else:
+            self.triggerEndOfPrint()
+            
+    
+    def waitForStart(self) -> None:
+        '''Loop this while we're waiting for the extrude command. Checks the shopbot flags and triggers the watch for pressure triggers if the test has started'''
+        sbFlag = self.getSBFlag()
+        cf = 8 + 2**(self.channelsTriggered[0]) # the critical flag at which flow starts
+        self.updateStatus(f'Waiting to start file, Shopbot output flag = {sbflag}, start at {cf}', False)
+        if sbFlag==cf:
+            self.triggerWatch()
+            
+            
+    ### start videos and fluigent
+    
+    
     def triggerWatch(self) -> None:
+        '''start recording and start the timer to watch for changes in pressure'''
         # eliminate the old timer
         self.timer.stop()
         
@@ -427,13 +573,72 @@ class sbBox(connectBox):
         self.timer.timeout.connect(self.timerFunc)
         self.timer.start(100) # update every 100 ms
         
-        # start the cameras
-        for camBox in self.sbWin.camBoxes:
-            if camBox.camInclude.checkState() and not camBox.camObj.recording:
-                camBox.cameraRec()
+        # start the cameras if any flow is triggered in the run
+        if min(self.channelsTriggered)<len(self.sbWin.fluBox.pchannels):
+            for camBox in self.sbWin.camBoxes:
+                if camBox.camInclude.isChecked() and not camBox.camObj.recording:
+                    camBox.cameraRec()
+    
+    ### wait for end
+    
+    def timerFunc(self) -> None:
+        '''timerFunc runs continuously while we are printing to determine if we're done.'''
+
+        if self.runningSBP and self.keyConnected:
+            self.watchSBFlags()
+        else:
+            # we turn off runningSBP when the file is done
+            self.triggerEndOfPrint()
+
+
+    def watchSBFlags(self) -> None:
+        '''Runs continuously while we're printing. Checks the Shopbot flags and changes the pressure if the flags have changed. Triggers the end if we hit the critical flag.'''
+        sbFlag = self.getSBFlag()
+        self.updateStatus(f'Running file, Shopbot output flag = {sbFlag}, end at {self.critFlag}', False)
+        
+        if self.allowEnd and (sbFlag==self.critFlag or sbFlag==0):
+            self.triggerEndOfPrint()
+            return
+        
+        # for each channel, check if the flag is up if flag 0 is up for channel 0, the output will be odd, so  flag mod 2 (2=2^(0+1)) will be 1, which is 2^0. If flag 1 is up for channel 1, it adds 2 to the output, e.g. if we want channel 1 on, the value will be 10, so 10%2=2, which is 2^1
+        for i in self.channelsTriggered:
+            if sbFlag%2**(i+1)==2**i:
+                # this channel is on
                 
-    # stop watching for changes in pressure, stop recording    
+                # now that we've started extrusion, we know that the run has really started, so we can allow it to end
+                self.allowEnd = True
+                
+                # set this channel to the value in the constant box (run pressure)
+                if i<len(self.sbWin.fluBox.pchannels):
+                    channel = self.sbWin.fluBox.pchannels[i]
+                    press = int(channel.constBox.text())
+                    fgt.fgt_set_pressure(i, press)
+
+                     # set the other channels to 0
+                    self.sbWin.fluBox.resetAllChannels(i)   
+                else:
+                    if not sbFlag==self.prevFlag:
+                        # if we triggered a flag that doesn't correspond to a pressure channel, take a snapshot with all checked cameras. Only do this once, right after the flag is flipped.
+                        for camBox in self.sbWin.camBoxes:
+                            if camBox.camInclude.isChecked() and not camBox.camObj.recording:
+                                if camBox.camObj.recording:
+                                    camBox.cameraRec()
+                                camBox.cameraPic()
+                                
+                        # originally, I had this set to turn the flag back off, but I can't get around the permissions, so instead you'll just have to program a wait into the .sbp file, using "PAUSE 5" for 5 seconds, etc.
+#                         newkey = sbFlag-4
+#                         sbFlag, _ = winreg.SetValueEx(self.aKey, 'OutPutSwitches',0, winreg.REG_DWORD, newkey)
+
+                return 
+        
+        # if no channels are turned on, turn off all of the channels       
+        self.sbWin.fluBox.resetAllChannels(-1)
+
+    
+    ### end           
+      
     def triggerEndOfPrint(self) -> None:
+        '''stop watching for changes in pressure, stop recording  '''
         if self.runningSBP:
             for camBox in self.sbWin.camBoxes:
                 if camBox.camInclude.checkState() and camBox.camObj.recording:
@@ -443,78 +648,11 @@ class sbBox(connectBox):
             except:
                 pass
             self.sbWin.fluBox.resetAllChannels(-1)
-        self.runningSBP = False
+        self.runningSBP = False # we're no longer running a sbp file
         self.abortButt.setEnabled(False)
         self.updateStatus('Ready', False)
-            
-    # goes inside the wait for start timer function
-    # checks the shopbot flags and triggers the watch 
-    # for pressure triggers if the test has started
-    def waitForStart(self) -> None:
-        sbFlag = self.getSBFlag()
-#         cf = self.critFlag
-        cf = 8 + 2**(self.channelsTriggered[0])
-        self.updateStatus('Waiting to start file, Shopbot output flag = ' + str(sbFlag) + ', start at ' + str(cf), False)
-        if sbFlag==cf:
-            self.triggerWatch()
-    
-    # this is the function we use when we're waiting for the nozzle to start extruding
-    def waitForStartTimerFunc(self) -> None:
-        if self.runningSBP and self.keyConnected:
-            self.waitForStart()
-        else:
-            self.triggerEndOfPrint()
+        self.activateNext() # activate the next sbp file in the list
 
-    # goes inside the timer function. 
-    # checks the Shopbot flags and changes the 
-    # pressure if the flags have changed    
-    def watchSBFlags(self) -> None:
-        sbFlag = self.getSBFlag()
-        self.updateStatus('Running file, Shopbot output flag = ' + str(sbFlag) + ', end at ' + str(self.critFlag), False)
-        
-        # allowEnd is a failsafe measure because when the shopbot
-        # starts running a file that changes output flags, it asks
-        # the user to allow spindle movement to start. This means
-        # that for an unpredictable amount of time, only flag 4 will be
-        # up, which would indicate that the print is done. We create
-        # an extra trigger to say that if we're extruding, we have to wait
-        # for extrusion to start before we can let the tracking stop
-        if self.allowEnd and (sbFlag==self.critFlag or sbFlag==0):
-            self.triggerEndOfPrint()
-            return
-        
-        # for each channel, check if the flag is up
-        # if flag 0 is up for channel 0, the output will be odd, so 
-        # flag mod 2 (2=2^(0+1)) will be 1, which is 2^0
-        # if flag 1 is up for channel 1, it adds 2 to the output,
-        # e.g. if we want channel 1 on, the value will be 10, so the
-        # 10%2=2, which is 2^1
-        for i in self.channelsTriggered:
-            if sbFlag%2**(i+1)==2**i:
-                # this channel is on
-                
-                # now that we've started extrusion, we know that
-                # the run has really started, so we can allow it to end
-                self.allowEnd = True
-                
-                # set this channel to the value in the 
-                # constant box (run pressure)
-                # if we triggered a flag that doesn't correspond to a 
-                # pressure channel, skip this
-                if i<len(self.sbWin.fluBox.pchannels):
-                    channel = self.sbWin.fluBox.pchannels[i]
-                    press = int(channel.constBox.text())
-                    fgt.fgt_set_pressure(i, press)
-
-                     # set the other channels to 0
-                    self.sbWin.fluBox.resetAllChannels(i)                    
-                return 
-        
-        # if we never hit a channel, turn off all of the channels       
-        self.sbWin.fluBox.resetAllChannels(-1)
-
-
-        
     #-----------------------------------------
     
     # this gets triggered when the whole window is closed
@@ -1188,40 +1326,57 @@ class cameraBox(connectBox):
         
         self.resetLayout()
         self.layout = qtw.QVBoxLayout()
-        self.camButts = qtw.QHBoxLayout()
+#         self.camButts = qtw.QHBoxLayout()
         
-        self.camInclude = qtw.QCheckBox('Export video on run')
-        self.camInclude.setCheckState(False)
         
-        self.camPrev = qtw.QPushButton()
+        self.camInclude = qtw.QToolButton()
+        
+        self.camInclude.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
+        self.camInclude.setCheckable(True)
+        self.camInclude.clicked.connect(self.updateCamInclude)
+        self.updateCamInclude() 
+        
+        self.camPrev = qtw.QToolButton()
         self.camPrev.clicked.connect(self.cameraPrev)
+#         self.camPrev.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
+        self.camPrev.setCheckable(True)
         self.setPrevButtStart()
         
-        self.camRec = qtw.QPushButton('Record')
+        self.camRec = qtw.QToolButton()
         self.camRec.clicked.connect(self.cameraRec)
+        self.camPrev.setCheckable(True)
         self.setRecButtStart()
         
-        self.camPic = qtw.QPushButton('Capture image')
-        self.camPic.clicked.connect(self.cameraPic)
+        self.camPic = qtw.QToolButton()
         self.camPic.setIcon(QtGui.QIcon('icons/camera.png'))
+        self.camPic.setStyleSheet(self.unclickedSheet())
+        self.camPic.clicked.connect(self.cameraPic)
+        self.camPic.setToolTip('Snapshot') 
         
-        self.settings = qtw.QPushButton('Settings')
+        self.settings = qtw.QToolButton()
+        self.settings.setIcon(QtGui.QIcon('icons/settings.png'))
+        self.settings.setStyleSheet(self.unclickedSheet())
         self.settings.clicked.connect(self.openSettings)
+        self.settings.setToolTip(self.bTitle+' settings') 
+        
         self.settingsDialog = settingsDialog(self, self.bTitle, self.camObj)
-        
-        self.status = qtw.QLabel('Ready')
-        self.status.setFixedSize(600, 50)
-        self.status.setWordWrap(True)
-        self.layout.addWidget(self.status)
-        
+                
+        self.camButts = qtw.QToolBar()
+        self.camButts.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
         self.camButts.addWidget(self.camInclude)
         self.camButts.addWidget(self.camPrev)
         self.camButts.addWidget(self.camRec)
         self.camButts.addWidget(self.camPic)
         self.camButts.addWidget(self.settings)
-        self.camButts.setSpacing(10) # spacing between buttons
+        self.camButts.setStyleSheet("QToolBar{spacing:5px;}");
         
-        self.layout.addItem(self.camButts)
+        self.layout.addWidget(self.camButts)
+        
+        self.status = qtw.QLabel('Ready')
+        self.status.setFixedSize(500, 50)
+        self.status.setWordWrap(True)
+        self.layout.addWidget(self.status)
+        
         self.layout.addStretch(1)
         
         self.layout.addWidget(self.camObj.prevWindow)
@@ -1258,26 +1413,55 @@ class cameraBox(connectBox):
         
     #------------------------------------------------
     #  functions to change appearance of buttons when they're pressed
+    
+    def clickedBoth(self) -> str:
+        return 'border:none; \
+        padding:3px; \
+        border-radius:3px; \
+        box-shadow: 2px 2px 2px #888888;'
+    
+    def clickedSheet(self) -> str:
+        '''Stylesheet for clicked camera buttons'''
+        return self.clickedBoth()+' background-color:#666666; color:white;'
+    
+    def unclickedSheet(self) -> str:
+        '''Stylesheet for unclicked camera buttons'''
+        return self.clickedBoth()+' background-color:#eeeeee;'
+        
+    
+    def updateCamInclude(self) -> None:
+        if self.camInclude.isChecked():
+            self.camInclude.setStyleSheet(self.clickedSheet())
+            self.camInclude.setText('Autosave is on')
+            self.camInclude.setIcon(QtGui.QIcon('icons/save.png'))
+            self.camInclude.setToolTip('Do not export videos with shopbot')
+        else:
+            self.camInclude.setStyleSheet(self.unclickedSheet())
+            self.camInclude.setText('Autosave is off')
+            self.camInclude.setIcon(QtGui.QIcon('icons/nosave.png'))
+            self.camInclude.setToolTip('Export videos with shopbot')
         
     def setPrevButtStart(self) -> None:
-        self.camPrev.setText('Start preview')
-        self.camPrev.setStyleSheet('')
-        self.camPrev.setIcon(QtGui.QIcon('icons/play.png'))
+        self.camPrev.setStyleSheet(self.unclickedSheet())
+#         self.camPrev.setText('Start preview')
+        self.camPrev.setIcon(QtGui.QIcon('icons/closedeye.png'))
+        self.camPrev.setToolTip('Start live preview') 
         
     def setPrevButtStop(self) -> None:
-        self.camPrev.setText('Stop preview')
-        self.camPrev.setStyleSheet('background-color:black; color:white;')
-        self.camPrev.setIcon(QtGui.QIcon('icons/stopwhite.png'))
+        self.camPrev.setStyleSheet(self.clickedSheet())
+#         self.camPrev.setText('Stop preview')
+        self.camPrev.setIcon(QtGui.QIcon('icons/eye.png'))
+        self.camPrev.setToolTip('Stop live preview') 
 
     def setRecButtStart(self) -> None:
-        self.camRec.setText('Record')
-        self.camRec.setStyleSheet('')
+        self.camRec.setStyleSheet(self.unclickedSheet())
         self.camRec.setIcon(QtGui.QIcon('icons/Record.png'))
+        self.camRec.setToolTip('Start recording') 
         
     def setRecButtStop(self) -> None:
-        self.camRec.setText('Stop recording')
-        self.camRec.setStyleSheet('background-color:black; color:white;')
+        self.camRec.setStyleSheet(self.clickedSheet())
         self.camRec.setIcon(QtGui.QIcon('icons/recordstop.png'))
+        self.camRec.setToolTip('Stop recording') 
         
     def openSettings(self) -> None:
         self.settingsDialog.show()
@@ -1622,8 +1806,6 @@ class QPlainTextEditLogger(logging.Handler):
 class logDialog(QtGui.QDialog):
     def __init__(self, parent):
         super().__init__(parent)  
-        
-        
 
         logTextBox = QPlainTextEditLogger(self)
         # You can format what is printed to text box
@@ -1647,18 +1829,23 @@ class SBwindow(qtw.QMainWindow):
     def __init__(self, parent=None):
         super(SBwindow, self).__init__(parent)
         
-        # define central widget
-        self.central_widget = qtw.QWidget()               
-        self.setCentralWidget(self.central_widget) 
-        
-        self.setWindowTitle("Shopbot/Fluigent/Camera")
-        self.setStyleSheet('background-color:white;')
-        self.resize(1600, 1800)
-        
-        self.createMenu()
-        self.createGrid()
-        
-        logging.info('Window created')
+        try:
+
+            # define central widget
+            self.central_widget = qtw.QWidget()               
+            self.setCentralWidget(self.central_widget) 
+
+            self.setWindowTitle("Shopbot/Fluigent/Camera")
+            self.setStyleSheet('background-color:white;')
+            self.resize(1400, 1800)
+
+
+            self.createGrid()
+            self.createMenu()
+
+            logging.info('Window created')
+        except:
+            self.closeEvent(0)
 
         
     def createGrid(self):
@@ -1691,18 +1878,29 @@ class SBwindow(qtw.QMainWindow):
         menubar = self.menuBar()
         self.setupLog()
         menubar.addAction(self.logButt)
+        
+        self.openButt = qtw.QAction('Open video folder')
+        self.openButt.triggered.connect(self.genBox.openSaveFolder)
+        menubar.addAction(self.openButt)
 
       
     # this runs when the window is closed
     def closeEvent(self, event):
-        for o in [self.sbBox, self.basBox, self.nozBox, self.ledBox, self.fluBox]:
-            o.close()
-        for handler in logging.root.handlers[:]:
-            logging.root.removeHandler(handler)
+        try:
+            for o in [self.sbBox, self.basBox, self.nozBox, self.ledBox, self.fluBox]:
+                try:
+                    o.close()
+                except:
+                    pass
+            for o in [self.logDialog]:
+                o.done(0)
+            for handler in logging.root.handlers[:]:
+                logging.root.removeHandler(handler)
+        except:
+            pass
             
     def setupLog(self):        
         self.logDialog = logDialog(self)
-#         self.logfile = setUpLog()
         self.logButt = qtw.QAction('Open log', self)
         self.logButt.triggered.connect(self.openLog)
                 

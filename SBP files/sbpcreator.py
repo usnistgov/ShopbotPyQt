@@ -8,26 +8,31 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import sympy as sy
 
-        
+      
 def oddNeg(n:int)->int:
+    '''Returns negative 1 if the input is odd'''
     return 2*((n%2)-1/2)
 
 def fs(i) -> str:
+    '''Converts a float into a string w/ 2 decimal places'''
     if type(i) is str:
         return i
     else:
         return '%3.2f' % i
     
-# generic plus float function
 def pf(a:float, b:float)->float:
+    '''literally just adds two numbers'''
     return a+b
 
-# generic multiply float function
+
 def mf(a:float, b:float)->float:
+    '''literally just multiplies two numbers'''
     return a*b 
     
 # plus or times for combos of strings and floats
 def pt(*dims, **kwargs) -> Union[str, float]:
+    '''Takes in a list of strings and floats and adds or multiplies them. dims is a list of elements to operate on, and mode should be defined as a keyword, e.g. mode='add' or mode='mult' '''
+    
     s = ''
     if kwargs['mode']=='add':
         toti = 0
@@ -60,17 +65,24 @@ def pt(*dims, **kwargs) -> Union[str, float]:
     else:
         return s + fs(tot)
 
-# add combos of strings and floats
+
 def p(*dims) -> Union[str, float]:
+    '''add combos of strings and floats'''
     return pt(*dims, mode='add')
 
-# multiply combos of strings and floats
+
 def t(*dims) -> Union[str, float]:
+    '''(times) multiply combos of strings and floats'''
     return pt(*dims, mode='mult')
+
+def mean(*dims) -> Union[str, float]:
+    return t(fs(1/len(dims)), '('+p(*dims)+')')
 
 #############-----------------------------------
 
 class sbpCreator:
+    '''Holds functions necessary for making .sbp files'''
+    
     def __init__(self, **kwargs):
         self.channel = 0    # channel is the pressure channel to turn on
         self.file = ''
@@ -81,8 +93,9 @@ class sbpCreator:
         if 'lastPt' in kwargs:
             self.takeLastPt(kwargs['lastPt'])
     
-    # function for adding two sbpcreators togethers
+
     def __add__(self, other):
+        '''function for adding two sbpcreators together'''
         scout = sbpCreator()
         self.sbp()
         other.sbp()
@@ -92,9 +105,9 @@ class sbpCreator:
         scout.stepPoints = self.stepPoints + other.stepPoints
         scout.vardefs = {**self.vardefs, **other.vardefs}
         return scout
-    
-    # return 1 if the last point is not valid
+     
     def takeLastPt(self, other) -> int:
+        '''return 1 if the last point is not valid'''
         self.vardefs = {**self.vardefs, **other.vardefs}
         if len(other.positions)>0:
             lp = other.positions[-1]
@@ -104,13 +117,14 @@ class sbpCreator:
         return 0
     
     def whichPlus(self, longdir:str) -> int:
+        '''Determine if the initial direction should be positive or negative'''
         if longdir[0]=='-':
             return -1
         else:
             return 1  
     
     def which0(self, longdir:str) -> Tuple[float, int]:
-        # determine the endpoints of the long lines
+        '''determine the endpoints of the long lines'''
         if longdir[1]=='x':
             long0 = self.x0
         elif longdir[1]=='y':
@@ -121,12 +135,14 @@ class sbpCreator:
         return long0, plus
     
     def altsp(self, p0, plus, i):
+        '''function used for alternating direction. p0 is a start position, plus is -1 or 1, i is the line number'''
         p1 = t(plus, self.spacing1, np.floor(i/2))
         p2 = t(plus, self.spacing2, np.ceil(i/2))
         return p(p0, p1, p2)
     
-     # NOTE: the number of reps in the zigzag is fixed and cannot change if you go back and change the header variables (e.g. '&spacing'), so you can either set it using this function or set it manually, but if you want the number of reps to be responsive to '&spacing', etc., you need to rebuild the whole file
+ 
     def updateReps(self, slideH:float, margin:float, divisible:int) -> None:
+        '''Determine the number of repeats to do in this zigzag. NOTE: the number of reps in the zigzag is fixed and cannot change if you go back and change the header variables (e.g. '&spacing'), so you can either set it using this function or set it manually, but if you want the number of reps to be responsive to '&spacing', etc., you need to rebuild the whole file'''
         s1 = self.floatSC(self.spacing1)
         s2 = self.floatSC(self.spacing2)
         r = np.floor((slideH - 2*margin) / (s1 + s2) * 2)
@@ -134,15 +150,16 @@ class sbpCreator:
         self.reps = int(r)
     
     def reset(self):
+        '''Clear the file and list of positions'''
         self.file = ''
         self.positions = []
     
-    # update the list of positions and file
-    # this should be redefined for each specific case
     def sbp(self):
+        '''Just the sbp file string'''
         return self.file
     
     def floatSC(self, vi) -> float:
+        '''Evaluate the expression with the values of any variables'''
         try:
             vout = float(vi)
         except:
@@ -162,6 +179,7 @@ class sbpCreator:
             return vout
         
     def strSimplify(self, vi, *args) -> str:
+        '''Simplify the expression, and evaluate it with any variables requested in *args. If you don't want to evaluate any variables, vi=[0] or any list w/ values that are not in the defined variables. If you want to evaluate all variables, vi=[]. If you want to use a specific list of variables, e.g. use ['&margin', '&spacing'] '''
         if not type(vi) is str:
             return vi
         if len(args)==0:
@@ -191,8 +209,9 @@ class sbpCreator:
         vout = vout.replace('.00000000000001', '.0')
         return vout
     
-    # this if for simplifying and formatting as string without any variable replacements
+    
     def fsss(self, vi) -> str:
+        '''this if for simplifying and formatting as string without any variable replacements'''
         if type(vi) is str:
             return self.strSimplify(vi, [0])
         else:
@@ -201,9 +220,9 @@ class sbpCreator:
     
     #------------
     
-    # search the dictionary for the string (e.g. 'x', 'y', 'z'). 
-    # If it's not there, return the coord from the point cp
-    def updatePtsXYZ(self, dic:Dict, st:str):  
+    
+    def updatePtsXYZ(self, dic:Dict, st:str): 
+        '''search the dictionary for the string (e.g. 'x', 'y', 'z'). If it's not there, return the coord from the point cp'''
         if st in dic:
             val = dic[st]
         else:
@@ -212,6 +231,7 @@ class sbpCreator:
         return val
         
     def updatePts(self, **kwargs):
+        '''Add point to list of points. e.g. if you are going to z=5, input z=5. If you are going to x=5,y=4, then input x=5,y=4.'''
         x = self.updatePtsXYZ(kwargs, 'x')
         y = self.updatePtsXYZ(kwargs, 'y')
         z = self.updatePtsXYZ(kwargs, 'z')
@@ -229,40 +249,47 @@ class sbpCreator:
     
     #-----
     def mj3(self, x:Union[float, str], y:Union[float, str], z:Union[float, str], ms:str) -> str:
+        '''Move or jump in 3D. ms='M' or 'J' '''
         s = ms.upper() + '3, ' + self.fsss(x) + ', ' + self.fsss(y) + ', ' + self.fsss(z) + '\n'
         self.updatePts(x=x, y=y, z=z)
         self.file+=s
         return s
     
     def m3(self, x:Union[float, str], y:Union[float, str], z:Union[float, str]) -> str:
+        '''Move in 3D'''
         return self.mj3(x,y,z,'M')
     
     def j3(self, x:Union[float, str], y:Union[float, str], z:Union[float, str]) -> str:
+        '''Jump in 3D'''
         return self.mj3(x,y,z,'J')
     
     #-----
     def mj2(self, x:Union[float, str], y:Union[float, str], ms:str) -> str:
+        '''Move or jump in 2D'''
         s = ms.upper() + '2, ' + self.fsss(x) + ', ' + self.fsss(y) + '\n'
         self.updatePts(x=x, y=y)
         self.file+=s
         return s
 
     def m2(self, x:Union[float, str], y:Union[float, str]) -> str:
+        '''Move in 2D'''
         return self.mj2(x, y, 'M')
     
     def j2(self, x:Union[float, str], y:Union[float, str]) -> str:
+        '''Jump in 2D'''
         return self.mj2(x, y, 'J')
     
     #-----
     def mj1(self, direc:str, position:Union[float, str], ms:str) -> str:
+        '''Move or jump in 1D'''
         if len(direc)>1:
             dire = direc[-1]
         else:
             dire = direc
         s = ms.upper() + dire.upper() + ', ' + self.fsss(position) + '\n'
-        if dire=='x':
+        if dire.lower()=='x':
             self.updatePts(x=position)
-        elif dire=='y':
+        elif dire.lower()=='y':
             self.updatePts(y=position)
         else:
             self.updatePts(z=position)
@@ -270,15 +297,39 @@ class sbpCreator:
         return s
     
     def m1(self, direc:str, position:Union[float, str]) -> str:
+        '''Move in 1D'''
         return self.mj1(direc, position, 'M')
     
+    def mx(self, x:Union[float, str]) -> str:
+        '''Move in x'''
+        return self.mj1('X', x, 'M')
+    
+    def my(self, y:Union[float, str]) -> str:
+        '''Move in y'''
+        return self.mj1('Y', y, 'M')
+    
+    def mz(self, z:Union[float, str]) -> str:
+        '''Move in z'''
+        return self.mj1('Z', z, 'M')
+    
     def j1(self, direc:str, position:Union[float, str]) -> str:
+        '''Jump in 1D'''
         return self.mj1(direc, position, 'J')
+    
+    def jx(self, x:Union[float, str]) -> str:
+        '''Jump in x'''
+        return self.mj1('X', x, 'J')
+    
+    def jy(self, y:Union[float, str]) -> str:
+        '''Jump in y'''
+        return self.mj1('Y', y, 'J')
 
     def jz(self, z:Union[float, str]) -> str:
+        '''Jump in z'''
         return self.mj1('Z', z, 'J')
     
     def withdraw(self) -> None:
+        '''Go back to the loading zone'''
         self.mj1('Z', 10, 'J')
         self.mj1('Y', 150, 'J')
         self.mj1('X', 80, 'J')
@@ -287,16 +338,19 @@ class sbpCreator:
     #------------
     
     def turnOnSpindle(self) -> str:
+        '''Turn on the spindle'''
         s = 'SetSpindleStatus,1\n'
         self.file+=s
         return s
     
     def turnOn(self, channel:int) -> str:
+        '''Turn on an output flag'''
         s = 'SO, ' + str(channel+1) + ', 1\n'
         self.file+=s
         return s
     
     def turnOff(self, channel:int) -> str:
+        '''Turn off an output flag'''
         s = 'SO, ' + str(channel+1) + ', 0\n'
         self.file+=s
         return s
@@ -304,6 +358,7 @@ class sbpCreator:
     #------------
     
     def convertFile(self, keys) -> str:
+        '''Convert the file with any requested variables evaluated. e.g. if &spacing is defined in this file, and you want to evaluate it with &spacing=5, it will make those replacements and simplify. Use keys=['spacing']. Use a list of [] to make no replacements. '''
         if len(keys)==0:
             return self.file
         newfile = ''
@@ -329,8 +384,9 @@ class sbpCreator:
     
     #------------
     
-    # convert positions list to a list of float coordinates
+    
     def convertPts(self, pts) -> np.ndarray:
+        '''convert positions list to a list of float coordinates'''
         ptsout = []
         for p in pts:
             if type(p) is list:
@@ -356,8 +412,9 @@ class sbpCreator:
             raise ValueError('Cannot convert list of pts to array')
         return out
     
-    # plot the toolpath
+    
     def plot(self, ele:float = 70, azi:float=35) -> None:
+        '''plot the toolpath'''
         self.sbp()
         if len(self.positions)==0:
             raise Exception('No points to plot')
@@ -406,6 +463,7 @@ class sbpCreator:
         return ax
     
     def export(self, filename:str, *args) -> None:
+        '''Export the .sbp file'''
         fout = self.convertFile(*args)
         File_object = open(filename,"w")
         File_object.write(fout)
@@ -416,6 +474,8 @@ class sbpCreator:
 ############---------------------------------
     
 class defVars(sbpCreator):
+    '''Holds onto variables defined in the .sbp file'''
+    
     def __init__(self, **kwargs):
         super(defVars, self).__init__()
         for key, val in kwargs.items():
@@ -423,15 +483,19 @@ class defVars(sbpCreator):
         self.vardefs = {**self.vardefs, **kwargs}
     
     def setSpeeds(self, **kwargs):
+        '''Set move and jump speeds. Inputs could be m=5, j=20'''
         for i in kwargs:
             self.file+= i.upper() + 'S, ' + str(kwargs[i]) + '\n'
             
     def setUnits(self, **kwargs):
+        '''Set the units to mm'''
         self.file+='VD , , 1\nVU, 157.480315, 157.480315, -157.480315\n'
 
 ############---------------------------------
 
 class startingPoint(sbpCreator):
+    '''Creates an initial point'''
+    
     def __init__(self, x, y, z):
         super(startingPoint, self).__init__()
         self.cp = [x,y,z]
@@ -444,6 +508,8 @@ class startingPoint(sbpCreator):
 ############---------------------------------
     
 class zigzag(sbpCreator):
+    '''Creates a zigzag'''
+    
     def __init__(self, **kwargs):
         super(zigzag, self).__init__(**kwargs)
         self.x0 = 0         # x0, y0, z0 are the corner of the zigzag
@@ -462,7 +528,8 @@ class zigzag(sbpCreator):
         if 'lastPt' in kwargs:
             self.takeLastPt(kwargs['lastPt'])
             
-    def takeLastPt(self, other) -> None:
+    def takeLastPt(self, other:sbpCreator) -> None:
+        '''Take the last point from the previous drawing and set it as our new current point'''
         out = super(zigzag, self).takeLastPt(other)
         if out==0:
             self.x0 = self.cp[0]
@@ -471,18 +538,21 @@ class zigzag(sbpCreator):
     
     
     def getLongList(self) -> List[float]:
+        '''Get a list of coordinates in the long direction'''
         long0, plus = self.which0(self.longdir)  
         longlist = [long0, p(long0, t(plus, self.width))]
         self.longlist = longlist
         return longlist
     
     def getShortList(self) -> List[float]:
+        '''Get a list of coordinates in the short direction'''
         short0, plus = self.which0(self.shortdir)
         shortlist = [p(short0, t(plus, self.spacing1, np.floor(i/2)), t(plus, self.spacing2, np.ceil(i/2))) for i in range(self.reps)]
         self.shortlist = shortlist
         return shortlist
         
     def sbp(self) -> str:
+        '''Create the sbp file'''
         longlist = self.getLongList()
         shortlist = self.getShortList()
         
@@ -509,6 +579,8 @@ class zigzag(sbpCreator):
 ########################################
     
 class verts(sbpCreator):
+    '''Creates a series of vertical lines'''
+    
     def __init__(self, **kwargs):
         super(verts, self).__init__(**kwargs)
 
@@ -534,6 +606,8 @@ class verts(sbpCreator):
                 setattr(self, key, val)
             
     def initFromScratch(self):
+        '''initialize a list of vertical lines'''
+        
         self.longdir = '+x'  # longdir is the direction of the positions we're predicting from spacing
             # for example, if we've already written a zigzag with a long direction of +x,
             # we should make the longdir here +x
@@ -549,15 +623,18 @@ class verts(sbpCreator):
         self.downdisp = 0
         
     def setZBounds(self, zmed:float, zspacing:float)->None:
+        '''Set the top and bottom z points. zmed is the middle point of the line, zspacing is half of the length of the line.'''
         self.zmin = p(zmed, t(-1, zspacing))
         self.zmax = p(zmed, zspacing)
 
     
-    # zz is a zigzag object
-    # start is the index of the first line in the shortlist to match
-    # end is the index of the last line in the shortlist to match
-    # disp is the displacement off the existing line to set the vertical lines(e.g. -0.5)
+    
     def matchToZigZag(self, **kwargs) -> None:
+        '''Match the initial point and coordinates to an existing zigzag object. 
+        zz is a zigzag object
+        start is the index of the first line in the shortlist to match
+        end is the index of the last line in the shortlist to match
+        disp is the displacement off the existing line to set the vertical lines(e.g. -0.5)'''
         
         if 'zigzag' not in kwargs or 'start' not in kwargs or 'end' not in kwargs or 'disp' not in kwargs:
             raise Exception
@@ -594,6 +671,7 @@ class verts(sbpCreator):
     
         
     def setSpacing(self, *args)->None:
+        '''Determine the spacing between lines. Input one or two spacings, one if you want uniform spacing, two if you want spacing to go ababab'''
         if len(args)==1:
             self.spacing1 = args[0]
             self.spacing2 = args[0]
@@ -616,6 +694,7 @@ class verts(sbpCreator):
 #         self.longlist = [p(self.longlist0[0], t(i, spacing)) for i in range(self.longreps)]
         
     def upDownRow(self, direc='+x', longlist = [5,20], const=0) -> None:
+        '''One row of vertical lines. direction is the direction that the row is in, e.g. +x or -y. Longlist is the list of coordinates to hit. const is the coordinate of x or y that is held constant.'''
         self.longdir = direc
         if self.longdir[1]=='x':
             self.shortdir = '+y' 
@@ -627,10 +706,11 @@ class verts(sbpCreator):
         self.shortlist = [const]
     
      
-    # longlist is the endpoints of the row
-    # direc is the direction that the row goes in
-    # const is the constant coordinate of the row
+    
     def singleUpDownRow(self, direc='+x', longlist = [5,20], const=0, spacing1=1, **kwargs) -> None:
+        '''One row of vertical lines, given a spacing. longlist is the endpoints of the row
+        direc is the direction that the row goes in
+        const is the constant coordinate of the row'''
         self.upDownRow(direc, longlist, const)
 
         self.shortreps = 1   
@@ -641,6 +721,7 @@ class verts(sbpCreator):
         
         
     def matchToVerts(self, **kwargs) -> None:
+        '''Match initial conditions and spacings to an existing row of vertical lines. vert should be a verts object. dshort is the distance between the existing row and new row in the short direction. dlong is the distance between the existing row and new row along the long direction, which is the direction of the row.'''
         if 'vert' not in kwargs or 'dshort' not in kwargs or 'dlong' not in kwargs:
             raise Exception
         v = kwargs['vert']
@@ -655,6 +736,7 @@ class verts(sbpCreator):
 
     
     def sbp(self):
+        '''Create the sbp file'''
         m1 = float(self.longdir[0]+'1') # sign of the long direction
         if type(self.downdisp) is float:
             self.downdisp = abs(self.downdisp)
@@ -715,4 +797,25 @@ class verts(sbpCreator):
 #         self.turnOff()
             
         return self.file
+    
+    
+class pics(sbpCreator):
+    '''Take pictures'''
+    
+    
+    def __init__(self, channel:int=2, wait:float=5, **kwargs):
+        super(pics, self).__init__(**kwargs)
+        self.channel = channel
+        self.wait = wait
+        
+    def snap(self):
+        self.stepPoints.append(self.cp)
+        self.turnOn(self.channel)
+        self.file+='PAUSE '+str(self.wait)+'\n'
+        self.turnOff(self.channel)       
+    
+    def sbp(self):
+        return self.file
+        
+    
         

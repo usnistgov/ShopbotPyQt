@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   height="512pt"
+   viewBox="0 0 512 512"
+   width="512pt"
+   version="1.1"
+   id="svg6"
+   sodipodi:docname="nosave.svg"
+   inkscape:version="1.0.2 (e86c870879, 2021-01-15, custom)"
+   inkscape:export-filename="C:\Users\lmf1\OneDrive - National Institute of Standards and Technology (NIST)\NIST\data\shopbot\software\pythonGUI\icons\nosave.png"
+   inkscape:export-xdpi="400"
+   inkscape:export-ydpi="400">
+  <metadata
+     id="metadata12">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs10" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1606"
+     inkscape:window-height="1228"
+     id="namedview8"
+     showgrid="false"
+     inkscape:zoom="1.0440874"
+     inkscape:cx="360.44746"
+     inkscape:cy="351.67151"
+     inkscape:window-x="1328"
+     inkscape:window-y="269"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg6"
+     inkscape:document-rotation="0">
+    <inkscape:grid
+       type="xygrid"
+       id="grid831" />
+  </sodipodi:namedview>
+  <path
+     d="M 436.8125,75.1875 C 388.32812,26.703125 324.11328,0 256,0 187.88672,0 123.67187,26.703125 75.1875,75.1875 26.703125,123.67187 0,187.88672 0,256 0,324.11328 26.703125,388.32812 75.1875,436.8125 123.67187,485.29687 187.88672,512 256,512 324.11328,512 388.32812,485.29687 436.8125,436.8125 485.29687,388.32812 512,324.11328 512,256 512,187.88672 485.29687,123.67187 436.8125,75.1875 Z M 30,256 C 30,131.38281 131.38281,30 256,30 312.92187,30 364.98828,51.160156 404.76953,86.019531 L 345.31641,145.47266 140.33984,350.44531 86.019531,404.76562 C 51.160156,364.98828 30,312.92187 30,256 Z m 226,226 c -56.92188,0 -108.98828,-21.16016 -148.76953,-56.01953 l 318.75,-318.7461 C 460.83984,147.01172 482,199.07812 482,256 482,380.61719 380.61719,482 256,482 Z"
+     id="path2"
+     style="fill:#000000;fill-opacity:1"
+     sodipodi:nodetypes="sssssssssssccccssccss" />
+  <path
+     id="path847"
+     style="fill:#000000;stroke-width:0.955648;fill-opacity:1"
+     d="M 260.27734 124.97461 C 153.78749 124.9933 159.90047 125.40927 149.69336 130.84961 C 142.96444 134.43607 133.74209 143.82134 130.33008 150.55469 C 124.64703 161.76909 124.95898 150.76836 124.95898 339.99805 C 124.95898 492.73177 125.13393 514.19782 126.42188 519.14258 C 128.86207 528.51115 134.32597 536.96806 141.61523 543.32031 L 272.9707 410.93359 C 276.6137 401.19872 280.91002 394.37321 288.22852 386.61523 C 295.79904 378.59008 304.63206 372.65683 314.86719 368.70703 L 508.49414 173.55859 L 507.46094 172.52539 L 459.91992 124.97852 L 313.1875 124.97852 C 293.00284 124.97852 275.49018 124.97194 260.27734 124.97461 z M 172.74023 172.75977 L 292.19727 172.75977 L 411.65234 172.75977 L 411.65234 220.54297 L 411.65234 268.32617 L 292.19727 268.32617 L 172.74023 268.32617 L 172.74023 220.54297 L 172.74023 172.75977 z M 555 231.67578 L 396.20508 391.7168 C 401.48731 398.24162 404.90339 404.69427 407.97656 413.63477 C 410.87911 422.07945 411.07822 423.49523 411.07422 435.56445 C 411.06934 447.65597 410.87013 449.04749 407.90234 457.75977 C 403.98952 469.24609 397.70628 479.0332 388.92773 487.31445 C 380.42464 495.33589 373.07992 499.74036 362.02734 503.44336 C 354.84225 505.85057 351.15793 506.49726 342.9668 506.78711 C 331.07965 507.20747 325.75317 506.3917 315.19141 502.53711 C 308.60749 500.13429 302.32793 496.60349 296.58594 492.11914 L 234.36523 554.82812 C 259.99222 554.90167 293.37395 554.93994 339.53906 554.95703 C 529.32815 555.0256 518.19927 555.33652 529.44727 549.63672 C 535.86439 546.38487 546.36535 535.88392 549.61719 529.4668 C 555.27905 518.29406 555 526.73678 555 366.79883 L 555 231.67578 z "
+     transform="scale(0.74999998)" />
+</svg>

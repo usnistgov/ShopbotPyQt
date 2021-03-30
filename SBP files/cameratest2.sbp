@@ -1,0 +1,14 @@
+SO, 2, 1
+PAUSE 5
+SO, 2, 0
+PAUSE 5
+
+SO, 3, 1
+PAUSE 5
+SO, 3, 0
+PAUSE 2
+SO, 3, 1
+PAUSE 5
+SO, 3, 0
+SO, 4, 0
+PAUSE 10
