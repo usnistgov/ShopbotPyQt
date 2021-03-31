@@ -268,12 +268,13 @@ class camera:
         self.timer = None                         # the timer that controls frame collection
         self.resetVidStats()
         self.framesSincePrev = 0  # how many frames we've collected since we updated the live display
-        self.diag = 1             # diag tells us which messages to log. 0 means none, 1 means some, 2 means a ton
-        self.fps = 0
-        self.exposure =0
+        self.diag = 1             # diag tells us which messages to log. 0 means none, 1 means some, 2 means a lot
+        self.fps = 0              # this will be set during subclass init (webcam.__init__, bascam.__init__)
+        self.exposure = 0         # this will be set during subclass init (webcam.__init__, bascam.__init__)
         self.fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
-        self.prevWindow = qtw.QLabel()
-        
+        self.prevWindow = qtw.QLabel()                # the window that the live preview will be displayed in
+        self.collisionCount = 0                       # this keeps track of frame read collisions
+        self.lastCollision = datetime.datetime.now()  # this keeps track of the time between frame read collisions
             
     def setFrameRate(self, fps:float) -> int:
         '''Set the frame rate of the camera. Return 0 if value changed, 1 if not'''
@@ -476,13 +477,41 @@ class camera:
             self.updateStatus('Error displaying frame', True)
             self.previewing = False
             self.stopTimer()
+            
+    def updateCollisions(self, st:str) -> str:
+        '''a common error during frame collection is 'Basler camera:Error collecting frame: Error collecting grab: There is already a thread waiting for a result. : RuntimeException thrown (file 'instantcameraimpl.h', line 1096)'. This prevents pile up of those messages. It returns a string to be logged.'''
+        if 'There is already a thread waiting for a result' in st:
+            now = datetime.datetime.now()
+            elapsed = (now-self.lastCollision).total_seconds()
+            self.lastCollision = now
+            if elapsed<10:
+                # reset the count and don't report if it's been at least 10 seconds since the last collision
+                self.collisionCount+=1
+                if self.collisionCount % 50 == 0:
+                    # if we've had 50 collisions in a row in quick succession, report an error
+                    st = f'{self.collisionCount} frame read collisions in a row. Consider decreasing frame rate.'
+                    return st
+                else:
+                    raise Exception('Do not log this message')
+            else:
+                self.collisionCount = 1
+                raise Exception('Do not log this message')
+        else:
+            return st
 
     
     def updateStatus(self, st:str, log:bool) -> None:
         '''updates the status of the widget that this camera belongs to. 
         st is the status message. 
         log determines whether to write to log. '''
-        self.guiBox.updateStatus(st, log)
+        
+        try:
+            st = self.updateCollisions(st)
+        except Exception as e:
+            print(e)
+            return
+        else:  
+            self.guiBox.updateStatus(st, log)
     
     
     def updateRecordStatus(self) -> None:
@@ -536,6 +565,7 @@ class webcam(camera):
         self.setFrameRateAuto()
         self.imw = int(self.camDevice.get(3))               # image width (px)
         self.imh = int(self.camDevice.get(4))               # image height (px)
+        self.prevWindow.setFixedSize(self.imw, self.imh)    # set the preview window to the image size
         self.getExposure()
         
         self.convertColors = True
@@ -653,11 +683,21 @@ class bascam(camera):
             self.converter.OutputBitAlignment = pylon.OutputBitAlignment_MsbAligned
             
             # get camera stats
-            self.setFrameRateAuto()
-            f1 = self.readFrame()
-            self.imw = len(f1[0]) # image width (px)
-            self.imh = len(f1) # image height (px)
-            self.getExposure()
+            self.setFrameRateAuto()                             # read the default frame rate from the camera
+            tryFrame = 0
+            while tryFrame<10:
+                try:
+                    f1 = self.readFrame()                               # get a sample frame
+                    self.imw = len(f1[0])                               # image width (px)
+                    self.imh = len(f1)                                  # image height (px)
+                    self.prevWindow.setFixedSize(self.imw, self.imh)    # set the preview window to the image size
+                except:
+                    tryFrame+=1     # if we failed to read a frame, try again
+                    time.sleep(1)
+                else:
+                    tryFrame = 10
+                
+            self.getExposure()                                  # read the default exposure time from the camera
             
             # if we successfully read the frame, keep it in lastFrame
             self.lastFrame = [f1]
@@ -706,7 +746,7 @@ class bascam(camera):
             if val>self.mspf:
                 # exposure time is longer than frame rate. reject.
                 if self.diag>0:
-                    self.updateStatus(f'Requested exposure time {val} is higher than frame rate {self.mspf}. Exposure time not updated.', True)
+                    self.updateStatus(f'Requested exposure time {val} is higher than frame rate {self.mspf} ms per frame. Exposure time not updated.', True)
                 return 1
             self.camDevice.ExposureTime.SetValue(val*1000) # convert from milliseconds to microseconds
             self.getExposure()
@@ -750,8 +790,8 @@ class bascam(camera):
     def grabError(self, status:str, statusNum:int, exc:bool) -> None:
         '''update the status box when there's an error grabbing the frame. Status is a number representing the type of error. This prevents us from printing the same error over in a loop. exc is true to return an exception and false to return nothing'''
         if exc:
-            if self.diag>1:
-                logging.info(f'errorStatus={self.errorStatus},statusNum={statusNum}')
+#             if self.diag>0:
+#                 logging.info(f'errorStatus={self.errorStatus},statusNum={statusNum}')
             if self.errorStatus==statusNum:
                 raise Exception('')
             else:
@@ -1010,7 +1050,7 @@ class cameraBox(connectBox):
         self.layout.addWidget(self.camButts)
         
         self.status = qtw.QLabel('Ready')
-        self.status.setFixedSize(500, 50)
+        self.status.setFixedSize(self.camObj.imw, 50)
         self.status.setWordWrap(True)
         self.layout.addWidget(self.status)
         

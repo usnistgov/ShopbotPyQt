@@ -162,7 +162,7 @@ class connectBox(qtw.QGroupBox):
     def createStatus(self, width:int) -> None:
         '''creates a section for displaying the device status'''
         self.status = qtw.QLabel('Ready')
-#         self.status.setFixedSize(width, 50)
+        self.status.setFixedSize(width, 50)
         self.status.setWordWrap(True)
     
     

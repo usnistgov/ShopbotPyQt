@@ -87,7 +87,7 @@ class SBwindow(qtw.QMainWindow):
 
             self.setWindowTitle("Shopbot/Fluigent/Camera")
             self.setStyleSheet('background-color:white;')
-            self.resize(1600, 1800)                         # window size
+            self.resize(1500, 1800)                         # window size
 
 
             self.createGrid()                               # create boxes to go in main window
@@ -122,8 +122,8 @@ class SBwindow(qtw.QMainWindow):
         self.fullLayout.setRowStretch(1, 2)
         self.fullLayout.setRowStretch(2, 6)     
         self.fullLayout.setRowStretch(3, 6)
-        self.fullLayout.setColumnStretch(0, 1)
-        self.fullLayout.setColumnStretch(1, 1)
+        self.fullLayout.setColumnStretch(6, 1)
+        self.fullLayout.setColumnStretch(4, 1)
 
         self.central_widget.setLayout(self.fullLayout)
         
