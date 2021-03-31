@@ -181,3 +181,17 @@ class connectBox(qtw.QGroupBox):
         else:
             if log and self.diag>0:
                 logging.info(f'{self.bTitle}:{st}')
+                
+        
+    def openSettings(self) -> None:
+        '''Open the camera settings dialog window'''
+        self.settingsDialog.show()
+        self.settingsDialog.raise_()
+
+                
+                
+class QHLine(qtw.QFrame):
+    def __init__(self):
+        super(QHLine, self).__init__()
+        self.setFrameShape(qtw.QFrame.HLine)
+        self.setFrameShadow(qtw.QFrame.Sunken)

@@ -484,8 +484,8 @@ class camera:
             now = datetime.datetime.now()
             elapsed = (now-self.lastCollision).total_seconds()
             self.lastCollision = now
-            if elapsed<10:
-                # reset the count and don't report if it's been at least 10 seconds since the last collision
+            if elapsed<1:
+                # if the last collision happened recently, note how many collisions there have been in a row
                 self.collisionCount+=1
                 if self.collisionCount % 50 == 0:
                     # if we've had 50 collisions in a row in quick succession, report an error
@@ -494,6 +494,7 @@ class camera:
                 else:
                     raise Exception('Do not log this message')
             else:
+                # reset the count and don't report if it's been at least 1 second since the last collision
                 self.collisionCount = 1
                 raise Exception('Do not log this message')
         else:
@@ -508,7 +509,6 @@ class camera:
         try:
             st = self.updateCollisions(st)
         except Exception as e:
-            print(e)
             return
         else:  
             self.guiBox.updateStatus(st, log)
@@ -953,6 +953,10 @@ class settingsDialog(QtGui.QDialog):
             self.fpsBox.setText(str(self.camObj.fps))
             self.fpsStatus()
 
+            
+            
+###################################################################################################
+
 class cameraBox(connectBox):
     '''widget that holds camera objects and displays buttons and preview frames'''
     
@@ -1040,11 +1044,12 @@ class cameraBox(connectBox):
                 
         self.camButts = qtw.QToolBar()
         self.camButts.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
-        self.camButts.addWidget(self.camInclude)
-        self.camButts.addWidget(self.camPrev)
-        self.camButts.addWidget(self.camRec)
-        self.camButts.addWidget(self.camPic)
-        self.camButts.addWidget(self.settings)
+        for b in [self.camPrev, self.camRec, self.camPic, self.settings]:
+            self.camButts.addWidget(b)
+#         self.camButts.addWidget(self.camPrev)
+#         self.camButts.addWidget(self.camRec)
+#         self.camButts.addWidget(self.camPic)
+#         self.camButts.addWidget(self.settings)
         self.camButts.setStyleSheet("QToolBar{spacing:5px;}");
         
         self.layout.addWidget(self.camButts)
@@ -1130,12 +1135,12 @@ class cameraBox(connectBox):
             self.camInclude.setStyleSheet(self.clickedSheet())
             self.camInclude.setText('Autosave is on')
             self.camInclude.setIcon(QtGui.QIcon('icons/save.png'))
-            self.camInclude.setToolTip('Do not export videos with shopbot')
+            self.camInclude.setToolTip('Videos will be exported during print')
         else:
             self.camInclude.setStyleSheet(self.unclickedSheet())
             self.camInclude.setText('Autosave is off')
             self.camInclude.setIcon(QtGui.QIcon('icons/nosave.png'))
-            self.camInclude.setToolTip('Export videos with shopbot')
+            self.camInclude.setToolTip('Videos will not be exported during print')
         
     def setPrevButtStart(self) -> None:
         '''Update preview button appearance to not previewing status'''

@@ -22,6 +22,58 @@ __maintainer__ = "Leanne Friedrich"
 __email__ = "Leanne.Friedrich@nist.gov"
 __status__ = "Development"
 
+
+
+      
+class settingsDialog(QtGui.QDialog):
+    '''This opens a window that holds settings about logging for cameras.'''
+    
+    
+    def __init__(self, parent:connectBox):
+        '''parent is the connectBox that this settings dialog belongs to. 
+            bTitle is the box title, e.g. webcam 2. 
+            camObj is the camera object that holds functions and info for a specific camera.'''
+        
+        super().__init__(parent)  
+        self.parent = parent
+        self.layout = qtw.QVBoxLayout()
+        
+        self.diagRow = qtw.QVBoxLayout()
+        self.diagLabel = qtw.QLabel('When the print is done:')
+        self.diag1 = qtw.QRadioButton('Automatically start the next file')
+        self.diag2 = qtw.QRadioButton('Wait for the user to press play')
+        if self.parent.autoPlay:
+            self.diag1.setChecked(True)
+        else:
+            self.diag2.setChecked(True)
+        self.diaggroup = qtw.QButtonGroup()
+        self.diaggroup.addButton(self.diag1, 0)
+        self.diaggroup.addButton(self.diag2, 1)
+        self.diaggroup.buttonClicked.connect(self.changeDiag)
+        self.diagRow.addWidget(self.diagLabel)
+        self.diagRow.addWidget(self.diag1)
+        self.diagRow.addWidget(self.diag2)
+        self.layout.addLayout(self.diagRow)
+
+    
+        self.setLayout(self.layout)
+        self.setWindowTitle('Shopbot settings')
+        
+    def changeDiag(self, diagButton):
+        bid = self.diaggroup.id(diagButton) 
+        if bid==0:
+            self.parent.autoPlay = True
+            self.parent.updateStatus('Turned on autoplay', True)
+        else:
+            self.parent.autoPlay = False
+            self.parent.updateStatus('Turned off autoplay', True)
+           
+            
+            
+###########################################
+
+
+
 class sbBox(connectBox):
     '''Holds shopbot functions and GUI items'''
     
@@ -40,6 +92,9 @@ class sbBox(connectBox):
         self.prevFlag = 0
         self.currentFlag = 0
         self.sbpName='No file selected'
+        self.autoPlay = False
+        self.settingsDialog = settingsDialog(self)
+        
         try:
             self.sb3File = findSb3()
             self.connectKeys()
@@ -64,19 +119,46 @@ class sbBox(connectBox):
             
         self.layout = qtw.QVBoxLayout()
         
-        self.createStatus(1200)
-
-        self.loadButt = qtw.QPushButton('Load file(s)')
+        
+        self.runButt = qtw.QPushButton()
+        self.runButt.setFixedSize(50, 50)
+        self.runButt.setEnabled(False)
+        self.runButt.setStyleSheet('border-radius:10px; padding:5px;')
+        self.updateRunButt()
+        
+        self.status = qtw.QLabel('Waiting for file ...')
+        self.status.setFixedSize(675, 50)
+        self.status.setWordWrap(True)
+        
+        self.settings = qtw.QToolButton()
+        self.settings.setIcon(QtGui.QIcon('icons/settings.png'))
+        self.settings.clicked.connect(self.openSettings)
+        self.settings.setToolTip('Shopbot settings') 
+        self.settingsBar = qtw.QToolBar()
+        self.settingsBar.addWidget(self.settings)
+        
+        self.topBar = qtw.QHBoxLayout()
+        self.topBar.addWidget(self.runButt)
+        self.topBar.addWidget(self.status)
+        self.topBar.addWidget(self.settingsBar)
+        self.topBar.setSpacing(10)
+        
+        self.loadButt = qtw.QToolButton()
+        self.loadButt.setToolTip('Load shopbot file(s)')
         self.loadButt.setIcon(QtGui.QIcon('icons/open.png'))
         self.loadButt.clicked.connect(self.loadFile)
         
-        self.deleteButt = qtw.QPushButton('Remove file(s)')
+        self.deleteButt = qtw.QToolButton()
+        self.deleteButt.setToolTip('Remove selected file(s)')
         self.deleteButt.setIcon(QtGui.QIcon('icons/delete.png'))
         self.deleteButt.clicked.connect(self.removeFiles)
         
-        self.loadDelete = qtw.QVBoxLayout()
-        self.loadDelete.addWidget(self.loadButt)
-        self.loadDelete.addWidget(self.deleteButt)
+        self.sbButts = qtw.QToolBar()
+        self.sbButts.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
+        for b in [self.loadButt, self.deleteButt]:
+            self.sbButts.addWidget(b)
+        self.sbButts.setStyleSheet("QToolBar{spacing:5px;}");
+        self.sbButts.setOrientation(QtCore.Qt.Vertical)
 
         self.sbpNameList = qtw.QListWidget()
         self.sbpNameList.setFixedHeight(100)
@@ -86,40 +168,58 @@ class sbBox(connectBox):
         self.sbpNameList.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
         self.sbpNameList.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
         self.sbpNameList.setDragEnabled(True)
+        self.sbpNameList.setToolTip('Double click to select the next file to run.\nSingle click to select files to delete.\nClick and drag to reorder.')
        
-        
         self.fileButts = qtw.QHBoxLayout()
-        self.fileButts.addItem(self.loadDelete)
+        self.fileButts.addWidget(self.sbButts)
         self.fileButts.addWidget(self.sbpNameList)
         self.fileButts.setSpacing(10)
         
-        self.runButt = qtw.QPushButton('Go')
-        self.runButt.clicked.connect(self.runFile)
-        self.runButt.setEnabled(False)
-        self.runButt.setStyleSheet("background-color: #a3d9ba; height:50px")
-        
-        self.abortButt = qtw.QPushButton('Stop')
-        self.abortButt.clicked.connect(self.triggerEndOfPrint)
-        self.abortButt.setEnabled(False)
-        self.abortButt.setStyleSheet("background-color: #de8383; height:50px")
-        
-        self.buttLayout = qtw.QHBoxLayout()
-        self.buttLayout.addWidget(self.runButt)
-        self.buttLayout.addWidget(self.abortButt)
-        self.buttLayout.setSpacing(50)
-        
-        self.layout.addWidget(self.status)
+        self.layout.addItem(self.topBar)
         self.layout.addItem(self.fileButts)
-        self.layout.addItem(self.buttLayout)
+        self.layout.addItem(self.sbWin.fluBox.printButts)
  
         self.setLayout(self.layout)
+    
+    def updateRunButt(self) -> None:
+        '''Update the appearance of the run button'''
+        if self.runningSBP:
+            try:
+                self.runButt.clicked.disconnect()
+            except:
+                pass
+            self.runButt.clicked.connect(self.triggerEndOfPrint)
+            self.runButt.setStyleSheet("background-color: #de8383")
+            self.runButt.setToolTip('Stop print')
+            self.runButt.setIcon(QtGui.QIcon('icons/stop.png'))
+        else:
+            try:
+                self.runButt.clicked.disconnect()
+            except:
+                pass
+            self.runButt.clicked.connect(self.runFile)
+            self.runButt.setStyleSheet("background-color: #a3d9ba")
+            self.runButt.setToolTip('Start print')
+            self.runButt.setIcon(QtGui.QIcon('icons/play.png'))
+        return
+
 
     def sbpNumber(self) -> int:
         '''Determine the index of the current file. Return -1 if it's not in the list.'''
         for i in range(self.sbpNameList.count()):
-            if self.sbpNameList.item(i).text()==self.sbpName:
+            if self.sbpNameList.item(i).data(QtCore.Qt.UserRole):
                 return i
         return -1
+    
+    def updateItem(self, item:qtw.QListWidgetItem, active:bool) -> None:
+        '''Update the item status to active or inactive'''
+        if active:
+            item.setIcon(QtGui.QIcon('icons/play.png')) # show that this item is next
+            item.setData(QtCore.Qt.UserRole, True)
+        else:
+            item.setIcon(QtGui.QIcon()) # show that this item is not next
+            item.setData(QtCore.Qt.UserRole, False)
+        return
     
     
     def activate(self, item:Union[int, qtw.QListWidgetItem]) -> None:
@@ -139,10 +239,13 @@ class sbBox(connectBox):
         
         # remove other play icons
         for i in range(self.sbpNameList.count()):
-            self.sbpNameList.item(i).setIcon(QtGui.QIcon())
+            self.updateItem(self.sbpNameList.item(i), False)
+#             self.sbpNameList.item(i).setIcon(QtGui.QIcon())
             
         self.sbpName = item.text() # new run file name
-        item.setIcon(QtGui.QIcon('icons/play.png')) # show that this item is next
+        self.updateItem(item, True)
+#         item.setIcon(QtGui.QIcon('icons/play.png')) # show that this item is next
+#         item.setData(QtCore.Qt.UserRole, True)
         
             
     def activateNext(self) -> None:
@@ -159,12 +262,13 @@ class sbBox(connectBox):
     def addFile(self, fn) -> None:
         '''Add this file to the list of files, and remove the original placeholder if it's still there.'''
         item = qtw.QListWidgetItem(fn) # create an item
+        item.setData(QtCore.Qt.UserRole, False)
         self.sbpNameList.addItem(item) # add it to the list
         
         if self.sbpNameList.count()>1: # if there was already an item in the list
             item0 = self.sbpNameList.item(0) # take the first item
             if not os.path.exists(item0.text()): # if the original item isn't a real file
-                self.activate(self.sbpNumber()+1) # activate the next item in the list
+                self.activate(1) # activate the next item in the list
                 self.sbpNameList.takeItem(0) # remove bad name from the list                
         return
     
@@ -172,7 +276,8 @@ class sbBox(connectBox):
         '''Remove the selected file from the list'''
         for item in self.sbpNameList.selectedItems():
             logging.info(f'Removing file from queue: {item.text()}')
-            if item.text()==self.sbpName:
+#             if item.text()==self.sbpName:
+            if item.data(QtCore.Qt.UserRole):
                 # we're removing the current file. go to the next file.
                 self.activateNext()
             row = self.sbpNameList.row(item)
@@ -197,8 +302,10 @@ class sbBox(connectBox):
                 logging.error(f'{sbpn} does not exist')
             else:
                 self.runButt.setEnabled(True)
-                logging.debug(f'Adding file to queue: {sbpn}')
-                self.addFile(sbpn)        
+                self.updateRunButt()
+                self.addFile(sbpn)
+                logging.debug(f'Added file to queue: {sbpn}')
+                self.updateStatus('Ready ... ', False)
             
     ########
     # communicating with the shopbot
@@ -250,7 +357,8 @@ class sbBox(connectBox):
             self.updateStatus('SBP file does not exist: ' + self.sbpName, True)
             return
         
-        self.abortButt.setEnabled(True)
+#         self.abortButt.setEnabled(True)
+        self.updateRunButt()
         
         ''' allowEnd is a failsafe measure because when the shopbot starts running a file that changes output flags, it asks the user to allow spindle movement to start. While it is waiting for the user to hit ok, only flag 4 would be up, giving a flag value of 8. If critFlag=8 (i.e. we want to stop running after the first extrusion step), this means the GUI will think the file is done before it even starts. We create an extra trigger to say that if we're extruding, we have to wait for extrusion to start before we can let the tracking stop'''
         self.critFlag = self.getCritFlag()
@@ -292,7 +400,7 @@ class sbBox(connectBox):
         '''Loop this while we're waiting for the extrude command. Checks the shopbot flags and triggers the watch for pressure triggers if the test has started'''
         sbFlag = self.getSBFlag()
         cf = 8 + 2**(self.channelsTriggered[0]) # the critical flag at which flow starts
-        self.updateStatus(f'Waiting to start file, Shopbot output flag = {sbflag}, start at {cf}', False)
+        self.updateStatus(f'Waiting to start file, Shopbot output flag = {sbFlag}, start at {cf}', False)
         if sbFlag==cf:
             self.triggerWatch()
             
@@ -378,17 +486,21 @@ class sbBox(connectBox):
         '''stop watching for changes in pressure, stop recording  '''
         if self.runningSBP:
             for camBox in self.sbWin.camBoxes:
-                if camBox.camInclude.checkState() and camBox.camObj.recording:
+                if camBox.camInclude.isChecked() and camBox.camObj.recording:
                     camBox.cameraRec()
             try:
                 self.timer.stop()
             except:
                 pass
             self.sbWin.fluBox.resetAllChannels(-1)
-        self.runningSBP = False # we're no longer running a sbp file
-        self.abortButt.setEnabled(False)
-        self.updateStatus('Ready', False)
         self.activateNext() # activate the next sbp file in the list
+        if self.autoPlay and self.sbpNumber()>0: # if we're in autoplay and we're not at the beginning of the list, play the next file
+            self.updateStatus('Autoplay is on: Running next file.', True)
+            self.runFile()
+        else:
+            self.runningSBP = False # we're no longer running a sbp file
+            self.updateRunButt()
+            self.updateStatus('Ready', False)
 
     #-----------------------------------------
     
@@ -400,6 +512,5 @@ class sbBox(connectBox):
         except:
             pass
         else:
-            logging.info('Shopbot timer stopped')#!/usr/bin/env python
-'''Shopbot GUI file handling functions. Refers to top box in GUI.'''
+            logging.info('Shopbot timer stopped')
 

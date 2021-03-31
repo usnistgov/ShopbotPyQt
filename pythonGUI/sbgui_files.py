@@ -10,6 +10,7 @@ from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
 
 from config import cfg
+from sbgui_general import fileDialog
 
 __author__ = "Leanne Friedrich"
 __copyright__ = "This data is publicly available according to the NIST statements of copyright, fair use and licensing; see https://www.nist.gov/director/copyright-fair-use-and-licensing-statements-srd-data-and-software"
@@ -20,9 +21,10 @@ __maintainer__ = "Leanne Friedrich"
 __email__ = "Leanne.Friedrich@nist.gov"
 __status__ = "Development"
 
-INITSAVEFOLDER = cfg.vid
+INITSAVEFOLDER = os.path.abspath(cfg.vid)
 if not os.path.exists(INITSAVEFOLDER):
     INITSAVEFOLDER = r'C:\\'
+
 
 
 ###############################################################
@@ -36,25 +38,57 @@ class genBox(qtw.QGroupBox):
     def __init__(self, sbWin:qtw.QMainWindow):
         super(genBox, self).__init__()
         self.sbWin = sbWin
-        self.layout = qtw.QGridLayout()        
+        self.layout = qtw.QVBoxLayout()  
+        self.setTitle('Export settings')
+        
+        self.saveButtBar = qtw.QToolBar()
+        iconw = float(self.saveButtBar.iconSize().width())
+        self.saveButtBar.setFixedWidth(iconw+4)
+        
+        
+#         self.saveLabel = qtw.QLabel('Export to')
+#         self.saveLabel.setFixedSize(100, iconw)
+            
+        self.saveButt = qtw.QToolButton()
+        self.saveButt.setToolTip('Set video folder')
+        self.saveButt.setIcon(QtGui.QIcon('icons/open.png'))
+        self.saveButt.clicked.connect(self.setSaveFolder)
+        self.saveButtBar.addWidget(self.saveButt)
+        
+        
+        self.saveFolder = INITSAVEFOLDER
+        self.saveFolderLabel = qtw.QLabel(self.saveFolder)
+        self.saveFolderLabel.setFixedHeight(iconw)
+        
+        self.saveFolderLink = qtw.QToolButton()
+        self.saveFolderLink.setToolTip('Open video folder')
+        self.saveFolderLink.setIcon(QtGui.QIcon('icons/link.png'))
+        self.saveFolderLink.clicked.connect(self.openSaveFolder)
+        self.saveLinkBar = qtw.QToolBar()
+        self.saveLinkBar.setFixedWidth(iconw+4)
+        self.saveLinkBar.addWidget(self.saveFolderLink)
+        
+        self.folderRow = qtw.QHBoxLayout()
+#         self.folderRow.addWidget(self.saveLabel)
+        self.folderRow.addWidget(self.saveButtBar)
+        self.folderRow.addWidget(self.saveFolderLabel)
+        self.folderRow.addWidget(self.saveLinkBar)
 
         self.appendName = qtw.QLineEdit()
         self.appendName.setText('')
+        self.appendName.setFixedHeight(iconw)
+        self.appendName.setToolTip('This gets added to the file names')
         
-        self.appendLabel = qtw.QLabel('Append to output file names:')
-        self.appendLabel.setBuddy(self.appendName)
+        appendForm = qtw.QFormLayout()
+        appendForm.addRow('Export to', self.folderRow)
+        appendForm.addRow('Sample name', self.appendName)
+        appendForm.setSpacing(5)
         
-        self.saveButt = qtw.QPushButton('Set video folder')
-        self.saveButt.setIcon(QtGui.QIcon('icons/open.png'))
-        self.saveButt.clicked.connect(self.setSaveFolder)
-        
-        self.saveFolder = INITSAVEFOLDER
-        self.saveFolderLabel = qtw.QLabel('Export to ' + self.saveFolder)
-        
-        self.layout.addWidget(self.saveButt, 1, 0)
-        self.layout.addWidget(self.saveFolderLabel, 1, 1)
-        self.layout.addWidget(self.appendLabel, 2, 0)
-        self.layout.addWidget(self.appendName, 2, 1)
+        for camBox in self.sbWin.camBoxes:
+            appendForm.addRow(qtw.QLabel(camBox.camObj.cameraName), camBox.camInclude)
+            
+        self.layout.addItem(appendForm)
+        self.layout.setSpacing(5)
        
         self.setLayout(self.layout)
     
@@ -72,7 +106,7 @@ class genBox(qtw.QGroupBox):
                 self.saveFolder = formatExplorer(sf)
                 
                 logging.info('Changed save folder to %s' % self.saveFolder)
-                self.saveFolderLabel.setText('Export to ' + self.saveFolder)
+                self.saveFolderLabel.setText(self.saveFolder)
             
     def openSaveFolder(self) -> None:
         '''Open the save folder in windows explorer'''

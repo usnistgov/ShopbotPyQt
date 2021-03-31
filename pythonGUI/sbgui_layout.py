@@ -87,7 +87,7 @@ class SBwindow(qtw.QMainWindow):
 
             self.setWindowTitle("Shopbot/Fluigent/Camera")
             self.setStyleSheet('background-color:white;')
-            self.resize(1500, 1800)                         # window size
+            self.resize(1500, 1600)                         # window size
 
 
             self.createGrid()                               # create boxes to go in main window
@@ -101,34 +101,37 @@ class SBwindow(qtw.QMainWindow):
         
     def createGrid(self):
         '''Create boxes that go inside of window'''
-        self.genBox = sbgui_files.genBox(self)           # general file ops
-        self.sbBox = sbgui_shopbot.sbBox(self)             # shopbot box
+
         self.basBox = sbgui_cameras.cameraBox(0, self)     # basler camera box
         self.nozBox = sbgui_cameras.cameraBox(1, self)     # nozzle webcam box
         self.web2Box = sbgui_cameras.cameraBox(2, self)     # webcam 2 box
         self.camBoxes = [self.basBox, self.nozBox, self.web2Box]
         self.fluBox = sbgui_fluigent.fluBox(self)           # fluigent box
+        
+        self.genBox = sbgui_files.genBox(self)           # general file ops
+        self.sbBox = sbgui_shopbot.sbBox(self)             # shopbot box
               
         self.fullLayout = qtw.QGridLayout()
-        self.fullLayout.addWidget(self.genBox, 0, 0, 1, 2)  # row 0, col 0, 1 row deep, 2 cols wide
-        self.fullLayout.addWidget(self.sbBox, 1, 0, 1, 2)   # row 1, col 0, 1 row deep, 2 cols wide
+        self.fullLayout.addWidget(self.genBox, 0, 1)  # row 0, col 1
+        self.fullLayout.addWidget(self.sbBox, 0, 0)  
         self.fullLayout.addWidget(self.basBox, 2, 0)
         self.fullLayout.addWidget(self.nozBox, 2, 1)
         self.fullLayout.addWidget(self.fluBox, 3, 0)
         self.fullLayout.addWidget(self.web2Box, 3, 1)
         
         # make the camera rows big so the whole window doesn't resize dramatically when we turn on previews
-        self.fullLayout.setRowStretch(0, 1)
-        self.fullLayout.setRowStretch(1, 2)
-        self.fullLayout.setRowStretch(2, 6)     
-        self.fullLayout.setRowStretch(3, 6)
-        self.fullLayout.setColumnStretch(6, 1)
-        self.fullLayout.setColumnStretch(4, 1)
+#         self.fullLayout.setRowStretch(0, 1)
+#         self.fullLayout.setRowStretch(1, 2)
+#         self.fullLayout.setRowStretch(2, 6)     
+#         self.fullLayout.setRowStretch(3, 6)
+#         self.fullLayout.setColumnStretch(6, 1)
+#         self.fullLayout.setColumnStretch(4, 1)
 
         self.central_widget.setLayout(self.fullLayout)
         
                 
-    def setupLog(self):        
+    def setupLog(self):  
+        '''Create the log dialog.'''
         self.logDialog = logDialog(self)
         self.logButt = qtw.QAction('Open log', self)
         self.logButt.triggered.connect(self.openLog)
@@ -141,9 +144,9 @@ class SBwindow(qtw.QMainWindow):
         self.setupLog()                  # create a log window, not open yet
         menubar.addAction(self.logButt)  # add button to open log window
         
-        self.openButt = qtw.QAction('Open video folder')
-        self.openButt.triggered.connect(self.genBox.openSaveFolder)
-        menubar.addAction(self.openButt)  # add a button to open the folder that videos are saved to in Windows explorer
+#         self.openButt = qtw.QAction('Open video folder')
+#         self.openButt.triggered.connect(self.genBox.openSaveFolder)
+#         menubar.addAction(self.openButt)  # add a button to open the folder that videos are saved to in Windows explorer
     
     
     def closeEvent(self, event):

@@ -40,75 +40,75 @@ class fluChannel:
         self.fluBox = fluBox
         
         columnw = fluBox.columnw
-        rowh = fluBox.rowh
         
         self.label = qtw.QLabel('Channel '+str(chanNum+1))
-        self.label.setFixedSize(1.5*columnw, rowh)
+        self.label.setFixedWidth(1.5*columnw)
+        self.label2 = qtw.QLabel('Channel '+str(chanNum+1))
+        self.label2.setFixedWidth(1.5*columnw)
               
         self.readLabel = qtw.QLabel('0')
-        self.readLabel.setFixedSize(1.5*columnw, rowh)
+        self.readLabel.setFixedWidth(1.5*columnw)
+        self.readLabel.setToolTip('Current pressure')
         
         # setBox is a one line input box that lets the user turn the pressure on to setBox
         self.setBox = qtw.QLineEdit()
-        self.setBox.setFixedSize(columnw, rowh)
+        self.setBox.setFixedWidth(columnw)
         self.setBox.setText('0')
-        self.setBox.selectionChanged.connect(self.setSetPressureFocus)
+#         self.setBox.selectionChanged.connect(self.setSetPressureFocus)
         self.setBox.returnPressed.connect(self.setPressure)
+        self.setBox.setToolTip('Set the pressure. Press [enter] or click Go to set the pressure.')
         objValidator = QtGui.QIntValidator()
         objValidator.setRange(0, 7000)
         self.setBox.setValidator(objValidator)
         self.setButton = qtw.QPushButton('Go')
-        self.setButton.setFixedSize(0.5*columnw, rowh)
+        self.setButton.setFixedWidth(0.5*columnw)
         self.setButton.clicked.connect(self.setPressure)
+        self.setButton.setAutoDefault(False)
+        self.setButton.setToolTip('Set pressure to [Set pressure] mbar.')
+        
+
+        
+        # constTimeBox is an input box that lets the user turn on the pressure to constBox for constTimeBox seconds and then turn off
+        self.constTimeBox = qtw.QLineEdit()
+        self.constTimeBox.setFixedWidth(columnw)
+        self.constTimeBox.setText('0')
+        self.constTimeBox.setValidator(objValidator)
+        self.constTimeBox.returnPressed.connect(self.runConstTime)
+        self.constTimeBox.setToolTip('Set pressure to [Set Pressure] for [Fixed time] s, then turn off.\nPress [enter] or click Go to start.')
+#         self.constTimeBox.selectionChanged.connect(self.setSetTimeFocus)
+        self.constTimeButton = qtw.QPushButton('Go')
+        self.constTimeButton.setFixedWidth(0.5*columnw)
+        self.constTimeButton.clicked.connect(self.runConstTime)
+        self.constTimeButton.setAutoDefault(False)
+        self.constTimeButton.setToolTip('Set pressure to [Set Pressure] for [Fixed time] s, then turn off.')
+        
         
         # constBox is a one line input box that is the 
         # "on" pressure for running files for this channel
         self.constBox = qtw.QLineEdit()
-        self.constBox.setFixedSize(columnw, rowh)
+        self.constBox.setFixedWidth(columnw)
         self.constBox.setText('0')
         self.constBox.setValidator(objValidator)
-        self.constBox.selectionChanged.connect(self.setNoFocus)
-        
-        # constTimeBox is an input box that lets the user turn on the pressure to constBox for constTimeBox seconds and then turn off
-        self.constTimeBox = qtw.QLineEdit()
-        self.constTimeBox.setFixedSize(columnw, rowh)
-        self.constTimeBox.setText('0')
-        self.constTimeBox.setValidator(objValidator)
-        self.constTimeBox.selectionChanged.connect(self.setSetTimeFocus)
-        self.constTimeButton = qtw.QPushButton('Go')
-        self.constTimeButton.setFixedSize(0.5*columnw, rowh)
-        self.constTimeButton.clicked.connect(self.runConstTime)
+#         self.constBox.selectionChanged.connect(self.setNoFocus)
+        self.constBox.setToolTip('Pressure to use during printing')
         
         
-        for o in [self.label, self.readLabel, self.setButton, self.constTimeButton, self.setBox, self.constBox, self.constTimeBox]:
+        for o in [self.label, self.label2, self.readLabel, self.setButton, self.constTimeButton, self.setBox, self.constTimeBox, self.constBox]:
             o.setStyleSheet('color: '+color+';')  
             # this makes the label our input color
         
         # line up the label and input box horizontally
-#         self.fluBox.fluButts = qtw.QGridLayout()
         col1 = 1+2*self.chanNum
         self.fluBox.fluButts.addWidget(self.label, 0, col1+0, 1, 2)
         self.fluBox.fluButts.addWidget(self.readLabel, 1,col1+ 0, 1, 2)
-        self.fluBox.fluButts.addWidget(self.setBox, 2, col1+0)
-        self.fluBox.fluButts.addWidget(self.setButton, 2, col1+1)
-        self.fluBox.fluButts.addWidget(self.constBox, 3, col1+0)
-        self.fluBox.fluButts.addWidget(self.constTimeBox, 4, col1+0)
-        self.fluBox.fluButts.addWidget(self.constTimeButton, 4, col1+1)
+        self.fluBox.fluButts.addWidget(self.setBox, 3, col1+0)
+        self.fluBox.fluButts.addWidget(self.setButton, 4, col1+1)
+        self.fluBox.fluButts.addWidget(self.constTimeBox, 5, col1+0)
+        self.fluBox.fluButts.addWidget(self.constTimeButton, 5, col1+1)
         
-#         # 10 px between the label and input box
-#         self.layout.setSpacing(10)
-        
-    def setSetPressureFocus(self):
-        self.constTimeButton.setAutoDefault(False)
-        self.setButton.setAutoDefault(True)
-        
-    def setSetTimeFocus(self):
-        self.constTimeButton.setAutoDefault(True)
-        self.setButton.setAutoDefault(False)
-        
-    def setNoFocus(self):
-        self.constTimeButton.setAutoDefault(False)
-        self.setButton.setAutoDefault(False)
+        self.fluBox.printButts.addWidget(self.label2, 0, col1+0)
+        self.fluBox.printButts.addWidget(self.constBox, 1, col1+0)
+
     
     def setPressure(self) -> None:
         '''set the pressure for this channel to the pressure in the setBox'''
@@ -122,7 +122,7 @@ class fluChannel:
         runTime = int(self.constTimeBox.text())
         if runTime<0:
             return
-        runPressure = int(self.constBox.text())
+        runPressure = int(self.setBox.text())
         self.fluBox.updateStatus(f'Setting channel {self.chanNum+1} to {runPressure} mbar for {runTime} s', True)
         fgt.fgt_set_pressure(self.chanNum, runPressure)
         QtCore.QTimer.singleShot(runTime*1000, self.zeroChannel) 
@@ -222,7 +222,8 @@ class fluPlot:
         
         # create the plot
         self.graphWidget = pg.PlotWidget() 
-        self.graphWidget.setFixedSize(800, 390)
+#         self.graphWidget.setFixedSize(800, 390)
+        self.graphWidget.setFixedHeight(390)
         self.graphWidget.setYRange(-10, 7100, padding=0) 
             # set the range from 0 to 7000 mbar
         self.graphWidget.setBackground('w')         
@@ -319,21 +320,34 @@ class fluBox(connectBox):
         self.createStatus(600)              # 600 px wide status bar
         self.layout.addWidget(self.status)
         
-        self.fluButts = qtw.QGridLayout()   # fluigent button row
+        self.fluButts = qtw.QGridLayout()   # fluigent operations grid
+        self.fluButts.setSpacing(5)         # px between channel buttons
+        self.fluButts.setAlignment(QtCore.Qt.AlignLeft)
+        self.printButts = qtw.QGridLayout()
+        self.printButts.setSpacing(5)         # px between channel buttons
+        self.printButts.setAlignment(QtCore.Qt.AlignLeft)
         
-        self.columnw = 100
-        self.rowh = 25
-        
+        self.columnw = 100       
         
         channelLabel = qtw.QLabel(' ')
-        readLabel = qtw.QLabel('Pressure (mBar)')
+        readLabel = qtw.QLabel('Current pressure (mBar)')
         setPressureLabel = qtw.QLabel('Set pressure (mBar)')
-        runPressureLabel = qtw.QLabel('Pressure during run (mBar)')
-        runTimeLabel = qtw.QLabel('Run time (s)')
+        pressureGoLabel = qtw.QLabel('  ... indefinitely')
+        runTimeLabel = qtw.QLabel('  ... for fixed time (s)')
+        qhline = QHLine()
+        qhline2 = QHLine()
         
-        for i, l in enumerate([channelLabel, readLabel, setPressureLabel, runPressureLabel, runTimeLabel]):
-            l.setFixedSize(self.columnw*2.2, self.rowh)
-            self.fluButts.addWidget(l, i, 0)
+        for i, l in enumerate([channelLabel, readLabel, qhline, setPressureLabel, pressureGoLabel, runTimeLabel]):
+            if i==2 or i==6:
+                w = 1+2*self.numChans
+            else:
+                w=1
+                l.setFixedWidth(self.columnw*2.2)
+            self.fluButts.addWidget(l, i, 0, 1, w)
+            
+        runPressureLabel = qtw.QLabel('Pressure during print (mBar)')
+        runPressureLabel.setFixedWidth(self.columnw*3)
+        self.printButts.addWidget(runPressureLabel, 1,0)
         
         self.pcolors = ['#3f8dd1', '#b0401e', '#3e8a5b', '#b8a665'][0:self.numChans]  # preset channel colors
         
@@ -342,8 +356,7 @@ class fluBox(connectBox):
             pc = fluChannel(i, self.pcolors[i], self)  # channel buttons are added to the layout during initialization
             self.pchannels.append(pc)
 
-        self.fluButts.setSpacing(5)         # px between channel buttons
-        self.fluButts.setAlignment(QtCore.Qt.AlignLeft)
+
         self.layout.addItem(self.fluButts)   # put the buttons in the layout
     
         self.fluPlot = fluPlot(self.pcolors, self)      # create plot
