@@ -135,10 +135,10 @@ The files included in this publication use the following hierarchy:
 
 
 Run this using 
-	# run sbgui.py 
+	` run sbgui.py `
 	in the Jupyter command line 
 or 
-	# python3 sbgui.py 
+	` python3 sbgui.py `
 	in the anaconda command line
 
 
