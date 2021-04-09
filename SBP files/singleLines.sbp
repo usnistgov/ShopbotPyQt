@@ -54,6 +54,4 @@ MZ, &margin - &slideW + 2.5*&spacing
 MY, &margin + &slideH/3 + 8.5*&spacing
 SO, 1, 0
 SO, 4, 0
-JZ, 10.00
-JY, 150.00
-JX, 80.00
+MZ, 10

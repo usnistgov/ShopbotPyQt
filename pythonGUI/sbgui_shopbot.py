@@ -10,6 +10,8 @@ import subprocess
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
 
+import Fluigent.SDK as fgt
+
 from config import cfg
 from sbgui_general import *
 

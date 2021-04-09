@@ -8,216 +8,267 @@ VD , , 1
 VU, 157.480315, 157.480315, -157.480315
 MS, 5
 JS, 20
+SO, 4, 1
 MY, 1.0*&margin + 0.333333333333333*&slideH + 6.25*&spacing
 MZ, -24.00
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, -22.00
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, -20.00
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, -18.00
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, -16.00
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, -14.00
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, -12.00
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, -10.00
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, -8.00
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, -6.00
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
-SO, 3, 0
-MZ, -4.00
-SO, 3, 1
-PAUSE 5
-SO, 3, 0
-MZ, -2.00
-SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, -0.5*&slideW
-MY, &margin + &slideH/3
+MY, &margin + &slideH/3 + 3.0*&spacing
+MZ, -20.00
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
-MY, &margin + &slideH/3 + &spacing
+MZ, -18.00
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
+SO, 3, 0
+MZ, -16.00
+PAUSE 1.0
+SO, 3, 1
+PAUSE 1.0
+SO, 3, 0
+MZ, -14.00
+PAUSE 1.0
+SO, 3, 1
+PAUSE 1.0
+SO, 3, 0
+MZ, -12.00
+PAUSE 1.0
+SO, 3, 1
+PAUSE 1.0
 SO, 3, 0
 MY, &margin + &slideH/3 + 2*&spacing
+MZ, -20.00
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
-MY, &margin + &slideH/3 + 3.0*&spacing
+MZ, -18.00
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
+SO, 3, 0
+MZ, -16.00
+PAUSE 1.0
+SO, 3, 1
+PAUSE 1.0
+SO, 3, 0
+MZ, -14.00
+PAUSE 1.0
+SO, 3, 1
+PAUSE 1.0
+SO, 3, 0
+MZ, -12.00
+PAUSE 1.0
+SO, 3, 1
+PAUSE 1.0
+SO, 3, 0
+MY, &margin + &slideH/3 + &spacing
+MZ, -20.00
+PAUSE 1.0
+SO, 3, 1
+PAUSE 1.0
+SO, 3, 0
+MZ, -18.00
+PAUSE 1.0
+SO, 3, 1
+PAUSE 1.0
+SO, 3, 0
+MZ, -16.00
+PAUSE 1.0
+SO, 3, 1
+PAUSE 1.0
+SO, 3, 0
+MZ, -14.00
+PAUSE 1.0
+SO, 3, 1
+PAUSE 1.0
+SO, 3, 0
+MZ, -12.00
+PAUSE 1.0
+SO, 3, 1
+PAUSE 1.0
+SO, 3, 0
+MY, &margin + &slideH/3
+MZ, -20.00
+PAUSE 1.0
+SO, 3, 1
+PAUSE 1.0
+SO, 3, 0
+MZ, -18.00
+PAUSE 1.0
+SO, 3, 1
+PAUSE 1.0
+SO, 3, 0
+MZ, -16.00
+PAUSE 1.0
+SO, 3, 1
+PAUSE 1.0
+SO, 3, 0
+MZ, -14.00
+PAUSE 1.0
+SO, 3, 1
+PAUSE 1.0
+SO, 3, 0
+MZ, -12.00
+PAUSE 1.0
+SO, 3, 1
+PAUSE 1.0
 SO, 3, 0
 MY, &margin + 4.0*&spacing
 MZ, -&slideW/2
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, 2.0 - &slideW/2
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, 4.0 - &slideW/2
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, 6.0 - &slideW/2
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
-SO, 3, 0
-MZ, 8.0 - &slideW/2
-SO, 3, 1
-PAUSE 5
-SO, 3, 0
-MZ, 10.0 - &slideW/2
-SO, 3, 1
-PAUSE 5
-SO, 3, 0
-MZ, 12.0 - &slideW/2
-SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MY, &margin + 3.0*&spacing
 MZ, -&slideW/2
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, 2.0 - &slideW/2
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, 4.0 - &slideW/2
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, 6.0 - &slideW/2
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
-SO, 3, 0
-MZ, 8.0 - &slideW/2
-SO, 3, 1
-PAUSE 5
-SO, 3, 0
-MZ, 10.0 - &slideW/2
-SO, 3, 1
-PAUSE 5
-SO, 3, 0
-MZ, 12.0 - &slideW/2
-SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MY, &margin + 2*&spacing
 MZ, -&slideW/2
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, 2.0 - &slideW/2
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, 4.0 - &slideW/2
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, 6.0 - &slideW/2
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
-SO, 3, 0
-MZ, 8.0 - &slideW/2
-SO, 3, 1
-PAUSE 5
-SO, 3, 0
-MZ, 10.0 - &slideW/2
-SO, 3, 1
-PAUSE 5
-SO, 3, 0
-MZ, 12.0 - &slideW/2
-SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MY, &margin + &spacing
 MZ, -&slideW/2
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, 2.0 - &slideW/2
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, 4.0 - &slideW/2
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, 6.0 - &slideW/2
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
-SO, 3, 0
-MZ, 8.0 - &slideW/2
-SO, 3, 1
-PAUSE 5
-SO, 3, 0
-MZ, 10.0 - &slideW/2
-SO, 3, 1
-PAUSE 5
-SO, 3, 0
-MZ, 12.0 - &slideW/2
-SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MY, &margin
 MZ, -&slideW/2
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, 2.0 - &slideW/2
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, 4.0 - &slideW/2
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 MZ, 6.0 - &slideW/2
+PAUSE 1.0
 SO, 3, 1
-PAUSE 5
-SO, 3, 0
-MZ, 8.0 - &slideW/2
-SO, 3, 1
-PAUSE 5
-SO, 3, 0
-MZ, 10.0 - &slideW/2
-SO, 3, 1
-PAUSE 5
-SO, 3, 0
-MZ, 12.0 - &slideW/2
-SO, 3, 1
-PAUSE 5
+PAUSE 1.0
 SO, 3, 0
 JZ, 10.00
 JY, 150.00

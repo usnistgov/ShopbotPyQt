@@ -337,6 +337,9 @@ class camera:
         t1 = self.sbWin.genBox.appendName.text()
         if len(t1)>0:
             filename = filename + '_'+t1
+            folder = os.path.join(folder, t1)
+            if not os.path.exists(folder):
+                os.makedirs(folder, exist_ok=True)
         filename = filename + '_'+time.strftime('%y%m%d_%H%M%S')+ext
         fullfn = os.path.join(folder, filename)
         return fullfn
