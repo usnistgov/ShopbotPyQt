@@ -183,10 +183,10 @@ class connectBox(qtw.QGroupBox):
                 logging.info(f'{self.bTitle}:{st}')
                 
         
-    def openSettings(self) -> None:
-        '''Open the camera settings dialog window'''
-        self.settingsDialog.show()
-        self.settingsDialog.raise_()
+#     def openSettings(self) -> None:
+#         '''Open the camera settings dialog window'''
+#         self.settingsDialog.show()
+#         self.settingsDialog.raise_()
 
                 
                 

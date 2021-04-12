@@ -25,7 +25,7 @@ __maintainer__ = "Leanne Friedrich"
 __email__ = "Leanne.Friedrich@nist.gov"
 __status__ = "Development"
    
-
+#----------------------------------------------------------------------
 
 class fluChannel:
     '''this class describes a single channel on the Fluigent
@@ -251,10 +251,14 @@ class fluPlot:
     def update(self) -> None:
         '''read the pressure and update the plot display'''
         try:
+            # add pressures to table if we're saving
+            if self.fluBox.save:
+                self.fluBox.saveTable.append([self.pw.time]+self.pw.pressures)
             for i in range(self.numChans):
+                # update the plot
                 self.datalines[i].setData(self.pw.time, self.pw.pressures[i])
                 # update the pressure reading
-                self.fluBox.updateReading(i, str(self.pw.pressures[i][-1])) 
+                self.fluBox.updateReading(i, str(self.pw.pressures[i][-1]))  
         except:
             pass
     
@@ -271,8 +275,29 @@ class fluPlot:
             logging.info('Fluigent timer deleted')
     
     
-############################## 
+#--------------------------------------
 
+class fluSettingsBox(qtw.QWidget):
+    '''This opens a window that holds settings about the Fluigent.'''
+    
+    
+    def __init__(self, parent:connectBox):
+        '''parent is the connectBox that this settings dialog belongs to.'''
+        
+        super().__init__(parent)  
+        self.parent = parent
+        
+        layout = QtGui.QVBoxLayout()
+        
+        self.savePressureCheck = qtw.QCheckBox('Save pressure graph during print')
+        self.savePressureCheck.setChecked(False)
+        layout.addWidget(self.savePressureCheck)
+        
+        self.setLayout(layout)
+
+        
+        
+#--------------------------------------
 
 
 class fluBox(connectBox):
@@ -283,7 +308,6 @@ class fluBox(connectBox):
         '''sbWin is a pointer to the parent window'''
         
         super(fluBox, self).__init__()
-        
         # this box is a QGroupBox. we are going to create a layout to put in the box
         self.bTitle = 'Fluigent'    # box title
         self.setTitle(self.bTitle)
@@ -291,7 +315,8 @@ class fluBox(connectBox):
         self.pchannels = []         # list of pressure channels as fluChannel objects
         self.connected = False      # connected to the fluigent
         self.connect() 
-        
+        self.save = False
+        self.fileName = ''
     
     
     def connect(self) -> None: 
@@ -313,6 +338,8 @@ class fluBox(connectBox):
     
     def successLayout(self) -> None:
         '''display if we successfully connected to the fluigent'''
+        
+        self.settingsBox = fluSettingsBox(self)
         
         self.resetLayout()                  # erase the old layout
         self.layout = qtw.QVBoxLayout()     # whole fluigent layout
@@ -376,6 +403,43 @@ class fluBox(connectBox):
     def updateReading(self, channum:int, preading:int) -> None:
         '''updates the status box that tells us what pressure this channel is at'''
         self.pchannels[channum].readLabel.setText(preading)
+        
+        
+    #-----------------------------------------
+    
+    def getFileName(self) -> str:
+        try:
+            folder, filename = self.sbWin.newfile()
+        except NameError:
+            return
+        
+        filename = filename + ('_' if len(filename)>0 else '')+'Fluigent'
+        filename = filename + '_'+time.strftime('%y%m%d_%H%M%S')+'.csv'
+        fullfn = os.path.join(folder, filename)
+        self.fileName = fullfn
+    
+    def startRecording(self) -> None:
+        '''Start keeping track of pressure readings in a table to be saved to file'''
+        if self.settingsBox.savePressureChecked.isChecked():
+        
+            self.saveTable = []
+            self.save = True
+            self.getFileName() # determine the current file name
+        
+    def stopRecording(self) -> None:
+        '''Save the recorded pressure readings in a csv'''
+        
+        if self.settingsBox.savePressureChecked.isChecked():
+        
+            self.save = False
+
+            with open(self.fileName, mode='w') as c:
+                writer = csv.writer(c, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+
+                writer.writerow(['time (s)']+[f'Channel {i} pressure (mbar)' for i in range(self.numChans)]) # header
+
+                for row in self.saveTable:
+                    writer.writerow(row)
         
         
     #-----------------------------------------

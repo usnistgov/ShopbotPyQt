@@ -317,29 +317,34 @@ class camera:
     def getFilename(self, ext:str) -> str: 
         '''determine the file name for the file we're about to record. ext is the extension. Uses the timestamp for unique file names. The folder is determined by the saveFolder established in the top box of the GUI.'''
         
-        # determine the folder to save to
-        folder = self.sbWin.genBox.saveFolder
-        if not os.path.exists(folder):
-            # open a save dialog if the folder does not exist
-            self.sbWin.genBox.setSaveFolder()
-            folder = self.sbWin.saveFolderLabel.text()
-        if not os.path.exists(folder):
-            self.updateStatus('Invalid folder name. Image not saved.', True)
+#         # determine the folder to save to
+#         folder = self.sbWin.fileBox.saveFolder
+#         if not os.path.exists(folder):
+#             # open a save dialog if the folder does not exist
+#             self.sbWin.fileBox.setSaveFolder()
+#             folder = self.sbWin.saveFolderLabel.text()
+#         if not os.path.exists(folder):
+#             self.updateStatus('Invalid folder name. Image not saved.', True)
+#             return
+
+        try:
+            folder, filename = self.sbWin.newfile()
+        except NameError:
             return
         
         # determine if we should include the shopbot file name in the file
-        if self.sbWin.sbBox.runningSBP:
-            sbname = os.path.basename(self.sbWin.sbBox.sbpName)
-            filename = os.path.splitext(sbname)[0]+'_'
-        else:
-            filename = ""
-        filename = filename + self.cameraName
-        t1 = self.sbWin.genBox.appendName.text()
-        if len(t1)>0:
-            filename = filename + '_'+t1
-            folder = os.path.join(folder, t1)
-            if not os.path.exists(folder):
-                os.makedirs(folder, exist_ok=True)
+#         if self.sbWin.sbBox.runningSBP:
+#             sbname = os.path.basename(self.sbWin.sbBox.sbpName)
+#             filename = os.path.splitext(sbname)[0]+'_'
+#         else:
+#             filename = ""
+        filename = filename + ('_' if len(filename)>0 else '')+self.cameraName
+# #         t1 = self.sbWin.fileBox.appendName.text()
+#         if len(t1)>0:
+#             filename = filename + '_'+t1
+# #             folder = os.path.join(folder, t1)
+# #             if not os.path.exists(folder):
+# #                 os.makedirs(folder, exist_ok=True)
         filename = filename + '_'+time.strftime('%y%m%d_%H%M%S')+ext
         fullfn = os.path.join(folder, filename)
         return fullfn
@@ -822,7 +827,7 @@ class bascam(camera):
             
 ################################################
         
-class settingsDialog(QtGui.QDialog):
+class camSettingsBox(qtw.QWidget):
     '''This opens a window that holds settings about logging for cameras.'''
     
     
@@ -833,40 +838,35 @@ class settingsDialog(QtGui.QDialog):
         
         super().__init__(parent)  
         self.camObj = camObj
-        self.layout = qtw.QVBoxLayout()
+        
+        layout = qtw.QVBoxLayout()
+        
+        form = qtw.QFormLayout()
         
         self.diagRow = qtw.QHBoxLayout()
-        self.diagLabel = qtw.QLabel('Log')
         self.diag1 = qtw.QRadioButton('None')
         self.diag2 = qtw.QRadioButton('Just critical')
         self.diag2.setChecked(True)
         self.diag3 = qtw.QRadioButton('All frames')
-        self.diaggroup = qtw.QButtonGroup()
-        self.diaggroup.addButton(self.diag1, 0)
-        self.diaggroup.addButton(self.diag2, 1)
-        self.diaggroup.addButton(self.diag3, 2)
-        self.diaggroup.buttonClicked.connect(self.changeDiag)
-        self.diagRow.addWidget(self.diagLabel)
-        self.diagRow.addWidget(self.diag1)
-        self.diagRow.addWidget(self.diag2)
-        self.diagRow.addWidget(self.diag3)
-        self.layout.addLayout(self.diagRow)
-        
-        
+        self.diagGroup = qtw.QButtonGroup()
+        for i,b in enumerate([self.diag1, self.diag2, self.diag3]):
+            self.diagGroup.addButton(b, i)
+            self.diagRow.addWidget(b)
+        self.diagGroup.buttonClicked.connect(self.changeDiag)
+        form.addRow("Log", self.diagRow)
+              
         self.fpsBox = qtw.QLineEdit()
         self.fpsBox.setText(str(self.camObj.fps))
-        self.fpsLabel = qtw.QLabel('Frame rate (fps)')
-        self.fpsLabel.setBuddy(self.fpsBox)
-#         self.fpsBox.returnPressed.connect(self.updateFPS)
         self.fpsAutoButt = qtw.QPushButton('Auto')
         self.fpsAutoButt.clicked.connect(self.fpsAuto)
         self.fpsAutoButt.setAutoDefault(False)
+        fpsRow = qtw.QHBoxLayout()
+        fpsRow.addWidget(self.fpsBox)
+        fpsRow.addWidget(self.fpsAutoButt)
+        form.addRow('Frame rate (fps)', fpsRow)
         
         self.exposureBox = qtw.QLineEdit()
         self.exposureBox.setText(str(self.camObj.exposure))
-        self.exposureLabel = qtw.QLabel('Exposure (ms)')
-        self.exposureLabel.setBuddy(self.exposureBox)
-#         self.exposureBox.returnPressed.connect(self.updateExposure)
         self.exposureAutoButt = qtw.QPushButton('Auto')
         self.exposureAutoButt.clicked.connect(self.exposureAuto)
         self.exposureAutoButt.setAutoDefault(False)
@@ -877,34 +877,28 @@ class settingsDialog(QtGui.QDialog):
             self.exposureBox.setEnabled(False)
         else:
             self.enableExposureBox = True
-        
-        self.varGrid = qtw.QGridLayout()
-        self.varGrid.addWidget(self.fpsLabel, 0,0)
-        self.varGrid.addWidget(self.fpsBox, 0,1)
-        self.varGrid.addWidget(self.fpsAutoButt, 0,2)
-        self.varGrid.addWidget(self.exposureLabel, 1,0)
-        self.varGrid.addWidget(self.exposureBox, 1,1)
-        self.varGrid.addWidget(self.exposureAutoButt, 1,2)
-        
-        self.layout.addLayout(self.varGrid)
+        exposureRow = qtw.QHBoxLayout()
+        exposureRow.addWidget(self.exposureBox)
+        exposureRow.addWidget(self.exposureAutoButt)
+        form.addRow('Exposure (ms)', exposureRow)
+
+        layout.addLayout(form)
         
         self.goButt = qtw.QPushButton('Save')
         self.goButt.clicked.connect(self.updateVars)
         self.goButt.setFocus()
         self.goButt.setAutoDefault(True)
-        self.layout.addWidget(self.goButt)
+        layout.addWidget(self.goButt)
+        self.setLayout(layout)
         
 #         self.reset = qtw.QPushButton('Reset camera')
 #         self.reset.clicked.connect(parent.connect)
 #         self.layout.addWidget(self.reset)
-    
-        self.setLayout(self.layout)
-        self.setWindowTitle(bTitle + " settings")
 
         
     def changeDiag(self, diagbutton):
         '''Change the diagnostics status on the camera, so we print out the messages we want.'''
-        self.camObj.diag = self.diaggroup.id(diagbutton) 
+        self.camObj.diag = self.diagGroup.id(diagbutton) 
         
             
     def updateVars(self):
@@ -1011,6 +1005,8 @@ class cameraBox(connectBox):
     def successLayout(self) -> None:
         '''this is the layout if we successfully connected to the camera'''
         
+        self.settingsBox = camSettingsBox(self, self.bTitle, self.camObj)
+        
         self.resetLayout()
         self.layout = qtw.QVBoxLayout()
 
@@ -1037,17 +1033,17 @@ class cameraBox(connectBox):
         self.camPic.clicked.connect(self.cameraPic)
         self.camPic.setToolTip('Snapshot') 
         
-        self.settings = qtw.QToolButton()
-        self.settings.setIcon(QtGui.QIcon('icons/settings.png'))
-        self.settings.setStyleSheet(self.unclickedSheet())
-        self.settings.clicked.connect(self.openSettings)
-        self.settings.setToolTip(self.bTitle+' settings') 
+#         self.settings = qtw.QToolButton()
+#         self.settings.setIcon(QtGui.QIcon('icons/settings.png'))
+#         self.settings.setStyleSheet(self.unclickedSheet())
+#         self.settings.clicked.connect(self.openSettings)
+#         self.settings.setToolTip(self.bTitle+' settings') 
         
-        self.settingsDialog = settingsDialog(self, self.bTitle, self.camObj)
+        
                 
         self.camButts = qtw.QToolBar()
         self.camButts.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
-        for b in [self.camPrev, self.camRec, self.camPic, self.settings]:
+        for b in [self.camPrev, self.camRec, self.camPic]:
             self.camButts.addWidget(b)
 #         self.camButts.addWidget(self.camPrev)
 #         self.camButts.addWidget(self.camRec)
@@ -1171,10 +1167,10 @@ class cameraBox(connectBox):
         self.camRec.setIcon(QtGui.QIcon('icons/recordstop.png'))
         self.camRec.setToolTip('Stop recording') 
         
-    def openSettings(self) -> None:
-        '''Open the camera settings dialog window'''
-        self.settingsDialog.show()
-        self.settingsDialog.raise_()
+#     def openSettings(self) -> None:
+#         '''Open the camera settings dialog window'''
+#         self.settingsDialog.show()
+#         self.settingsDialog.raise_()
 
     #------------------------------------------------
     
@@ -1187,5 +1183,5 @@ class cameraBox(connectBox):
     def close(self) -> None:
         '''gets triggered when the window is closed. Disconnects GUI from camera.'''
         self.camObj.close()
-        self.settingsDialog.done()
+#         self.settingsDialog.done()
 

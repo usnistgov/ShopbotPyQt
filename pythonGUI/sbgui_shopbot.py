@@ -27,42 +27,38 @@ __status__ = "Development"
 
 
       
-class settingsDialog(QtGui.QDialog):
-    '''This opens a window that holds settings about logging for cameras.'''
+class sbSettingsBox(qtw.QWidget):
+    '''This opens a window that holds settings about logging for the shopbot.'''
     
     
     def __init__(self, parent:connectBox):
-        '''parent is the connectBox that this settings dialog belongs to. 
-            bTitle is the box title, e.g. webcam 2. 
-            camObj is the camera object that holds functions and info for a specific camera.'''
+        '''parent is the connectBox that this settings dialog belongs to. '''
         
         super().__init__(parent)  
         self.parent = parent
-        self.layout = qtw.QVBoxLayout()
         
-        self.diagRow = qtw.QVBoxLayout()
-        self.diagLabel = qtw.QLabel('When the print is done:')
-        self.diag1 = qtw.QRadioButton('Automatically start the next file')
-        self.diag2 = qtw.QRadioButton('Wait for the user to press play')
+        layout = qtw.QVBoxLayout()
+        
+        self.autoPlayRow = qtw.QVBoxLayout()
+        self.autoPlayLabel = qtw.QLabel('When the print is done:')
+        self.autoPlayRow.addWidget(self.autoPlayLabel)
+        self.autoPlay1 = qtw.QRadioButton('Automatically start the next file')
+        self.autoPlay2 = qtw.QRadioButton('Wait for the user to press play')
         if self.parent.autoPlay:
-            self.diag1.setChecked(True)
+            self.autoPlay1.setChecked(True)
         else:
-            self.diag2.setChecked(True)
-        self.diaggroup = qtw.QButtonGroup()
-        self.diaggroup.addButton(self.diag1, 0)
-        self.diaggroup.addButton(self.diag2, 1)
-        self.diaggroup.buttonClicked.connect(self.changeDiag)
-        self.diagRow.addWidget(self.diagLabel)
-        self.diagRow.addWidget(self.diag1)
-        self.diagRow.addWidget(self.diag2)
-        self.layout.addLayout(self.diagRow)
-
-    
-        self.setLayout(self.layout)
-        self.setWindowTitle('Shopbot settings')
+            self.autoPlay2.setChecked(True)
+        self.autoPlayGroup = qtw.QButtonGroup()
+        for i,b in enumerate([self.autoPlay1, self.autoPlay2]):
+            self.autoPlayGroup.addButton(b, i)
+            self.autoPlayRow.addWidget(b)
+        self.autoPlayGroup.buttonClicked.connect(self.changeautoPlay)
+        layout.addLayout(self.autoPlayRow)
+        self.setLayout(layout)
         
-    def changeDiag(self, diagButton):
-        bid = self.diaggroup.id(diagButton) 
+    def changeautoPlay(self, autoPlayButton):
+        '''Change autoPlay settings'''
+        bid = self.autoPlayGroup.id(autoPlayButton) 
         if bid==0:
             self.parent.autoPlay = True
             self.parent.updateStatus('Turned on autoplay', True)
@@ -87,15 +83,14 @@ class sbBox(connectBox):
     def __init__(self, sbWin:qtw.QMainWindow):
         '''sbWin is the parent window that all of the widgets are in'''
         super(sbBox, self).__init__()
-        self.btitle = 'Shopbot'
+        self.bTitle = 'Shopbot'
         self.sbWin = sbWin
         self.runningSBP = False
         self.setTitle('Shopbot')
         self.prevFlag = 0
         self.currentFlag = 0
         self.sbpName='No file selected'
-        self.autoPlay = False
-        self.settingsDialog = settingsDialog(self)
+        self.autoPlay = False        
         
         try:
             self.sb3File = findSb3()
@@ -118,6 +113,10 @@ class sbBox(connectBox):
 
     def successLayout(self) -> None:
         '''layout if we found the sb3 files and windows registry keys'''
+        
+        self.settingsBox = sbSettingsBox(self)
+        
+        self.resetLayout()
             
         self.layout = qtw.QVBoxLayout()
         
@@ -132,17 +131,17 @@ class sbBox(connectBox):
         self.status.setFixedSize(675, 50)
         self.status.setWordWrap(True)
         
-        self.settings = qtw.QToolButton()
-        self.settings.setIcon(QtGui.QIcon('icons/settings.png'))
-        self.settings.clicked.connect(self.openSettings)
-        self.settings.setToolTip('Shopbot settings') 
-        self.settingsBar = qtw.QToolBar()
-        self.settingsBar.addWidget(self.settings)
+#         self.settings = qtw.QToolButton()
+#         self.settings.setIcon(QtGui.QIcon('icons/settings.png'))
+#         self.settings.clicked.connect(self.openSettings)
+#         self.settings.setToolTip('Shopbot settings') 
+#         self.settingsBar = qtw.QToolBar()
+#         self.settingsBar.addWidget(self.settings)
         
         self.topBar = qtw.QHBoxLayout()
         self.topBar.addWidget(self.runButt)
         self.topBar.addWidget(self.status)
-        self.topBar.addWidget(self.settingsBar)
+#         self.topBar.addWidget(self.settingsBar)
         self.topBar.setSpacing(10)
         
         self.loadButt = qtw.QToolButton()
@@ -425,6 +424,8 @@ class sbBox(connectBox):
             for camBox in self.sbWin.camBoxes:
                 if camBox.camInclude.isChecked() and not camBox.camObj.recording:
                     camBox.cameraRec()
+                    
+        self.sbWin.fluBox.startRecording()
     
     ### wait for end
     
@@ -490,6 +491,7 @@ class sbBox(connectBox):
             for camBox in self.sbWin.camBoxes:
                 if camBox.camInclude.isChecked() and camBox.camObj.recording:
                     camBox.cameraRec()
+            self.sbWin.fluBox.stopRecording()
             try:
                 self.timer.stop()
             except:

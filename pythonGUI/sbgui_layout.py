@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 '''Shopbot GUI functions for setting up the GUI window'''
 
-from PyQt5 import QtGui
+from PyQt5 import QtGui, QtGui
 import PyQt5.QtWidgets as qtw
 import sys
 import ctypes
@@ -61,6 +61,82 @@ class logDialog(QtGui.QDialog):
         
         self.setWindowTitle("Shopbot/Fluigent/Camera log")
         self.resize(900, 400)                       # window is 900 px x 400 px
+        
+        
+######################## settings window
+
+class TabBar(qtw.QTabBar):
+    '''for vertical tabs. https://stackoverflow.com/questions/51404102/pyqt5-tabwidget-vertical-tab-horizontal-text-alignment-left'''
+    
+    def tabSizeHint(self, index):
+        s = qtw.QTabBar.tabSizeHint(self, index)
+        s.transpose()
+        return s
+
+    def paintEvent(self, event):
+        painter = qtw.QStylePainter(self)
+        opt = qtw.QStyleOptionTab()
+
+        for i in range(self.count()):
+            self.initStyleOption(opt, i)
+            painter.drawControl(qtw.QStyle.CE_TabBarTabShape, opt)
+            painter.save()
+
+            s = opt.rect.size()
+            s.transpose()
+            s.setHeight(s.height()+20)
+            r = QtCore.QRect(QtCore.QPoint(), s)
+            r.moveCenter(opt.rect.center())
+            opt.rect = r
+
+            c = self.tabRect(i).center()
+            painter.translate(c)
+            painter.rotate(90)
+            painter.translate(-c)
+            painter.drawControl(qtw.QStyle.CE_TabBarTabLabel, opt);
+            painter.restore()
+            
+        
+class ProxyStyle(qtw.QProxyStyle):
+    '''for vertical tabs. https://stackoverflow.com/questions/51404102/pyqt5-tabwidget-vertical-tab-horizontal-text-alignment-left'''
+    
+    def drawControl(self, element, opt, painter, widget):
+        if element == qtw.QStyle.CE_TabBarTabLabel:
+            ic = self.pixelMetric(qtw.QStyle.PM_TabBarIconSize)
+            r = QtCore.QRect(opt.rect)
+            w =  0 if opt.icon.isNull() else opt.rect.width() + self.pixelMetric(qtw.QStyle.PM_TabBarIconSize)
+            r.setHeight(opt.fontMetrics.width(opt.text) + w + 50) # needed to add 50 to not cut off words
+            r.moveBottom(opt.rect.bottom())
+            opt.rect = r
+        qtw.QProxyStyle.drawControl(self, element, opt, painter, widget)
+        
+        
+        
+class settingsDialog(QtGui.QDialog):
+    '''Creates a settings window'''
+    
+    def __init__(self, parent):
+        '''This is called by the parent, which is the main SBwindow'''
+        
+        super().__init__(parent)
+        self.parent = parent
+        
+        self.setStyle(ProxyStyle())
+        self.layout = qtw.QVBoxLayout()
+        
+        self.tabs = qtw.QTabWidget()
+                
+        self.tabs.setTabBar(TabBar(self))
+        self.tabs.setTabPosition(qtw.QTabWidget.West)
+        
+        for box in [parent.fileBox, parent.sbBox, parent.basBox, parent.nozBox, parent.web2Box, parent.fluBox]:
+            self.tabs.addTab(box.settingsBox, box.bTitle)
+        
+        self.layout.addWidget(self.tabs)
+        self.setLayout(self.layout)
+        
+        self.setWindowTitle('Settings')
+
 
         
 ####################### the whole window
@@ -73,7 +149,7 @@ class SBwindow(qtw.QMainWindow):
         
         # initialize all boxes to empty value so if we hit an error during setup and need to disconnect, we aren't trying to call empty variables
         
-        self.genBox = None
+        self.fileBox = None
         self.sbBox = None
         self.basBox = None
         self.nozBox = None
@@ -92,6 +168,7 @@ class SBwindow(qtw.QMainWindow):
 
             self.createGrid()                               # create boxes to go in main window
             self.createMenu()                               # create menu bar to go at top of window
+                # createMenu must go after createGrid, because it uses features created in createGrid
 
             logging.info('Window created')
         except Exception as e:
@@ -108,11 +185,11 @@ class SBwindow(qtw.QMainWindow):
         self.camBoxes = [self.basBox, self.nozBox, self.web2Box]
         self.fluBox = sbgui_fluigent.fluBox(self)           # fluigent box
         
-        self.genBox = sbgui_files.genBox(self)           # general file ops
+        self.fileBox = sbgui_files.fileBox(self)           # general file ops
         self.sbBox = sbgui_shopbot.sbBox(self)             # shopbot box
               
         self.fullLayout = qtw.QGridLayout()
-        self.fullLayout.addWidget(self.genBox, 0, 1)  # row 0, col 1
+        self.fullLayout.addWidget(self.fileBox, 0, 1)  # row 0, col 1
         self.fullLayout.addWidget(self.sbBox, 0, 0)  
         self.fullLayout.addWidget(self.basBox, 2, 0)
         self.fullLayout.addWidget(self.nozBox, 2, 1)
@@ -128,14 +205,46 @@ class SBwindow(qtw.QMainWindow):
 #         self.fullLayout.setColumnStretch(4, 1)
 
         self.central_widget.setLayout(self.fullLayout)
-        
+    
+    
+    #----------------
+    # log
                 
     def setupLog(self):  
         '''Create the log dialog.'''
         self.logDialog = logDialog(self)
         self.logButt = qtw.QAction('Open log', self)
+        self.logButt.setStatusTip('Open running log of status messages')
         self.logButt.triggered.connect(self.openLog)
-    
+        
+        
+                
+    def openLog(self) -> None:
+        '''Open the log window'''
+        
+        self.logDialog.show()
+        self.logDialog.raise_()
+        
+    #----------------
+    # settings
+                
+    def setupSettings(self):  
+        '''Create the settings dialog.'''
+        self.settingsDialog = settingsDialog(self)
+        self.settingsButt = qtw.QAction(QtGui.QIcon('icons/settings.png'), 'Settings', self)
+        self.settingsButt.setStatusTip('Open app settings')
+        self.settingsButt.triggered.connect(self.openSettings)
+        
+        
+           
+    def openSettings(self) -> None:
+        '''Open the settings window'''
+        
+        self.settingsDialog.show()
+        self.settingsDialog.raise_()
+        
+    #----------------
+    # top menu
         
     def createMenu(self):
         '''Create the top menu of the window'''
@@ -143,11 +252,20 @@ class SBwindow(qtw.QMainWindow):
         menubar = self.menuBar()
         self.setupLog()                  # create a log window, not open yet
         menubar.addAction(self.logButt)  # add button to open log window
+        self.setupSettings()                  # create a log window, not open yet
+        menubar.addAction(self.settingsButt)  # add button to open settings window
         
 #         self.openButt = qtw.QAction('Open video folder')
-#         self.openButt.triggered.connect(self.genBox.openSaveFolder)
+#         self.openButt.triggered.connect(self.fileBox.openSaveFolder)
 #         menubar.addAction(self.openButt)  # add a button to open the folder that videos are saved to in Windows explorer
+
+    #-----------------
+    # file names
+    def newFile(self) -> Tuple[str, str]:
+        return self.fileBox.newFile()
     
+    #----------------
+    # close the window
     
     def closeEvent(self, event):
         '''runs when the window is closed. Disconnects everything we connected to.'''
@@ -166,13 +284,8 @@ class SBwindow(qtw.QMainWindow):
                 logging.root.removeHandler(handler)
         except:
             pass
+        self.close()
 
-                
-    def openLog(self) -> None:
-        '''Open the log window'''
-        
-        self.logDialog.show()
-        self.logDialog.raise_()
 
 class MainProgram(qtw.QWidget):
     '''The main application widget. Here, we can set fonts, icons, window info'''
