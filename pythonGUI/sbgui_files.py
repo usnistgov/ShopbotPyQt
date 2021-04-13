@@ -4,14 +4,18 @@
 
 from PyQt5 import QtGui
 import PyQt5.QtWidgets as qtw
-import os
+import os, sys
 import subprocess
 import time
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
 
+# currentdir = os.path.dirname(os.path.realpath(__file__))
+# sys.path.append(currentdir)
+# sys.path.append(os.path.join(currentdir, 'icons'))
+
 from config import cfg
-from sbgui_general import fileDialog, connectBox
+from sbgui_general import fileDialog, connectBox, icon
 
 __author__ = "Leanne Friedrich"
 __copyright__ = "This data is publicly available according to the NIST statements of copyright, fair use and licensing; see https://www.nist.gov/director/copyright-fair-use-and-licensing-statements-srd-data-and-software"
@@ -115,7 +119,7 @@ class fileBox(connectBox):
             
         self.saveButt = qtw.QToolButton()
         self.saveButt.setToolTip('Set video folder')
-        self.saveButt.setIcon(QtGui.QIcon('icons/open.png'))
+        self.saveButt.setIcon(icon('open.png'))
         self.saveButt.clicked.connect(self.setSaveFolder)
         self.saveButtBar.addWidget(self.saveButt)
         
@@ -126,7 +130,7 @@ class fileBox(connectBox):
         
         self.saveFolderLink = qtw.QToolButton()
         self.saveFolderLink.setToolTip('Open video folder')
-        self.saveFolderLink.setIcon(QtGui.QIcon('icons/link.png'))
+        self.saveFolderLink.setIcon(icon('link.png'))
         self.saveFolderLink.clicked.connect(self.openSaveFolder)
         self.saveLinkBar = qtw.QToolBar()
         self.saveLinkBar.setFixedWidth(iconw+4)
@@ -204,7 +208,7 @@ class fileBox(connectBox):
             subsubfolder = ''
             
             # add date?
-            bid = self.iDateGroup.checkedId()
+            bid = self.settingsBox.iDateGroup.checkedId()
             if bid==0 or bid==1:
                 # use date
                 date = time.strftime('%y%m%d')
@@ -216,8 +220,8 @@ class fileBox(connectBox):
                     subsubfolder = subsubfolder+'_'+date
                     
             # add SB?
-            sb = self.iSBGroup.checkedId()
-            if sb==0 or sb==1 and self.sbWin.sbBox.runningSBP:
+            sb = self.settingsBox.iSBGroup.checkedId()
+            if (sb==0 or sb==1) and self.sbWin.sbBox.runningSBP:
                 # add SB is selected in settings, and we're running a SB file
                 sbname = os.path.basename(self.sbWin.sbBox.sbpName)
                 sbname = os.path.splitext(sbname)[0]
@@ -252,14 +256,22 @@ class fileBox(connectBox):
             
         t1 = t1 + '_' + filename
         t1 = removeUnderScore(t1)
-
         return folder, t1
                 
 def removeUnderScore(s:str) -> str:
     '''remove the underscore from the front of a string'''
-    if s[0]=='_':
+    if len(s)==0:
+        return s
+    while s[0]=='_':
         if len(s)>1:
             s = s[1:]
         else:
             s = ''
+            return s
+    while s[-1]=='_':
+        if len(s)>1:
+            s = s[0:-1]
+        else:
+            s = ''
+            return s
     return s

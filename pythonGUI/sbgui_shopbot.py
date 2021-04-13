@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 '''Shopbot GUI Shopbot functions'''
 
-
 from PyQt5 import QtCore, QtGui
 import PyQt5.QtWidgets as qtw
-import os
+import os, sys
 import winreg
 import subprocess
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
 
 import Fluigent.SDK as fgt
+
+# currentdir = os.path.dirname(os.path.realpath(__file__))
+# sys.path.append(currentdir)
+# sys.path.append(os.path.join(currentdir, 'icons'))
 
 from config import cfg
 from sbgui_general import *
@@ -120,38 +123,29 @@ class sbBox(connectBox):
             
         self.layout = qtw.QVBoxLayout()
         
-        
         self.runButt = qtw.QPushButton()
         self.runButt.setFixedSize(50, 50)
         self.runButt.setEnabled(False)
-        self.runButt.setStyleSheet('border-radius:10px; padding:5px;')
+#         self.runButt.setStyleSheet('border-radius:10px; padding:5px; border-style: outset; border: 2px solid #555;')
         self.updateRunButt()
         
         self.status = qtw.QLabel('Waiting for file ...')
-        self.status.setFixedSize(675, 50)
+        self.status.setFixedSize(725, 50)
         self.status.setWordWrap(True)
-        
-#         self.settings = qtw.QToolButton()
-#         self.settings.setIcon(QtGui.QIcon('icons/settings.png'))
-#         self.settings.clicked.connect(self.openSettings)
-#         self.settings.setToolTip('Shopbot settings') 
-#         self.settingsBar = qtw.QToolBar()
-#         self.settingsBar.addWidget(self.settings)
         
         self.topBar = qtw.QHBoxLayout()
         self.topBar.addWidget(self.runButt)
         self.topBar.addWidget(self.status)
-#         self.topBar.addWidget(self.settingsBar)
         self.topBar.setSpacing(10)
         
         self.loadButt = qtw.QToolButton()
         self.loadButt.setToolTip('Load shopbot file(s)')
-        self.loadButt.setIcon(QtGui.QIcon('icons/open.png'))
+        self.loadButt.setIcon(icon('open.png'))
         self.loadButt.clicked.connect(self.loadFile)
         
         self.deleteButt = qtw.QToolButton()
         self.deleteButt.setToolTip('Remove selected file(s)')
-        self.deleteButt.setIcon(QtGui.QIcon('icons/delete.png'))
+        self.deleteButt.setIcon(icon('delete.png'))
         self.deleteButt.clicked.connect(self.removeFiles)
         
         self.sbButts = qtw.QToolBar()
@@ -190,18 +184,18 @@ class sbBox(connectBox):
             except:
                 pass
             self.runButt.clicked.connect(self.triggerEndOfPrint)
-            self.runButt.setStyleSheet("background-color: #de8383")
+            self.runButt.setStyleSheet("background-color: #de8383; border-radius:10px")
             self.runButt.setToolTip('Stop print')
-            self.runButt.setIcon(QtGui.QIcon('icons/stop.png'))
+            self.runButt.setIcon(icon('stop.png'))
         else:
             try:
                 self.runButt.clicked.disconnect()
             except:
                 pass
             self.runButt.clicked.connect(self.runFile)
-            self.runButt.setStyleSheet("background-color: #a3d9ba")
+            self.runButt.setStyleSheet("background-color: #a3d9ba; border-radius:10px")
             self.runButt.setToolTip('Start print')
-            self.runButt.setIcon(QtGui.QIcon('icons/play.png'))
+            self.runButt.setIcon(icon('play.png'))
         return
 
 
@@ -215,7 +209,7 @@ class sbBox(connectBox):
     def updateItem(self, item:qtw.QListWidgetItem, active:bool) -> None:
         '''Update the item status to active or inactive'''
         if active:
-            item.setIcon(QtGui.QIcon('icons/play.png')) # show that this item is next
+            item.setIcon(icon('play.png')) # show that this item is next
             item.setData(QtCore.Qt.UserRole, True)
         else:
             item.setIcon(QtGui.QIcon()) # show that this item is not next
@@ -241,12 +235,9 @@ class sbBox(connectBox):
         # remove other play icons
         for i in range(self.sbpNameList.count()):
             self.updateItem(self.sbpNameList.item(i), False)
-#             self.sbpNameList.item(i).setIcon(QtGui.QIcon())
             
         self.sbpName = item.text() # new run file name
         self.updateItem(item, True)
-#         item.setIcon(QtGui.QIcon('icons/play.png')) # show that this item is next
-#         item.setData(QtCore.Qt.UserRole, True)
         
             
     def activateNext(self) -> None:

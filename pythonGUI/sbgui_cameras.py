@@ -1,17 +1,20 @@
 #!/usr/bin/env python
 '''Shopbot GUI Shopbot functions'''
 
-
 from PyQt5 import QtCore, QtGui
 import PyQt5.QtWidgets as qtw
 import cv2
 import time
 import datetime
 import numpy as np
-import os
+import os, sys
 import subprocess
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
+
+# currentdir = os.path.dirname(os.path.realpath(__file__))
+# sys.path.append(currentdir)
+# sys.path.append(os.path.join(currentdir, 'icons'))
 
 from sbgui_general import *
 
@@ -316,35 +319,13 @@ class camera:
     
     def getFilename(self, ext:str) -> str: 
         '''determine the file name for the file we're about to record. ext is the extension. Uses the timestamp for unique file names. The folder is determined by the saveFolder established in the top box of the GUI.'''
-        
-#         # determine the folder to save to
-#         folder = self.sbWin.fileBox.saveFolder
-#         if not os.path.exists(folder):
-#             # open a save dialog if the folder does not exist
-#             self.sbWin.fileBox.setSaveFolder()
-#             folder = self.sbWin.saveFolderLabel.text()
-#         if not os.path.exists(folder):
-#             self.updateStatus('Invalid folder name. Image not saved.', True)
-#             return
 
         try:
-            folder, filename = self.sbWin.newfile()
+            folder, filename = self.sbWin.newFile()
         except NameError:
             return
         
-        # determine if we should include the shopbot file name in the file
-#         if self.sbWin.sbBox.runningSBP:
-#             sbname = os.path.basename(self.sbWin.sbBox.sbpName)
-#             filename = os.path.splitext(sbname)[0]+'_'
-#         else:
-#             filename = ""
         filename = filename + ('_' if len(filename)>0 else '')+self.cameraName
-# #         t1 = self.sbWin.fileBox.appendName.text()
-#         if len(t1)>0:
-#             filename = filename + '_'+t1
-# #             folder = os.path.join(folder, t1)
-# #             if not os.path.exists(folder):
-# #                 os.makedirs(folder, exist_ok=True)
         filename = filename + '_'+time.strftime('%y%m%d_%H%M%S')+ext
         fullfn = os.path.join(folder, filename)
         return fullfn
@@ -1028,35 +1009,26 @@ class cameraBox(connectBox):
         self.setRecButtStart()
         
         self.camPic = qtw.QToolButton()
-        self.camPic.setIcon(QtGui.QIcon('icons/camera.png'))
+        self.camPic.setIcon(icon('camera.png'))
         self.camPic.setStyleSheet(self.unclickedSheet())
         self.camPic.clicked.connect(self.cameraPic)
         self.camPic.setToolTip('Snapshot') 
-        
-#         self.settings = qtw.QToolButton()
-#         self.settings.setIcon(QtGui.QIcon('icons/settings.png'))
-#         self.settings.setStyleSheet(self.unclickedSheet())
-#         self.settings.clicked.connect(self.openSettings)
-#         self.settings.setToolTip(self.bTitle+' settings') 
-        
-        
-                
+
         self.camButts = qtw.QToolBar()
         self.camButts.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
-        for b in [self.camPrev, self.camRec, self.camPic]:
+        buttons =  [self.camPrev, self.camRec, self.camPic]
+        for b in buttons:
             self.camButts.addWidget(b)
-#         self.camButts.addWidget(self.camPrev)
-#         self.camButts.addWidget(self.camRec)
-#         self.camButts.addWidget(self.camPic)
-#         self.camButts.addWidget(self.settings)
         self.camButts.setStyleSheet("QToolBar{spacing:5px;}");
         
-        self.layout.addWidget(self.camButts)
-        
         self.status = qtw.QLabel('Ready')
-        self.status.setFixedSize(self.camObj.imw, 50)
+        self.status.setFixedSize(self.camObj.imw - (self.camButts.iconSize().width()+20)*len(buttons), 70)
         self.status.setWordWrap(True)
-        self.layout.addWidget(self.status)
+                
+        buttRow = qtw.QHBoxLayout()
+        buttRow.addWidget(self.camButts)
+        buttRow.addWidget(self.status)
+        self.layout.addLayout(buttRow)
         
         self.layout.addStretch(1)
         
@@ -1133,38 +1105,38 @@ class cameraBox(connectBox):
         if self.camInclude.isChecked():
             self.camInclude.setStyleSheet(self.clickedSheet())
             self.camInclude.setText('Autosave is on')
-            self.camInclude.setIcon(QtGui.QIcon('icons/save.png'))
+            self.camInclude.setIcon(icon('save.png'))
             self.camInclude.setToolTip('Videos will be exported during print')
         else:
             self.camInclude.setStyleSheet(self.unclickedSheet())
             self.camInclude.setText('Autosave is off')
-            self.camInclude.setIcon(QtGui.QIcon('icons/nosave.png'))
+            self.camInclude.setIcon(icon('nosave.png'))
             self.camInclude.setToolTip('Videos will not be exported during print')
         
     def setPrevButtStart(self) -> None:
         '''Update preview button appearance to not previewing status'''
         self.camPrev.setStyleSheet(self.unclickedSheet())
 #         self.camPrev.setText('Start preview')
-        self.camPrev.setIcon(QtGui.QIcon('icons/closedeye.png'))
+        self.camPrev.setIcon(icon('closedeye.png'))
         self.camPrev.setToolTip('Start live preview') 
         
     def setPrevButtStop(self) -> None:
         '''Update preview button appearance to previewing status'''
         self.camPrev.setStyleSheet(self.clickedSheet())
 #         self.camPrev.setText('Stop preview')
-        self.camPrev.setIcon(QtGui.QIcon('icons/eye.png'))
+        self.camPrev.setIcon(icon('eye.png'))
         self.camPrev.setToolTip('Stop live preview') 
 
     def setRecButtStart(self) -> None:
         '''Update record button appearance to not recording status'''
         self.camRec.setStyleSheet(self.unclickedSheet())
-        self.camRec.setIcon(QtGui.QIcon('icons/Record.png'))
+        self.camRec.setIcon(icon('Record.png'))
         self.camRec.setToolTip('Start recording') 
         
     def setRecButtStop(self) -> None:
         '''Update record button appearance to recording status'''
         self.camRec.setStyleSheet(self.clickedSheet())
-        self.camRec.setIcon(QtGui.QIcon('icons/recordstop.png'))
+        self.camRec.setIcon(icon('recordstop.png'))
         self.camRec.setToolTip('Stop recording') 
         
 #     def openSettings(self) -> None:

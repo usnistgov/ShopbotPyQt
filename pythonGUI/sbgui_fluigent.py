@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 '''Shopbot GUI functions for controlling fluigent mass flow controller'''
 
+
 from PyQt5 import QtCore, QtGui
 import PyQt5.QtWidgets as qtw
 import pyqtgraph as pg
@@ -9,6 +10,11 @@ import datetime
 import numpy as np
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
+import os, sys
+
+# currentdir = os.path.dirname(os.path.realpath(__file__))
+# sys.path.append(currentdir)
+# sys.path.append(os.path.join(currentdir, 'icons'))
 
 import Fluigent.SDK as fgt
 
@@ -409,7 +415,7 @@ class fluBox(connectBox):
     
     def getFileName(self) -> str:
         try:
-            folder, filename = self.sbWin.newfile()
+            folder, filename = self.sbWin.newFile()
         except NameError:
             return
         

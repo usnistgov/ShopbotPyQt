@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 '''Shopbot GUI. '''
 
+# import os, sys
+
+# currentdir = os.path.dirname(os.path.realpath(__file__))
+# sys.path.append(currentdir)
+# sys.path.append(os.path.join(currentdir, 'icons'))
+
 import sbgui_layout
 
 __author__ = "Leanne Friedrich"

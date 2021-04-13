@@ -2,14 +2,17 @@
 '''Shopbot GUI general functions. Contains classes and functions that are shared among fluigent, cameras, shopbot.'''
 
 
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtGui
 import PyQt5.QtWidgets as qtw
 import sip
-import os
+import os, sys
 import subprocess
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
 
+# currentdir = os.path.dirname(os.path.realpath(__file__))
+# sys.path.append(currentdir)
+# sys.path.append(os.path.join(currentdir, 'icons'))
 
 __author__ = "Leanne Friedrich"
 __copyright__ = "This data is publicly available according to the NIST statements of copyright, fair use and licensing; see https://www.nist.gov/director/copyright-fair-use-and-licensing-statements-srd-data-and-software"
@@ -22,6 +25,19 @@ __status__ = "Development"
 
 
 ################################################
+
+def icon(name:str) -> QtGui.QIcon:
+    '''Get a QtGui icon given an icon name'''
+    currentdir = os.path.dirname(os.path.realpath(__file__))
+    iconfolder = os.path.join(currentdir, 'icons')
+    if not os.path.exists(iconfolder):
+        iconfolder = os.path.join(os.path.dirname(currendir), 'icons')
+    if not os.path.exists(iconfolder):
+        raise NameError('No icon folder found')
+    iconpath = os.path.join(iconfolder, name)
+    if not os.path.exists(iconpath):
+        raise NameError('No icon with that name')
+    return QtGui.QIcon(iconpath)
 
 
 def fileDialog(startDir:str, fmt:str, isFolder:bool) -> str:

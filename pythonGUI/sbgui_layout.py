@@ -1,12 +1,17 @@
 #!/usr/bin/env python
 '''Shopbot GUI functions for setting up the GUI window'''
 
+
 from PyQt5 import QtGui, QtGui
 import PyQt5.QtWidgets as qtw
-import sys
+import os, sys
 import ctypes
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
+
+# currentdir = os.path.dirname(os.path.realpath(__file__))
+# sys.path.append(currentdir)
+# sys.path.append(os.path.join(currentdir, 'icons'))
 
 from sbgui_general import *
 import sbgui_fluigent
@@ -231,7 +236,7 @@ class SBwindow(qtw.QMainWindow):
     def setupSettings(self):  
         '''Create the settings dialog.'''
         self.settingsDialog = settingsDialog(self)
-        self.settingsButt = qtw.QAction(QtGui.QIcon('icons/settings.png'), 'Settings', self)
+        self.settingsButt = qtw.QAction(icon('settings.png'), 'Settings', self)
         self.settingsButt.setStatusTip('Open app settings')
         self.settingsButt.triggered.connect(self.openSettings)
         
@@ -296,8 +301,8 @@ class MainProgram(qtw.QWidget):
         app.setFont(sansFont)
         gallery = SBwindow()
         gallery.show()
-        gallery.setWindowIcon(QtGui.QIcon('icons/sfcicon.ico'))
-        app.setWindowIcon(QtGui.QIcon('icons/sfcicon.ico'))
+        gallery.setWindowIcon(icon('sfcicon.ico'))
+        app.setWindowIcon(icon('sfcicon.ico'))
         app.exec_()
         
         myappid = APPID # arbitrary string
