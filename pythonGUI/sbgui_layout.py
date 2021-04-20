@@ -136,6 +136,9 @@ class settingsDialog(QtGui.QDialog):
         
         for box in [parent.fileBox, parent.sbBox, parent.basBox, parent.nozBox, parent.web2Box, parent.fluBox]:
             self.tabs.addTab(box.settingsBox, box.bTitle)
+            
+                
+        parent.fileBox.settingsBox.checkFormats() # update the initial file format
         
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
@@ -266,8 +269,9 @@ class SBwindow(qtw.QMainWindow):
 
     #-----------------
     # file names
-    def newFile(self) -> Tuple[str, str]:
-        return self.fileBox.newFile()
+    def newFile(self, deviceName:str, ext:str) -> Tuple[str, str]:
+        '''Generate a new file name for device and with extension'''
+        return self.fileBox.newFile(deviceName, ext)
     
     #----------------
     # close the window

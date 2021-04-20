@@ -5,6 +5,7 @@
 from PyQt5 import QtCore, QtGui
 import PyQt5.QtWidgets as qtw
 import pyqtgraph as pg
+import csv
 import time
 import datetime
 import numpy as np
@@ -259,7 +260,7 @@ class fluPlot:
         try:
             # add pressures to table if we're saving
             if self.fluBox.save:
-                self.fluBox.saveTable.append([self.pw.time]+self.pw.pressures)
+                self.fluBox.saveTable.append([self.pw.time[-1]]+[j[-1] for j in self.pw.pressures])
             for i in range(self.numChans):
                 # update the plot
                 self.datalines[i].setData(self.pw.time, self.pw.pressures[i])
@@ -296,10 +297,14 @@ class fluSettingsBox(qtw.QWidget):
         layout = QtGui.QVBoxLayout()
         
         self.savePressureCheck = qtw.QCheckBox('Save pressure graph during print')
-        self.savePressureCheck.setChecked(False)
+        self.savePressureCheck.setChecked(True)
         layout.addWidget(self.savePressureCheck)
         
         self.setLayout(layout)
+        
+        
+    def savePressureChecked(self):
+        return self.savePressureCheck.isChecked()
 
         
         
@@ -415,37 +420,33 @@ class fluBox(connectBox):
     
     def getFileName(self) -> str:
         try:
-            folder, filename = self.sbWin.newFile()
+            fullfn = self.sbWin.newFile('Fluigent', '.csv')
         except NameError:
             return
         
-        filename = filename + ('_' if len(filename)>0 else '')+'Fluigent'
-        filename = filename + '_'+time.strftime('%y%m%d_%H%M%S')+'.csv'
-        fullfn = os.path.join(folder, filename)
+#         filename = filename + ('_' if len(filename)>0 else '')+'Fluigent'
+#         filename = filename + '_'+time.strftime('%y%m%d_%H%M%S')+'.csv'
+#         fullfn = os.path.join(folder, filename)
         self.fileName = fullfn
     
     def startRecording(self) -> None:
         '''Start keeping track of pressure readings in a table to be saved to file'''
-        if self.settingsBox.savePressureChecked.isChecked():
-        
+        if self.settingsBox.savePressureChecked():
             self.saveTable = []
             self.save = True
             self.getFileName() # determine the current file name
         
     def stopRecording(self) -> None:
         '''Save the recorded pressure readings in a csv'''
-        
-        if self.settingsBox.savePressureChecked.isChecked():
-        
+        if self.settingsBox.savePressureChecked():
             self.save = False
-
-            with open(self.fileName, mode='w') as c:
+            with open(self.fileName, mode='w', newline='', encoding='utf-8') as c:
                 writer = csv.writer(c, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-
                 writer.writerow(['time (s)']+[f'Channel {i} pressure (mbar)' for i in range(self.numChans)]) # header
-
                 for row in self.saveTable:
                     writer.writerow(row)
+            self.updateStatus(f'Saved {self.fileName}', True)
+            
         
         
     #-----------------------------------------

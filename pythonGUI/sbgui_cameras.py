@@ -321,13 +321,14 @@ class camera:
         '''determine the file name for the file we're about to record. ext is the extension. Uses the timestamp for unique file names. The folder is determined by the saveFolder established in the top box of the GUI.'''
 
         try:
-            folder, filename = self.sbWin.newFile()
-        except NameError:
+            fullfn = self.sbWin.newFile(self.cameraName, ext)
+        except NameError as e:
+            logging.error(e)
             return
         
-        filename = filename + ('_' if len(filename)>0 else '')+self.cameraName
-        filename = filename + '_'+time.strftime('%y%m%d_%H%M%S')+ext
-        fullfn = os.path.join(folder, filename)
+#         filename = filename + ('_' if len(filename)>0 else '')+self.cameraName
+#         filename = filename + '_'+time.strftime('%y%m%d_%H%M%S')+ext
+#         fullfn = os.path.join(folder, filename)
         return fullfn
     
     

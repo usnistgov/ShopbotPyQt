@@ -350,7 +350,7 @@ class sbBox(connectBox):
             return
         
 #         self.abortButt.setEnabled(True)
-        self.updateRunButt()
+
         
         ''' allowEnd is a failsafe measure because when the shopbot starts running a file that changes output flags, it asks the user to allow spindle movement to start. While it is waiting for the user to hit ok, only flag 4 would be up, giving a flag value of 8. If critFlag=8 (i.e. we want to stop running after the first extrusion step), this means the GUI will think the file is done before it even starts. We create an extra trigger to say that if we're extruding, we have to wait for extrusion to start before we can let the tracking stop'''
         self.critFlag = self.getCritFlag()
@@ -368,6 +368,7 @@ class sbBox(connectBox):
         
         # wait to start videos and fluigent
         self.runningSBP = True
+        self.updateRunButt()
         self.triggerWait()
         
     
