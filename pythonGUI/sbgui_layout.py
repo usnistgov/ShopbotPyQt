@@ -1,24 +1,24 @@
 #!/usr/bin/env python
 '''Shopbot GUI functions for setting up the GUI window'''
 
-
+# external packages
 from PyQt5 import QtGui, QtGui
 import PyQt5.QtWidgets as qtw
 import os, sys
 import ctypes
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
+import traceback
 
-# currentdir = os.path.dirname(os.path.realpath(__file__))
-# sys.path.append(currentdir)
-# sys.path.append(os.path.join(currentdir, 'icons'))
-
+# local packages
 from sbgui_general import *
 import sbgui_fluigent
 import sbgui_files
 import sbgui_shopbot
 import sbgui_cameras
+from config import *
 
+# info
 __author__ = "Leanne Friedrich"
 __copyright__ = "This data is publicly available according to the NIST statements of copyright, fair use and licensing; see https://www.nist.gov/director/copyright-fair-use-and-licensing-statements-srd-data-and-software"
 __credits__ = ["Leanne Friedrich"]
@@ -28,9 +28,7 @@ __maintainer__ = "Leanne Friedrich"
 __email__ = "Leanne.Friedrich@nist.gov"
 __status__ = "Development"
 
-################
 
-APPID = 'leanfried.sbgui.v1.0.4'
        
 ##################################################          
 ########### logging window
@@ -129,22 +127,73 @@ class settingsDialog(QtGui.QDialog):
         self.setStyle(ProxyStyle())
         self.layout = qtw.QVBoxLayout()
         
-        self.tabs = qtw.QTabWidget()
-                
+        loadButton = qtw.QPushButton('Load settings from file')
+        loadButton.clicked.connect(self.loadSettings)
+        loadButton.setIcon(icon('open.png'))
+        self.layout.addWidget(loadButton)
+        
+        saveButton = qtw.QPushButton('Save settings to file')
+        saveButton.clicked.connect(self.saveSettings)
+        saveButton.setIcon(icon('save.png'))
+        self.layout.addWidget(saveButton)
+        
+        self.alwaysSave = qtw.QCheckBox('Save settings for next session')
+        self.alwaysSave.setChecked(cfg.layout.save)
+        self.layout.addWidget(self.alwaysSave)
+        
+        self.tabs = qtw.QTabWidget()       
         self.tabs.setTabBar(TabBar(self))
         self.tabs.setTabPosition(qtw.QTabWidget.West)
-        
         for box in [parent.fileBox, parent.sbBox, parent.basBox, parent.nozBox, parent.web2Box, parent.fluBox]:
-            self.tabs.addTab(box.settingsBox, box.bTitle)
-            
-                
+            self.tabs.addTab(box.settingsBox, box.bTitle)     
         parent.fileBox.settingsBox.checkFormats() # update the initial file format
-        
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
         
         self.setWindowTitle('Settings')
-
+        
+    def loadSettings(self) -> None:
+        '''Load settings from file'''
+        sf = fileDialog(getConfigDir(), 'config files (*.yaml *.yml)', False)
+        if len(sf)>0:
+            sf = sf[0]
+        else:
+            return 
+        if not os.path.exists(sf):
+            return
+        cfg = loadConfigFile(sf)
+        parent = self.parent
+        for box in [parent.fileBox, parent.sbBox, parent.basBox, parent.nozBox, parent.web2Box, parent.fluBox]:
+            box.loadConfig(cfg)
+        logging.info(f'Loaded settings from {sf}')
+        
+    def saveCfg(self, file:str):
+        '''save the config file to file'''
+        parent = self.parent
+        from config import cfg
+        for box in [parent.fileBox, parent.sbBox, parent.basBox, parent.nozBox, parent.web2Box, parent.fluBox]:
+            cfg = box.saveConfig(cfg)
+        dumpConfigs(cfg, file)
+        logging.info(f'Saved settings to {file}')
+            
+    def saveSettings(self):
+        '''Save all settings to file'''
+        sf = fileDialog(getConfigDir(), 'config files (*.yml)', False, opening=False)
+        if len(sf)>0:
+            sf = sf[0]
+            if sf.endswith(','):
+                sf = sf[:-1]
+        else:
+            return 
+        self.saveCfg(sf)
+        
+        
+    def close(self):
+        '''Close the window'''
+        if self.alwaysSave.isChecked():
+            self.saveCfg(os.path.join(getConfigDir(), 'config.yml'))
+        self.done(0)
+        
 
         
 ####################### the whole window
@@ -181,6 +230,7 @@ class SBwindow(qtw.QMainWindow):
             logging.info('Window created')
         except Exception as e:
             logging.error(f'Error during initialization: {e}')
+            traceback.print_exc()
             self.closeEvent(0)                              # if we fail to initialize the GUI, disconnect from everything we connected
 
         
@@ -203,14 +253,6 @@ class SBwindow(qtw.QMainWindow):
         self.fullLayout.addWidget(self.nozBox, 2, 1)
         self.fullLayout.addWidget(self.fluBox, 3, 0)
         self.fullLayout.addWidget(self.web2Box, 3, 1)
-        
-        # make the camera rows big so the whole window doesn't resize dramatically when we turn on previews
-#         self.fullLayout.setRowStretch(0, 1)
-#         self.fullLayout.setRowStretch(1, 2)
-#         self.fullLayout.setRowStretch(2, 6)     
-#         self.fullLayout.setRowStretch(3, 6)
-#         self.fullLayout.setColumnStretch(6, 1)
-#         self.fullLayout.setColumnStretch(4, 1)
 
         self.central_widget.setLayout(self.fullLayout)
     
@@ -262,10 +304,7 @@ class SBwindow(qtw.QMainWindow):
         menubar.addAction(self.logButt)  # add button to open log window
         self.setupSettings()                  # create a log window, not open yet
         menubar.addAction(self.settingsButt)  # add button to open settings window
-        
-#         self.openButt = qtw.QAction('Open video folder')
-#         self.openButt.triggered.connect(self.fileBox.openSaveFolder)
-#         menubar.addAction(self.openButt)  # add a button to open the folder that videos are saved to in Windows explorer
+
 
     #-----------------
     # file names
@@ -279,7 +318,7 @@ class SBwindow(qtw.QMainWindow):
     def closeEvent(self, event):
         '''runs when the window is closed. Disconnects everything we connected to.'''
         try:
-            for o in [self.sbBox, self.basBox, self.nozBox, self.web2Box, self.fluBox]:
+            for o in [self.sbBox, self.basBox, self.nozBox, self.web2Box, self.fluBox, self.settingsDialog]:
                 try:
                     o.close()
                 except:
@@ -309,5 +348,5 @@ class MainProgram(qtw.QWidget):
         app.setWindowIcon(icon('sfcicon.ico'))
         app.exec_()
         
-        myappid = APPID # arbitrary string
+        myappid = cfg.appid # arbitrary string
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 '''Shopbot GUI file handling functions. Refers to top box in GUI.'''
 
-
+# external packages
 from PyQt5 import QtGui
 import PyQt5.QtWidgets as qtw
 import os, sys
@@ -10,13 +10,11 @@ import time
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
 
-# currentdir = os.path.dirname(os.path.realpath(__file__))
-# sys.path.append(currentdir)
-# sys.path.append(os.path.join(currentdir, 'icons'))
-
+# local packages
 from config import cfg
-from sbgui_general import fileDialog, connectBox, icon
+from sbgui_general import *
 
+# info
 __author__ = "Leanne Friedrich"
 __copyright__ = "This data is publicly available according to the NIST statements of copyright, fair use and licensing; see https://www.nist.gov/director/copyright-fair-use-and-licensing-statements-srd-data-and-software"
 __credits__ = ["Leanne Friedrich"]
@@ -26,17 +24,7 @@ __maintainer__ = "Leanne Friedrich"
 __email__ = "Leanne.Friedrich@nist.gov"
 __status__ = "Development"
 
-INITSAVEFOLDER = os.path.abspath(cfg.vid)
-if not os.path.exists(INITSAVEFOLDER):
-    INITSAVEFOLDER = r'C:\\'
-
-
-
 ###############################################################
-
-def formatExplorer(fn:str) -> str:
-    '''Format the file name for use in subprocess.Popen(explorer)'''
-    return fn.replace(r"/", "\\")
 
         
 def un(*args, separator:str='_') -> str:
@@ -56,26 +44,57 @@ def riffle(*args, separator:str='_') -> str:
         s = s[0:-len(separator)]
     return s
 
-                
-# def removeUnderScore(s:str) -> str:
-#     '''remove the underscore from the front of a string'''
-#     if len(s)==0:
-#         return s
-#     while s[0]=='_':
-#         if len(s)>1:
-#             s = s[1:]
-#         else:
-#             s = ''
-#             return s
-#     while s[-1]=='_':
-#         if len(s)>1:
-#             s = s[0:-1]
-#         else:
-#             s = ''
-#             return s
-#     return s
 
 #----------------------------------------------------
+
+class fCheckBox(qtw.QCheckBox):
+    '''This is a checkbox style for quick initialization'''
+    
+    def __init__(self, layout:qtw.QLayout, title:str='', tooltip:str='', checked:bool=False, **kwargs):
+        super().__init__()
+        self.setText(title)
+        if len(tooltip)>0:
+            self.setToolTip(tooltip)
+        self.setChecked(checked)
+        layout.addWidget(self)
+        if 'func' in kwargs:
+            self.stateChanged.connect(kwargs['func'])
+        
+class fLabel(qtw.QLabel):
+    '''This is a label style for quick initialization'''
+    
+    def __init__(self, layout:qtw.QLayout, title:str='', style:str=''):
+        super().__init__()
+        self.setText(title)
+        if len(style)>0:
+            self.setStyleSheet(style)
+        layout.addWidget(self)
+        
+class fRadio(qtw.QRadioButton):
+    '''This is a radio button style for quick initialization'''
+    
+    def __init__(self, layout:qtw.QLayout, group:qtw.QButtonGroup, title:str='', tooltip:str='', i:int=0, **kwargs):
+        super().__init__()
+        self.setText(title)
+        if len(tooltip)>0:
+            self.setToolTip(tooltip)
+        group.addButton(self, i)
+        layout.addWidget(self)
+        if 'func' in kwargs:
+            self.clicked.connect(kwargs['func'])
+            
+class fLineEdit(qtw.QLineEdit):
+    '''This is a line edit style for quick initialization'''
+    
+    def __init__(self, form:qtw.QFormLayout, title:str='', text:str='', tooltip:str='', **kwargs):
+        super().__init__()
+        self.setText(text)
+        if len(tooltip)>0:
+            self.setToolTip(tooltip)
+        if 'func' in kwargs:
+            self.editingFinished.connect(kwargs['func'])
+        form.addRow(title, self)
+        
 
 class fileSettingsBox(qtw.QWidget):
     '''This opens a window that holds settings about logging for files.'''
@@ -92,120 +111,94 @@ class fileSettingsBox(qtw.QWidget):
         labelStyle = 'font-weight:bold; color:#31698f'
         
         # folder creation
-        self.newFolderCheck = qtw.QCheckBox('Create subfolders')
-        self.newFolderCheck.setChecked(True)
-        self.newFolderCheck.stateChanged.connect(self.changeNewFolder)
-        layout.addWidget(self.newFolderCheck)
+        self.newFolderCheck = fCheckBox(layout, title='Create subfolders', tooltip='Create subfolders for samples, dates', checked=cfg.files.createSubfolders, func=self.changeNewFolder)
                 
         # include sample
-        self.iSampleRow = qtw.QVBoxLayout()
-        iSampleLabel = qtw.QLabel('Include sample:')
-        iSampleLabel.setStyleSheet(labelStyle)
-        self.iSampleRow.addWidget(iSampleLabel)
-        self.iSampleFileCheck = qtw.QCheckBox('In file name')
-        self.iSampleFileCheck.setToolTip('Include the sample in the file name')
-        self.iSampleFileCheck.setChecked(True)
-        self.iSampleRow.addWidget(self.iSampleFileCheck)
-        self.iSampleFolderCheck = qtw.QCheckBox('In folder name')
-        self.iSampleFolderCheck.setToolTip('Include the sample in the file name')
-        self.iSampleFolderCheck.setChecked(True)
-        self.iSampleRow.addWidget(self.iSampleFolderCheck)
-        layout.addLayout(self.iSampleRow)
+        iSampleRow = qtw.QVBoxLayout()
+        fLabel(iSampleRow, title='Include sample:', style=labelStyle)
+        self.iSampleFileCheck = fCheckBox(iSampleRow, title='In file name', tooltip = 'Include the sample in the file name', checked=cfg.files.includeSampleInFile)   
+        self.iSampleFolderCheck = fCheckBox(iSampleRow, title='In folder name', tooltip='Include the sample in the file name', checked=cfg.files.includeSampleInFolder)
+        layout.addLayout(iSampleRow)
     
         
         # include date
-        self.iDateRow = qtw.QVBoxLayout()
-        iDateLabel = qtw.QLabel('Include date:')
-        iDateLabel.setStyleSheet(labelStyle)
-        self.iDateRow.addWidget(iDateLabel)
-        self.iDate1 = qtw.QRadioButton('In sample folder name')
-        self.iDate1.setToolTip('Append the date to the name of the folder for this sample')
-        self.iDate1.setChecked(True)
-        self.iDate2 = qtw.QRadioButton('As sample subfolder name')
-        self.iDate2.setToolTip('Create a subfolder inside of the sample folder with the date')
-        self.iDate3 = qtw.QRadioButton('In no folder name')
-        self.iDate3.setToolTip('Do not create a specific folder for this date')
+        iDateRow = qtw.QVBoxLayout()
         self.iDateGroup = qtw.QButtonGroup()
+        fLabel(iDateRow, title='Include date:', style=labelStyle)
+        self.iDate1 = fRadio(iDateRow, self.iDateGroup, title='In sample folder name', tooltip='Append the date to the name of the folder for this sample', func=self.checkFormats, i=0)
+        self.iDate2 = fRadio(iDateRow, self.iDateGroup, title='As sample subfolder name', tooltip='Create a subfolder inside of the sample folder with the date', func=self.checkFormats, i=1)
+        self.iDate3 = fRadio(iDateRow, self.iDateGroup, title='In no folder name', tooltip='Do not create a specific folder for this date', func=self.checkFormats, i=2)
         self.iDateList = [self.iDate1, self.iDate2, self.iDate3]
-        for i,b in enumerate(self.iDateList):
-            self.iDateGroup.addButton(b, i)
-            self.iDateRow.addWidget(b)
-            b.clicked.connect(self.checkFormats)
-        layout.addLayout(self.iDateRow)
+        self.iDateList[cfg.files.includeDateRadio].setChecked(True)
+        layout.addLayout(iDateRow)
         
         # include time
-        self.iTimeRow = qtw.QVBoxLayout()
-        iTimeLabel = qtw.QLabel('Include time:')
-        iTimeLabel.setStyleSheet(labelStyle)
-        self.iTimeRow.addWidget(iTimeLabel)
-        self.iTimeCheck = qtw.QCheckBox('In file name')
-        self.iTimeCheck.setToolTip('Include the time in the file name')
-        self.iTimeCheck.setChecked(True)
-        self.iTimeCheck.clicked.connect(self.checkFormats)
-        self.iTimeRow.addWidget(self.iTimeCheck)
-        layout.addLayout(self.iTimeRow)
+        iTimeRow = qtw.QVBoxLayout()
+        fLabel(iTimeRow, title='Include time:', style=labelStyle)
+        self.iTimeCheck = fCheckBox(iTimeRow, title='In file name', tooltip = 'Include the time in the file name', checked=cfg.files.includeTimeInFile, func=self.checkFormats)
+        layout.addLayout(iTimeRow)
         
         # include Shopbot file name
-        self.iSBRow = qtw.QVBoxLayout()
-        iSBLabel = qtw.QLabel('Include SB file name:')
-        iSBLabel.setStyleSheet(labelStyle)
-        self.iSBRow.addWidget(iSBLabel)
-        self.iSB1 = qtw.QRadioButton('In sample folder name')
-        self.iSB2 = qtw.QRadioButton('As sample subfolder name')
-        self.iSB3 = qtw.QRadioButton('In no folder name')
-        self.iSB3.setChecked(True)
+        iSBRow = qtw.QVBoxLayout()
         self.iSBGroup = qtw.QButtonGroup()
+        fLabel(iSBRow, title='Include SB file name:', style=labelStyle)
+        self.iSB1 = fRadio(iSBRow, self.iSBGroup, title='In sample folder name', tooltip='Append the shopbot file name to the name of the folder for this sample', func=self.checkFormats, i=0)
+        self.iSB2 = fRadio(iSBRow, self.iSBGroup, title='As sample subfolder name', tooltip='Create a subfolder inside of the sample folder with the shopbot file name ', func=self.checkFormats, i=1)
+        self.iSB3 = fRadio(iSBRow, self.iSBGroup, title='In no folder name', tooltip='Do not create a specific folder for this shopbot file name ', func=self.checkFormats, i=2)
         self.iSBList = [self.iSB1, self.iSB2, self.iSB3]
-        for i,b in enumerate(self.iSBList):
-            self.iSBGroup.addButton(b, i)
-            self.iSBRow.addWidget(b)
-            b.clicked.connect(self.checkFormats)
-        self.iSBCheck = qtw.QCheckBox('In file name')
-        self.iSBCheck.setChecked(True)
-        self.iSBRow.addWidget(self.iSBCheck)
-        layout.addLayout(self.iSBRow)
+        self.iSBList[cfg.files.includeSBRadio].setChecked(True)
+        self.iSBCheck = fCheckBox(iSBRow, title='In file name', tooltip='Include the shopbot file name in exported file names', checked=cfg.files.includeSBInFile)
+        layout.addLayout(iSBRow)
 
         # formatting
-        formatLabel = qtw.QLabel('Formatting options:')
-        formatLabel.setStyleSheet(labelStyle)
-        layout.addWidget(formatLabel)
+        fLabel(layout, title='Formatting options:', style=labelStyle)
         fileForm = qtw.QFormLayout()
-        self.dateFormatBox = qtw.QLineEdit()
-        self.dateFormatBox.setText('%y%m%d')
-        self.dateFormatBox.setToolTip('Format for date: use Python strftime format (https://strftime.org/)')
-        self.dateFormatBox.editingFinished.connect(self.checkFormats)
-        fileForm.addRow('Date format', self.dateFormatBox)
-        self.timeFormatBox = qtw.QLineEdit()
-        self.timeFormatBox.setText('%y%m%d_%H%M%S')
-        self.timeFormatBox.setToolTip('Format for time: use Python strftime format (https://strftime.org/)')
-        self.timeFormatBox.editingFinished.connect(self.checkFormats)
-        fileForm.addRow('Time format', self.timeFormatBox)
-        self.duplicateFormatBox = qtw.QLineEdit()
-        self.duplicateFormatBox.setText("{0:0=3d}")
-        self.duplicateFormatBox.setToolTip('Format for number to add if file already exists. Use python string format')
-        self.duplicateFormatBox.editingFinished.connect(self.checkFormats)
-        fileForm.addRow('Duplicate suffix', self.duplicateFormatBox)
-        self.separatorBox = qtw.QLineEdit()
-        self.separatorBox.setText('_')
-        self.separatorBox.setToolTip('Put this character between each part of the file name')
-        self.separatorBox
-        fileForm.addRow('Separator', self.separatorBox)
+        self.dateFormatBox = fLineEdit(fileForm, title='Date format', text=cfg.files.dateFormat, tooltip='Format for date: use Python strftime format (https://strftime.org/)', func=self.checkFormats)
+        self.timeFormatBox = fLineEdit(fileForm, title='Time format', text=cfg.files.timeFormat, tooltip='Format for time: use Python strftime format (https://strftime.org/)', func=self.checkFormats)
+        self.duplicateFormatBox = fLineEdit(fileForm, title='Duplicate suffix', text=cfg.files.duplicateFormat, tooltip='Format for number to add if file already exists. Use python string format', func=self.checkFormats)
+        self.separatorBox = fLineEdit(fileForm, title='Separator', text=cfg.files.separator, tooltip='Format for number to add if file already exists. Use python string format', func=self.checkFormats)
         layout.addLayout(fileForm)
 
-        self.status = qtw.QLabel('')
-        self.status.setFixedWidth(500)
-        self.status.setWordWrap(True)
+        self.status = createStatus(500, height=150, status='')
         layout.addWidget(self.status)
         
         for b in (self.iDateList + self.iSBList):
             b.clicked.connect(self.checkFormats)
         for b in [self.iSampleFileCheck, self.iSampleFolderCheck, self.iSBCheck]:
             b.stateChanged.connect(self.changeNewFolder)
-        for b in [self.dateFormatBox, self.timeFormatBox, self.duplicateFormatBox, self.separatorBox]:
-            b.editingFinished.connect(self.checkFormats)
-
         self.setLayout(layout)
-
+        self.changeNewFolder()
+        
+    def saveConfig(self, cfg1):
+        '''save the current settings to a config Box object'''
+        cfg1.files.createSubfolders = self.newFolderCheck.isChecked()
+        cfg1.files.includeSampleInFile = self.iSampleFileCheck.isChecked()
+        cfg1.files.includeSampleInFolder = self.iSampleFolderCheck.isChecked()
+        cfg1.files.includeDateRadio = self.iDateGroup.checkedId()
+        cfg1.files.includeTimeInFile = self.iTimeCheck.isChecked()
+        cfg1.files.includeSBRadio = self.iSBGroup.checkedId()
+        cfg1.files.includeSBInFile = self.iSBCheck.isChecked()
+        cfg1.files.dateFormat = self.dateFormat()
+        cfg1.files.timeFormat = self.timeFormat()
+        cfg1.files.duplicateFormat = self.dupFormat()
+        cfg1.files.separator = self.sep()
+        return cfg1
+    
+    def loadConfig(self, cfg1) -> None:
+        '''load a configuration from config Box object'''
+        self.newFolderCheck.setChecked(cfg1.files.createSubfolders)
+        self.iSampleFileCheck.setChecked(cfg1.files.includeSampleInFile)
+        self.iSampleFolderCheck.setChecked(cfg1.files.includeSampleInFolder)
+        self.iDateList[cfg1.files.includeDateRadio].setChecked(True)
+        self.iTimeCheck.setChecked(cfg1.files.includeTimeInFile)
+        self.iSBList[cfg1.files.includeSBRadio].setChecked(True)
+        self.iSBCheck.setChecked(cfg1.files.includeSBInFile)
+        self.dateFormatBox.setText(cfg1.files.dateFormat)
+        self.timeFormatBox.setText(cfg1.files.timeFormat)
+        self.duplicateFormatBox.setText(cfg1.files.duplicateFormat)
+        self.separatorBox.setText(cfg1.files.separator)
+        self.checkFormats()
+        self.changeNewFolder()
         
     def changeNewFolder(self) -> None:
         '''When the create folder box is checked, enable or disable the related boxes'''
@@ -213,7 +206,10 @@ class fileSettingsBox(qtw.QWidget):
         for l in [self.iDateList, self.iSBList, [self.iSampleFolderCheck, self.dateFormatBox]]:
             for box in l:
                 box.setEnabled(check)
-        self.checkFormats()
+        try:
+            self.checkFormats()
+        except:
+            pass
                 
     def dateFormat(self) -> str:
         '''Get the date format'''
@@ -338,8 +334,19 @@ class fileBox(connectBox):
         super(fileBox, self).__init__()
         self.bTitle = 'Export'
         self.sbWin = sbWin
-        
+        self.saveFolder = checkPath(cfg.files.save)
         self.successLayout()
+        
+    def saveConfig(self, cfg1):
+        '''save the current settings to a config Box object'''
+        cfg1.files.save = self.saveFolder
+        cfg1 = self.settingsBox.saveConfig(cfg1)
+        return cfg1
+    
+    def loadConfig(self, cfg1):
+        '''load settings from a config Box object'''
+        self.saveFolder = checkPath(cfg1.files.save)
+        self.settingsBox.loadConfig(cfg1)
         
     def successLayout(self):
         '''This is the main layout for file management. There is no fail layout'''
@@ -347,37 +354,13 @@ class fileBox(connectBox):
         self.resetLayout()
         self.layout = qtw.QVBoxLayout()  
         self.setTitle('Export settings')
-        
-        self.saveButtBar = qtw.QToolBar()
-        iconw = float(self.saveButtBar.iconSize().width())
-        self.saveButtBar.setFixedWidth(iconw+4)
-            
-        self.saveButt = qtw.QToolButton()
-        self.saveButt.setToolTip('Set video folder')
-        self.saveButt.setIcon(icon('open.png'))
-        self.saveButt.clicked.connect(self.setSaveFolder)
-        self.saveButtBar.addWidget(self.saveButt)
-        
-        self.saveFolder = INITSAVEFOLDER
-        self.saveFolderLabel = qtw.QLabel(self.saveFolder)
-        self.saveFolderLabel.setFixedHeight(iconw)
-        
-        self.saveFolderLink = qtw.QToolButton()
-        self.saveFolderLink.setToolTip('Open video folder')
-        self.saveFolderLink.setIcon(icon('link.png'))
-        self.saveFolderLink.clicked.connect(self.openSaveFolder)
-        self.saveLinkBar = qtw.QToolBar()
-        self.saveLinkBar.setFixedWidth(iconw+4)
-        self.saveLinkBar.addWidget(self.saveFolderLink)
-        
-        self.folderRow = qtw.QHBoxLayout()
-        self.folderRow.addWidget(self.saveButtBar)
-        self.folderRow.addWidget(self.saveFolderLabel)
-        self.folderRow.addWidget(self.saveLinkBar)
+        self.fsor = fileSetOpenRow(self, width=450, title='Set video folder', initFolder=self.saveFolder, tooltip='Open video folder')
+        self.folderRow = self.fsor.makeDisplay()
+        self.fsor.saveButt.clicked.connect(self.setSaveFolder)
+        self.fsor.saveFolderLink.clicked.connect(self.openSaveFolder)
 
         self.appendName = qtw.QLineEdit()
         self.appendName.setText('')
-        self.appendName.setFixedHeight(iconw)
         self.appendName.setToolTip('This gets added to the file names')
         self.appendName.textChanged.connect(self.settingsBox.checkFormats)
         
@@ -400,30 +383,14 @@ class fileBox(connectBox):
     
     def setSaveFolder(self) -> None:
         '''set the folder to save all the files we generate from the whole gui'''
-        if os.path.exists(self.saveFolder):
-            startFolder = os.path.dirname(self.saveFolder)
-        else:
-            startFolder = INITSAVEFOLDER
-        sf = fileDialog(startFolder, '', True)
-        if len(sf)>0:
-            sf = sf[0]
-            if os.path.exists(sf):
-                self.saveFolder = formatExplorer(sf)
-                
-                logging.info('Changed save folder to %s' % self.saveFolder)
-                self.saveFolderLabel.setText(self.saveFolder)
-                self.settingsBox.checkFormats()
+        self.saveFolder = setFolder(self.saveFolder)        
+        logging.info('Changed save folder to %s' % self.saveFolder)
+        self.fsor.updateText(self.saveFolder)
+        self.settingsBox.checkFormats()
             
     def openSaveFolder(self) -> None:
         '''Open the save folder in windows explorer'''
-        
-        if not os.path.exists(self.saveFolder):
-            logging.debug(f'Save folder does not exist: {self.saveFolder}')
-            return
-        logging.debug(f'Opening {self.saveFolder}')
-        cmd = ['explorer',  formatExplorer(self.saveFolder)]
-        
-        subprocess.Popen(cmd, shell=True)
+        openFolder(self.saveFolder)
         
     #-------------------------------------------
     

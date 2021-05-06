@@ -1,3 +1,33 @@
- 
-sbp: "C:/Users/lmf1/OneDriveNIST/NIST/data/shopbot/software/SBP files"
-vid: "C:/Users/lmf1/Videos/Shopbot Videos"
+appid: leanfried.sbgui.v1.0.4
+camera:
+  diag: 1
+files:
+  createSubfolders: true
+  dateFormat: '%y%m%d'
+  duplicateFormat: '{0:0=3d}'
+  includeDateRadio: 0
+  includeSBInFile: true
+  includeSBRadio: 2
+  includeSampleInFile: true
+  includeSampleInFolder: true
+  includeTimeInFile: true
+  save: C:/Users/lmf1/Videos/Shopbot Videos
+  separator: _
+  timeFormat: '%y%m%d_%H%M%S'
+fluigent:
+  colors:
+  - '#3f8dd1'
+  - '#b0401e'
+  - '#3e8a5b'
+  - '#b8a665'
+  dt: 200
+  pmax: 7000
+  savePressure: true
+  trange: 60
+layout:
+  save: true
+savePressure: true
+shopbot:
+  autoplay: false
+  sbpFolder: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files
+  sbpName: No file selected

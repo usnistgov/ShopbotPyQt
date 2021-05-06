@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 '''Shopbot GUI Shopbot functions'''
 
+# external packages
 from PyQt5 import QtCore, QtGui
 import PyQt5.QtWidgets as qtw
 import cv2
@@ -12,12 +13,11 @@ import subprocess
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
 
-# currentdir = os.path.dirname(os.path.realpath(__file__))
-# sys.path.append(currentdir)
-# sys.path.append(os.path.join(currentdir, 'icons'))
-
+# local packages
 from sbgui_general import *
+from config import cfg
 
+# info
 __author__ = "Leanne Friedrich"
 __copyright__ = "This data is publicly available according to the NIST statements of copyright, fair use and licensing; see https://www.nist.gov/director/copyright-fair-use-and-licensing-statements-srd-data-and-software"
 __credits__ = ["Leanne Friedrich"]
@@ -271,7 +271,7 @@ class camera:
         self.timer = None                         # the timer that controls frame collection
         self.resetVidStats()
         self.framesSincePrev = 0  # how many frames we've collected since we updated the live display
-        self.diag = 1             # diag tells us which messages to log. 0 means none, 1 means some, 2 means a lot
+        self.diag = cfg.camera.diag             # diag tells us which messages to log. 0 means none, 1 means some, 2 means a lot
         self.fps = 0              # this will be set during subclass init (webcam.__init__, bascam.__init__)
         self.exposure = 0         # this will be set during subclass init (webcam.__init__, bascam.__init__)
         self.fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
@@ -477,9 +477,9 @@ class camera:
             if elapsed<1:
                 # if the last collision happened recently, note how many collisions there have been in a row
                 self.collisionCount+=1
-                if self.collisionCount % 50 == 0:
+                if self.collisionCount % 1000 == 0 and self.diag>1:
                     # if we've had 50 collisions in a row in quick succession, report an error
-                    st = f'{self.collisionCount} frame read collisions in a row. Consider decreasing frame rate.'
+                    st = f'{self.collisionCount} frame read collisions in a row. Consider decreasing exposure time.'
                     return st
                 else:
                     raise Exception('Do not log this message')
@@ -958,6 +958,15 @@ class cameraBox(connectBox):
         if self.connected:
             if self.camObj.diag>0:
                 logging.info(self.bTitle, ' ', self.camObj.fps, ' fps')
+        
+        
+    def saveConfig(self, cfg1):
+        '''save the current settings to a config Box object'''
+        return cfg1
+    
+    def loadConfig(self, cfg1):
+        '''load settings from a config Box object'''
+        self.camObj.diag = cfg1.camera.diag
 
     
     def connect(self) -> None:
@@ -1022,9 +1031,10 @@ class cameraBox(connectBox):
             self.camButts.addWidget(b)
         self.camButts.setStyleSheet("QToolBar{spacing:5px;}");
         
-        self.status = qtw.QLabel('Ready')
-        self.status.setFixedSize(self.camObj.imw - (self.camButts.iconSize().width()+20)*len(buttons), 70)
-        self.status.setWordWrap(True)
+#         self.status = qtw.QLabel('Ready')
+#         self.status.setFixedSize(self.camObj.imw - (self.camButts.iconSize().width()+20)*len(buttons), 70)
+#         self.status.setWordWrap(True)
+        self.createStatus(self.camObj.imw - (self.camButts.iconSize().width()+20)*len(buttons), height=70)
                 
         buttRow = qtw.QHBoxLayout()
         buttRow.addWidget(self.camButts)

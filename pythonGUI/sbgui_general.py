@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 '''Shopbot GUI general functions. Contains classes and functions that are shared among fluigent, cameras, shopbot.'''
 
-
+# external packages
 from PyQt5 import QtCore, QtGui
 import PyQt5.QtWidgets as qtw
 import sip
@@ -10,10 +10,7 @@ import subprocess
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
 
-# currentdir = os.path.dirname(os.path.realpath(__file__))
-# sys.path.append(currentdir)
-# sys.path.append(os.path.join(currentdir, 'icons'))
-
+# info
 __author__ = "Leanne Friedrich"
 __copyright__ = "This data is publicly available according to the NIST statements of copyright, fair use and licensing; see https://www.nist.gov/director/copyright-fair-use-and-licensing-statements-srd-data-and-software"
 __credits__ = ["Leanne Friedrich"]
@@ -25,6 +22,13 @@ __status__ = "Development"
 
 
 ################################################
+
+def checkPath(path:str) -> str:
+    '''check if the path is formatted correctly and exists'''
+    path0 = os.path.abspath(path)
+    if not os.path.exists(path):
+        path = r'C:\\'
+    return path
 
 def icon(name:str) -> QtGui.QIcon:
     '''Get a QtGui icon given an icon name'''
@@ -40,7 +44,7 @@ def icon(name:str) -> QtGui.QIcon:
     return QtGui.QIcon(iconpath)
 
 
-def fileDialog(startDir:str, fmt:str, isFolder:bool) -> str:
+def fileDialog(startDir:str, fmt:str, isFolder:bool, opening:bool=True) -> str:
     '''fileDialog opens a dialog to select a file for reading
     startDir is the directory to start in, e.g. r'C:\Documents'
     fmt is a string file format, e.g. 'Gcode files (*.gcode *.sbp)'
@@ -55,7 +59,10 @@ def fileDialog(startDir:str, fmt:str, isFolder:bool) -> str:
         dialog.setFileMode(qtw.QFileDialog.ExistingFiles)
         
     # OPENING OR SAVING
-    dialog.setAcceptMode(qtw.QFileDialog.AcceptOpen)
+    if opening:
+        dialog.setAcceptMode(qtw.QFileDialog.AcceptOpen)
+    else:
+        dialog.setAcceptMode(qtw.QFileDialog.AcceptSave)
 
     # SET FORMAT, IF SPECIFIED
     if fmt != '' and isFolder is False:
@@ -73,6 +80,84 @@ def fileDialog(startDir:str, fmt:str, isFolder:bool) -> str:
         return paths
     else:
         return ''
+    
+    
+def formatExplorer(fn:str) -> str:
+    '''Format the file name for use in subprocess.Popen(explorer)'''
+    return fn.replace(r"/", "\\")
+
+def setFolder(folder:str) -> str:
+    '''Check and format the folder'''
+    if os.path.exists(folder):
+        startFolder = folder
+    else:
+        startFolder = "C:\\"
+    sf = fileDialog(startFolder, '', True)
+    if len(sf)>0:
+        sf = sf[0]
+        if os.path.exists(sf):
+            return formatExplorer(sf)
+    return ''
+
+def openFolder(folder:str) -> None:
+    '''Open the folder in windows explorer'''
+    if not os.path.exists(folder):
+        logging.debug(f'Folder does not exist: {folder}')
+        return
+    logging.debug(f'Opening {folder}')
+    cmd = ['explorer',  formatExplorer(folder)]
+
+    subprocess.Popen(cmd, shell=True)
+        
+    
+class fileSetOpenRow:
+    '''A row of icons and displays that lets the user set a file name using a dialog and open the folder location'''
+    
+    def __init__(self, parent, width:int=500, title:str='Set folder', tooltip:str='Open folder', initFolder='No folder selected') -> None:
+        '''Make the display row. Return a layout'''
+        self.width = width
+        self.title = title
+        self.saveFolder = initFolder
+        self.tooltip = tooltip
+        self.parent = parent
+        
+    def makeDisplay(self) -> qtw.QHBoxLayout:
+        '''Make the display row. Return a layout'''
+        saveButtBar = qtw.QToolBar()
+        iconw = float(saveButtBar.iconSize().width())
+        saveButtBar.setFixedWidth(iconw+4)
+            
+        saveButt = qtw.QToolButton()
+        saveButt.setToolTip(self.title)
+        saveButt.setIcon(icon('open.png'))
+#         saveButt.clicked.connect(self.setSaveFolder)
+        self.saveButt = saveButt
+        saveButtBar.addWidget(saveButt)
+        
+        self.saveFolderLabel = createStatus(self.width, height=2*iconw, status=self.saveFolder)
+        
+        saveFolderLink = qtw.QToolButton()
+        saveFolderLink.setToolTip(self.tooltip)
+        saveFolderLink.setIcon(icon('link.png'))
+#         saveFolderLink.clicked.connect(self.openSaveFolder)
+        self.saveFolderLink = saveFolderLink
+        saveLinkBar = qtw.QToolBar()
+        saveLinkBar.setFixedWidth(iconw+4)
+        saveLinkBar.addWidget(saveFolderLink)
+        
+        folderRow = qtw.QHBoxLayout()
+        folderRow.addWidget(saveButtBar)
+        folderRow.addWidget(self.saveFolderLabel)
+        folderRow.addWidget(saveLinkBar)
+        
+        return folderRow
+        
+    def updateText(self, sf:str) -> None:
+        '''set the folder name display'''
+        self.saveFolderLabel.setText(sf)
+
+    
+    
 
 #####################################################
 
@@ -137,6 +222,12 @@ def deleteLayoutItems(layout) -> None:
             return
     sip.delete(layout)
     
+def createStatus(width:int, height:int=70, status:str='Ready') -> qtw.QLabel:
+    '''creates a section for displaying the device status'''
+    status = qtw.QLabel(status)
+    status.setFixedSize(width, height)
+    status.setWordWrap(True)
+    return status
     
 
 class connectBox(qtw.QGroupBox):
@@ -175,11 +266,12 @@ class connectBox(qtw.QGroupBox):
         self.setLayout(self.layout)
     
     
-    def createStatus(self, width:int) -> None:
+    def createStatus(self, width:int, height:int=70, status:str='Ready') -> None:
         '''creates a section for displaying the device status'''
-        self.status = qtw.QLabel('Ready')
-        self.status.setFixedSize(width, 50)
-        self.status.setWordWrap(True)
+#         self.status = qtw.QLabel('Ready')
+#         self.status.setFixedSize(width, height)
+#         self.status.setWordWrap(True)
+        self.status = createStatus(width, height=height, status=status)
     
     
     def resetLayout(self) -> None:

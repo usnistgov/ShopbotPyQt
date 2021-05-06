@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 '''Shopbot GUI Shopbot functions'''
 
+# 
 from PyQt5 import QtCore, QtGui
 import PyQt5.QtWidgets as qtw
 import os, sys
@@ -9,15 +10,12 @@ import subprocess
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
 
+# local packages
 import Fluigent.SDK as fgt
-
-# currentdir = os.path.dirname(os.path.realpath(__file__))
-# sys.path.append(currentdir)
-# sys.path.append(os.path.join(currentdir, 'icons'))
-
 from config import cfg
 from sbgui_general import *
 
+# info
 __author__ = "Leanne Friedrich"
 __copyright__ = "This data is publicly available according to the NIST statements of copyright, fair use and licensing; see https://www.nist.gov/director/copyright-fair-use-and-licensing-statements-srd-data-and-software"
 __credits__ = ["Leanne Friedrich"]
@@ -27,7 +25,7 @@ __maintainer__ = "Leanne Friedrich"
 __email__ = "Leanne.Friedrich@nist.gov"
 __status__ = "Development"
 
-
+##################################################  
 
       
 class sbSettingsBox(qtw.QWidget):
@@ -41,6 +39,7 @@ class sbSettingsBox(qtw.QWidget):
         self.parent = parent
         
         layout = qtw.QVBoxLayout()
+        layout.addStretch()
         
         self.autoPlayRow = qtw.QVBoxLayout()
         self.autoPlayLabel = qtw.QLabel('When the print is done:')
@@ -57,9 +56,16 @@ class sbSettingsBox(qtw.QWidget):
             self.autoPlayRow.addWidget(b)
         self.autoPlayGroup.buttonClicked.connect(self.changeautoPlay)
         layout.addLayout(self.autoPlayRow)
+        self.fsor = fileSetOpenRow(self, width=400, title='Set SBP folder', initFolder=self.parent.sbpFolder, tooltip='Open SBP folder')
+        folderRow = self.fsor.makeDisplay()
+        self.fsor.saveButt.clicked.connect(self.setSBPFolder)
+        self.fsor.saveFolderLink.clicked.connect(self.openSBPFolder)
+        
+        layout.addLayout(folderRow)
+        
         self.setLayout(layout)
         
-    def changeautoPlay(self, autoPlayButton):
+    def changeautoPlay(self, autoPlayButton) -> None:
         '''Change autoPlay settings'''
         bid = self.autoPlayGroup.id(autoPlayButton) 
         if bid==0:
@@ -68,8 +74,21 @@ class sbSettingsBox(qtw.QWidget):
         else:
             self.parent.autoPlay = False
             self.parent.updateStatus('Turned off autoplay', True)
-           
             
+#     def updateFolder(self, folder:str) -> None:
+#         self.parent.sbpFolder = folder
+
+    def setSBPFolder(self) -> None:
+        '''set the folder to save all the files we generate from the whole gui'''
+        self.parent.sbpFolder = setFolder(self.parent.sbpFolder)        
+        logging.info('Changed shopbot file folder to %s' % self.parent.sbpFolder)
+        self.fsor.updateText(self.parent.sbpFolder)
+            
+    def openSBPFolder(self) -> None:
+        '''Open the save folder in windows explorer'''
+        openFolder(self.parent.sbpFolder)
+
+        
             
 ###########################################
 
@@ -92,8 +111,9 @@ class sbBox(connectBox):
         self.setTitle('Shopbot')
         self.prevFlag = 0
         self.currentFlag = 0
-        self.sbpName='No file selected'
-        self.autoPlay = False        
+        self.sbpName = cfg.shopbot.sbpName
+        self.autoPlay = cfg.shopbot.autoplay 
+        self.sbpFolder = cfg.shopbot.sbpFolder
         
         try:
             self.sb3File = findSb3()
@@ -102,6 +122,19 @@ class sbBox(connectBox):
             self.failLayout()
         else:
             self.successLayout()
+            
+    def saveConfig(self, cfg1):
+        '''save the current settings to a config Box object'''
+        cfg1.shopbot.sbpName = self.sbpName
+        cfg1.shopbot.autoplay = self.autoPlay   
+        cfg1.shopbot.sbpFolder = self.sbpFolder
+        return cfg1
+    
+    def loadConfig(self, cfg1):
+        '''load settings from a config Box object'''
+        self.sbpName = cfg1.shopbot.sbpName
+        self.autoPlay = cfg1.shopbot.autoplay  
+        self.sbpFolder = checkPath(cfg1.shopbot.sbpFolder)
             
     def connectKeys(self) -> None:
         '''connects to the windows registry keys for the Shopbot flags'''
@@ -129,9 +162,10 @@ class sbBox(connectBox):
 #         self.runButt.setStyleSheet('border-radius:10px; padding:5px; border-style: outset; border: 2px solid #555;')
         self.updateRunButt()
         
-        self.status = qtw.QLabel('Waiting for file ...')
-        self.status.setFixedSize(725, 50)
-        self.status.setWordWrap(True)
+        self.createStatus(725, height=50, status='Waiting for file ...')
+#         self.status = qtw.QLabel('Waiting for file ...')
+#         self.status.setFixedSize(725, 50)
+#         self.status.setWordWrap(True)
         
         self.topBar = qtw.QHBoxLayout()
         self.topBar.addWidget(self.runButt)
@@ -285,7 +319,7 @@ class sbBox(connectBox):
         if os.path.exists(self.sbpName):
             openFolder = os.path.dirname(self.sbpName)
         else:
-            openFolder = cfg.sbp
+            openFolder = self.sbpFolder
             if not os.path.exists(openFolder):
                 openFolder = r'C:\\'
         sbpnList = fileDialog(openFolder, 'Gcode files (*.gcode *.sbp)', False)
