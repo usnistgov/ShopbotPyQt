@@ -48,7 +48,8 @@ def fileDialog(startDir:str, fmt:str, isFolder:bool, opening:bool=True) -> str:
     '''fileDialog opens a dialog to select a file for reading
     startDir is the directory to start in, e.g. r'C:\Documents'
     fmt is a string file format, e.g. 'Gcode files (*.gcode *.sbp)'
-    isFolder is bool true to only open folders'''
+    isFolder is bool true to only open folders
+    opening is true if we are opening a file, false if we are saving'''
     dialog = qtw.QFileDialog()
     dialog.setFilter(dialog.filter() | QtCore.QDir.Hidden)
 
@@ -156,7 +157,70 @@ class fileSetOpenRow:
         '''set the folder name display'''
         self.saveFolderLabel.setText(sf)
 
+#############################################
+
+
+class fCheckBox(qtw.QCheckBox):
+    '''This is a checkbox style for quick initialization'''
     
+    def __init__(self, layout:qtw.QLayout, title:str='', tooltip:str='', checked:bool=False, **kwargs):
+        super().__init__()
+        self.setText(title)
+        if len(tooltip)>0:
+            self.setToolTip(tooltip)
+        self.setChecked(checked)
+        layout.addWidget(self)
+        if 'func' in kwargs:
+            self.stateChanged.connect(kwargs['func'])
+        
+class fLabel(qtw.QLabel):
+    '''This is a label style for quick initialization'''
+    
+    def __init__(self, layout:qtw.QLayout, title:str='', style:str=''):
+        super().__init__()
+        self.setText(title)
+        if len(style)>0:
+            self.setStyleSheet(style)
+        layout.addWidget(self)
+        
+class fRadio(qtw.QRadioButton):
+    '''This is a radio button style for quick initialization'''
+    
+    def __init__(self, layout:qtw.QLayout, group:qtw.QButtonGroup, title:str='', tooltip:str='', i:int=0, **kwargs):
+        super().__init__()
+        self.setText(title)
+        if len(tooltip)>0:
+            self.setToolTip(tooltip)
+        group.addButton(self, i)
+        layout.addWidget(self)
+        if 'func' in kwargs:
+            self.clicked.connect(kwargs['func'])
+            
+class fLineEdit(qtw.QLineEdit):
+    '''This is a line edit style for quick initialization'''
+    
+    def __init__(self, form:qtw.QFormLayout, title:str='', text:str='', tooltip:str='', **kwargs):
+        super().__init__()
+        self.setText(text)
+        if len(tooltip)>0:
+            self.setToolTip(tooltip)
+        if 'func' in kwargs:
+            self.editingFinished.connect(kwargs['func'])
+        form.addRow(title, self)
+        
+class fButton(qtw.QPushButton):
+    '''This is a pushbutton style for quick initialization'''
+    
+    def __init__(self, layout:qtw.QLayout, title:str='', tooltip:str='', **kwargs):
+        super().__init__()
+        self.setText(title)
+        if len(tooltip)>0:
+            self.setToolTip(tooltip)
+        if 'func' in kwargs:
+            self.clicked.connect(kwargs['func'])
+        self.setAutoDefault(False)
+        self.clearFocus()
+        layout.addWidget(self)
     
 
 #####################################################

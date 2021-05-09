@@ -1,4 +1,10 @@
 appid: leanfried.sbgui.v1.0.4
+calibration:
+  flowRateFolder: C:/Users/lmf1/OneDrive - National Institute of Standards and Technology
+    (NIST)/NIST/data/material properties/flow rates
+  initDensity: 1
+  initDiam: '0.603'
+  initSpeed: '5.0'
 camera:
   diag: 1
 files:

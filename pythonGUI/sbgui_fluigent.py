@@ -135,6 +135,7 @@ class fluChannel:
         fgt.fgt_set_pressure(self.chanNum, runPressure)
         QtCore.QTimer.singleShot(runTime*1000, self.zeroChannel) 
             # QTimer wants time in milliseconds
+        self.fluBox.addRowToCalib(runPressure, runTime)
     
     
     def zeroChannel(self) -> None:
@@ -178,11 +179,14 @@ class plotWatch:
             press = [0 for _ in range(len(self.time))]
             self.pressures.append(press)
 
+#------------------------------
 
 def checkPressure(channel:int) -> int:
     '''reads the pressure of a given channel, 0-indexed'''
     pressure = int(fgt.fgt_get_pressure(channel))
     return pressure
+
+#------------------------------
             
 class plotRunnable(QtCore.QRunnable):
     '''plotRunnable updates the list of times and pressures and allows us to read pressures continuously in a background thread.'''
@@ -219,6 +223,7 @@ class plotRunnable(QtCore.QRunnable):
                 self.signals.progress.emit()             # Tell the GUI to update plot
             time.sleep(self.fluBox.dt/1000)                         # Update every 200 ms
 
+#------------------------------
             
 class fluPlot:
     '''produces a plot that can be displayed in fluBox'''
@@ -536,11 +541,18 @@ class fluBox(connectBox):
         '''Update the plot time range'''
         self.fluPlot.updateRange()
         
+    def updateRunPressure(self, p) -> None:
+        self.pchannels[0].constBox.setText(str(p))
+        
     def updateColors(self) -> None:
         '''Update channel colors'''
         self.fluPlot.updateColors()
         for i in range(len(self.pchannels)):
             self.pchannels[i].updateColor(self.colors[i])
+            
+    def addRowToCalib(self, runPressure:float, runTime:float) -> None:
+        '''add pressure and time to the calibration table'''
+        self.sbWin.calibDialog.addRowToCalib(runPressure, runTime)
         
         
     #-----------------------------------------

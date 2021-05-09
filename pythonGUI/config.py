@@ -29,28 +29,37 @@ def getConfigDir() -> str:
             raise FileNotFoundError(f"No configs directory found")
     return configdir
 
-def dumpConfigs(cfg:Box, path:str) -> None:
-    '''Saves config file'''
+def dumpConfigs(cfg, path:str) -> None:
+    '''Saves config file. cfg could be a Box or a dict'''
     with open(path, "w") as ymlout:
-        yaml.dump(cfg.to_dict(), ymlout)
+        if type(cfg) is Box:
+            cout = cfg.to_dict()
+        elif type(cfg) is dict:
+            cout = cfg
+        else:
+            return
+        yaml.dump(cout, ymlout)
         
 def loadConfigFile(path:str) -> Box:
     with open(path, "r") as ymlfile:
         cfg = Box(yaml.safe_load(ymlfile))
         return cfg
-        
+
+def loadConfig() -> Box:
+    configdir = getConfigDir()
+    path = os.path.join(configdir,"config.yml")
+    if not os.path.exists(path):
+        path = os.path.join(configdir, 'config_default.yml')
+    llist = os.listdir(configdir)
+    while not os.path.exists(path):
+        l = llist.pop(0)
+        if l.endswith('yml') or l.endswidth('yaml'):
+            path = os.path.join(configdir, l)
+    cfg = loadConfigFile(path)
+    return cfg
         
 #----------------------------------------------------
-configdir = getConfigDir()
-path = os.path.join(configdir,"config.yml")
-if not os.path.exists(path):
-    path = os.path.join(configdir, 'config_default.yml')
-llist = os.listdir(configdir)
-while not os.path.exists(path):
-    l = llist.pop(0)
-    if l.endswith('yml') or l.endswidth('yaml'):
-        path = os.path.join(configdir, l)
-            
-cfg = loadConfigFile(path)
+
+cfg = loadConfig()
     
     

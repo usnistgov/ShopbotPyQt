@@ -2,7 +2,7 @@
 '''Shopbot GUI functions for setting up the GUI window'''
 
 # external packages
-from PyQt5 import QtGui, QtGui
+from PyQt5 import QtGui
 import PyQt5.QtWidgets as qtw
 import os, sys
 import ctypes
@@ -16,6 +16,7 @@ import sbgui_fluigent
 import sbgui_files
 import sbgui_shopbot
 import sbgui_cameras
+import sbgui_calibration
 from config import *
 
 # info
@@ -65,6 +66,10 @@ class logDialog(QtGui.QDialog):
         self.setWindowTitle("Shopbot/Fluigent/Camera log")
         self.resize(900, 400)                       # window is 900 px x 400 px
         
+        
+    def close(self):
+        '''close the window'''
+        self.done(0)
         
 ######################## settings window
 
@@ -171,7 +176,7 @@ class settingsDialog(QtGui.QDialog):
         '''save the config file to file'''
         parent = self.parent
         from config import cfg
-        for box in [parent.fileBox, parent.sbBox, parent.basBox, parent.nozBox, parent.web2Box, parent.fluBox]:
+        for box in [parent.fileBox, parent.sbBox, parent.basBox, parent.nozBox, parent.web2Box, parent.fluBox, parent.calibDialog]:
             cfg = box.saveConfig(cfg)
         dumpConfigs(cfg, file)
         logging.info(f'Saved settings to {file}')
@@ -193,6 +198,8 @@ class settingsDialog(QtGui.QDialog):
         if self.alwaysSave.isChecked():
             self.saveCfg(os.path.join(getConfigDir(), 'config.yml'))
         self.done(0)
+        
+
         
 
         
@@ -260,50 +267,61 @@ class SBwindow(qtw.QMainWindow):
     #----------------
     # log
                 
-    def setupLog(self):  
+    def setupLog(self, menubar) -> None:  
         '''Create the log dialog.'''
         self.logDialog = logDialog(self)
-        self.logButt = qtw.QAction('Open log', self)
+        self.logButt = qtw.QAction('Log', self)
         self.logButt.setStatusTip('Open running log of status messages')
         self.logButt.triggered.connect(self.openLog)
-        
-        
-                
+        menubar.addAction(self.logButt)  # add button to open log window
+                 
     def openLog(self) -> None:
         '''Open the log window'''
-        
         self.logDialog.show()
         self.logDialog.raise_()
         
     #----------------
     # settings
                 
-    def setupSettings(self):  
+    def setupSettings(self, menubar) -> None:  
         '''Create the settings dialog.'''
         self.settingsDialog = settingsDialog(self)
         self.settingsButt = qtw.QAction(icon('settings.png'), 'Settings', self)
         self.settingsButt.setStatusTip('Open app settings')
         self.settingsButt.triggered.connect(self.openSettings)
-        
-        
-           
+        menubar.addAction(self.settingsButt)  # add button to open settings window
+          
     def openSettings(self) -> None:
         '''Open the settings window'''
-        
         self.settingsDialog.show()
         self.settingsDialog.raise_()
+        
+    #-------------- 
+    # calibration tool
+    
+    def setupCalib(self, menubar) -> None:
+        '''Create the pressure calibration tool dialog'''
+        self.calibDialog = sbgui_calibration.pCalibration(self)
+        self.calibButt = qtw.QAction('Speed calibration tool', self)
+        self.calibButt.setStatusTip('Tool for calibrating speed vs pressure')
+        self.calibButt.triggered.connect(self.openCalib)
+        menubar.addAction(self.calibButt)  # add button to open calibration window
+        
+    def openCalib(self) -> None:
+        '''Open the calibration window'''
+        self.calibDialog.show()
+        self.calibDialog.raise_()
         
     #----------------
     # top menu
         
     def createMenu(self):
         '''Create the top menu of the window'''
-        
         menubar = self.menuBar()
-        self.setupLog()                  # create a log window, not open yet
-        menubar.addAction(self.logButt)  # add button to open log window
-        self.setupSettings()                  # create a log window, not open yet
-        menubar.addAction(self.settingsButt)  # add button to open settings window
+        self.setupLog(menubar)                  # create a log window, not open yet
+        self.setupCalib(menubar)
+        self.setupSettings(menubar)                  # create a log window, not open yet
+        
 
 
     #-----------------
@@ -318,14 +336,9 @@ class SBwindow(qtw.QMainWindow):
     def closeEvent(self, event):
         '''runs when the window is closed. Disconnects everything we connected to.'''
         try:
-            for o in [self.sbBox, self.basBox, self.nozBox, self.web2Box, self.fluBox, self.settingsDialog]:
+            for o in [self.sbBox, self.basBox, self.nozBox, self.web2Box, self.fluBox, self.settingsDialog, self.logDialog, self.calibDialog]:
                 try:
                     o.close()
-                except:
-                    pass
-            for o in [self.logDialog]:
-                try:
-                    o.done(0)
                 except:
                     pass
             for handler in logging.root.handlers[:]:
