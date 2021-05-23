@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-'''Functions for creating shopbot files'''
+'''Functions for creating shopbot files
+Handbook: https://www.shopbottools.com/ShopBotDocs/files/SBG00314150707ProgHandWin.pdf'''
 
 # external packages
 import math

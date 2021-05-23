@@ -839,6 +839,7 @@ class camSettingsBox(qtw.QWidget):
               
         self.fpsBox = qtw.QLineEdit()
         self.fpsBox.setText(str(self.camObj.fps))
+        self.fpsBox.returnPressed.connect(self.updateVars)
         self.fpsAutoButt = qtw.QPushButton('Auto')
         self.fpsAutoButt.clicked.connect(self.fpsAuto)
         self.fpsAutoButt.setAutoDefault(False)
@@ -849,6 +850,7 @@ class camSettingsBox(qtw.QWidget):
         
         self.exposureBox = qtw.QLineEdit()
         self.exposureBox.setText(str(self.camObj.exposure))
+        self.exposureBox.returnPressed.connect(self.updateVars)
         self.exposureAutoButt = qtw.QPushButton('Auto')
         self.exposureAutoButt.clicked.connect(self.exposureAuto)
         self.exposureAutoButt.setAutoDefault(False)

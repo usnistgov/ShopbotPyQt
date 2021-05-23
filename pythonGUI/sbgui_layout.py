@@ -132,30 +132,42 @@ class settingsDialog(QtGui.QDialog):
         self.setStyle(ProxyStyle())
         self.layout = qtw.QVBoxLayout()
         
-        loadButton = qtw.QPushButton('Load settings from file')
-        loadButton.clicked.connect(self.loadSettings)
-        loadButton.setIcon(icon('open.png'))
-        self.layout.addWidget(loadButton)
-        
-        saveButton = qtw.QPushButton('Save settings to file')
-        saveButton.clicked.connect(self.saveSettings)
-        saveButton.setIcon(icon('save.png'))
-        self.layout.addWidget(saveButton)
-        
-        self.alwaysSave = qtw.QCheckBox('Save settings for next session')
-        self.alwaysSave.setChecked(cfg.layout.save)
-        self.layout.addWidget(self.alwaysSave)
-        
+        self.generalBox() # create a layout for general settings
         self.tabs = qtw.QTabWidget()       
         self.tabs.setTabBar(TabBar(self))
         self.tabs.setTabPosition(qtw.QTabWidget.West)
-        for box in [parent.fileBox, parent.sbBox, parent.basBox, parent.nozBox, parent.web2Box, parent.fluBox]:
+        for box in [self, parent.fileBox, parent.sbBox, parent.basBox, parent.nozBox, parent.web2Box, parent.fluBox]:
             self.tabs.addTab(box.settingsBox, box.bTitle)     
         parent.fileBox.settingsBox.checkFormats() # update the initial file format
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
         
         self.setWindowTitle('Settings')
+        
+    def generalBox(self) -> None:
+        '''create a tab for settings of settings'''
+        self.settingsBox = qtw.QWidget()
+        self.bTitle = 'Load/save'
+        layout = QtGui.QVBoxLayout()
+        loadButton = qtw.QPushButton('Load settings from file')
+        loadButton.clicked.connect(self.loadSettings)
+        loadButton.setIcon(icon('open.png'))
+        loadButton.clearFocus()
+        layout.addWidget(loadButton)
+        
+        saveButton = qtw.QPushButton('Save settings to file')
+        saveButton.clicked.connect(self.saveSettings)
+        saveButton.setIcon(icon('save.png'))
+        saveButton.clearFocus()
+        layout.addWidget(saveButton)
+        
+        self.alwaysSave = qtw.QCheckBox('Save settings for next session')
+        self.alwaysSave.setChecked(cfg.layout.save)
+        self.alwaysSave.clearFocus()
+        layout.addWidget(self.alwaysSave)
+        
+        self.settingsBox.setLayout(layout)
+        
         
     def loadSettings(self) -> None:
         '''Load settings from file'''

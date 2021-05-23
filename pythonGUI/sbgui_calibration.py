@@ -93,10 +93,13 @@ class calibPlot:
         self.graph.setBackground('w')
         self.graph.setLabel('left', 'Flow speed (mm/s)')
         self.graph.setLabel('bottom', 'Pressure (mBar)')
-        self.horizPen =  pg.mkPen(color='#888888', width=1)
+        self.horizPen =  pg.mkPen(color='#888888', width=2)
         self.prange = [0,10]
         self.horizLine = self.graph.plot(self.prange, [self.parent.targetSpeed(), self.parent.targetSpeed()], pen=self.horizPen)
-        self.dataline = self.graph.plot([], [], pen=None, symbol='o', name=self.parent.sample())
+        self.dataline = pg.ScatterPlotItem([], [], brush='b', symbol='o', name=self.parent.sample())
+        self.graph.addItem(self.dataline)
+        self.fitPoint = pg.ScatterPlotItem([], [], brush='r',  symbol='s')
+        self.graph.addItem(self.fitPoint)
         self.fitPen =  pg.mkPen(color='#000000', width=2)
         self.fitline = self.graph.plot([], [], pen=self.fitPen)
         self.graph.setFixedSize(400, 300)
@@ -115,7 +118,7 @@ class calibPlot:
     def updateTargetSpeed(self) -> None:
         '''update the target speed line on the plot'''
         p,_ = self.getPS()
-        self.prange = [0, max(p)]
+        self.prange = [min(p), max(p)]
         self.horizLine.setData(self.prange, [self.parent.targetSpeed(), self.parent.targetSpeed()], pen=self.horizPen)
         self.calcPressure()
         
@@ -138,7 +141,8 @@ class calibPlot:
                 ps3.append(row1)
         if len(ps3)==0:
             return [], []
-        ps3 = (np.sort(ps3, axis=0)).transpose()
+        ps3 = np.array(ps3)
+        ps3 = (ps3[ps3[:, 0].argsort()]).transpose()
         return list(ps3[0]), list(ps3[1])
     
     def calcPressure(self) -> None:
@@ -158,13 +162,14 @@ class calibPlot:
         else:
             p = c
         self.parent.updatePressure(p)
+        self.fitPoint.setData([p], [self.parent.targetSpeed()]) # put a point on the plot
             
         
     def update(self) -> None:
         '''Update the plot with data from the current table'''
         # plot x,y
         p,s = self.getPS()
-        self.dataline.setData(p, s, pen=None, symbol='o')
+        self.dataline.setData(p, s)
         
         if len(p)>1:
             # fit x,y
@@ -184,6 +189,7 @@ class calibPlot:
         # update fit and pressure
         self.updateEq()
         self.calcPressure()
+        self.updateTargetSpeed()
 
 
 #-------------------------------------------------------------
@@ -301,7 +307,7 @@ class pCalibration(QtGui.QDialog):
     #-------------------------------------
 
     
-    def initTable(self, size:int=10) -> None:
+    def initTable(self, size:int=20) -> None:
         self.columns = ['initwt', 'finalwt', 'pressure', 'time', 'speed']
         self.headerDict = {'initwt':'init wt (g)', 'finalwt':'final wt (g)', 'pressure':'pressure (mBar)', 'time':'time (s)', 'speed':'speed (mm/s)'}
         blank = ['' for i in range(size)]
