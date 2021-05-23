@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 '''Functions for creating shopbot files'''
 
+# external packages
 import math
 import numpy as np
 import os
@@ -11,7 +12,11 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import sympy as sy
 import copy
+import logging
 
+# local packages
+
+# info
 __author__ = "Leanne Friedrich"
 __copyright__ = "This data is publicly available according to the NIST statements of copyright, fair use and licensing; see https://www.nist.gov/director/copyright-fair-use-and-licensing-statements-srd-data-and-software"
 __credits__ = ["Leanne Friedrich"]
@@ -484,6 +489,21 @@ class sbpCreator:
         File_object.write(fout)
         File_object.close()
         print("Exported file %s" % filename)
+        
+    def defineVar(self, key:str, val:Any) -> None:
+        '''add variable definition to file'''
+        self.file+='&' + key + ' = ' + fs(val) + '\n'
+        newdef = {key:val}
+        self.vardefs = {**self.vardefs, **newdef}
+        
+    def defineVars(self, keyvals:Dict) -> None:
+        '''from a dictionary, add all definitions'''
+        for key, val in keyvals.items():
+            self.defineVar(key, val)
+            
+    def addLabel(self, label:str) -> None:
+        '''label the top of the loop'''
+        self.file+=f'{label}:\n' 
     
     
 ############---------------------------------
@@ -493,14 +513,12 @@ class defVars(sbpCreator):
     
     def __init__(self, **kwargs):
         super(defVars, self).__init__()
-        for key, val in kwargs.items():
-            self.file+='&' + key + ' = ' + fs(val) + '\n'
-        self.vardefs = {**self.vardefs, **kwargs}
+        self.defineVars(kwargs)
     
     def setSpeeds(self, **kwargs):
         '''Set move and jump speeds. Inputs could be m=5, j=20'''
         for i in kwargs:
-            self.file+= i.upper() + 'S, ' + str(kwargs[i]) + '\n'
+            self.file+= f'{i.upper()}S, {str(kwargs[i])}\n'
             
     def setUnits(self, **kwargs):
         '''Set the units to mm'''
@@ -826,17 +844,47 @@ class pics(sbpCreator):
     '''Take pictures'''
     
     
-    def __init__(self, channel:int=2, wait:float=5, **kwargs):
+    def __init__(self, channel:int=2, **kwargs):
         super(pics, self).__init__(**kwargs)
         self.channel = channel
-        self.wait = wait
+        self.labelsIndex = 0
         
     def snap(self):
+        '''take a picture by turning on/off flags'''
         self.stepPoints.append(self.cp)
         self.file+='PAUSE &wait1\n'
         self.turnOn(self.channel)
         self.file+='PAUSE &wait2\n'
-        self.turnOff(self.channel)       
+        self.turnOff(self.channel) 
+        
+    def vertLine(self, z0:Union[str, float], dz:Union[str, float], pics:Union[str, int]) -> None:
+        '''take pictures in a vertical line, starting at z0, with spacing dz, for # of pics'''
+        if type(pics) is int and pics<0:
+            print(f'Negative number of z reps requested: {z0}, {dz}, {pics}')
+            return
+        self.defineVars({'countz':0, 'dz':dz, 'z0':z0})
+        self.labelsIndex+=1 # create a new label
+        label = f'LABEL{self.labelsIndex}'
+        self.file+=f'{label}:\n' # label the top of the loop
+        self.mz(f'z0 + &countz*dz') # move in z
+        self.snap() # take picture
+        self.defineVars({'countz':'&countz + 1'})
+        self.file+=f'IF &countz<{pics} THEN GOTO {label}\n'
+        
+    def grid(self, y0:Union[str, float], dy:Union[str, float], yreps:Union[int,str], z0:Union[str, float], dz:Union[str, float], zreps:Union[str,int]) -> None:
+        '''take a grid of pictures'''
+        if type(yreps) is int and yreps<0:
+            print(f'Negative number of y reps requested: {y0}, {dy}, {yreps}')
+            return
+        self.defineVars({'county':0, 'dy':dy, 'z0':y0})
+        self.labelsIndex+=1
+        label = f'LABEL{self.labelsIndex}'
+        self.file+=f'{label}:\n' # label the top of the loop
+        self.my(f'y0 + &county*dy') # move in z
+        self.vertLine(z0, dz, zreps) # take vertical line
+        self.file+='&county = &county + 1\n' # increment count
+        self.file+=f'IF &county<{yreps} THEN GOTO {label}\n'
+        
     
     def sbp(self):
         return self.file
