@@ -6,4 +6,5 @@ sbguiarchive.py
 pythonGUI/archive
 pythonGUI/configs/*ml
 !pythonGUI/configs/config_default.yml
+!pythonGUI/configs/densities.yml
 
