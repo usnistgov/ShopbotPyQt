@@ -4,6 +4,8 @@
 &spacing = 5.00
 &nd = 0.91
 &downdisp = 0.00
+&wait1 = 0.5
+&wait2 = 0.5
 VD , , 1
 VU, 157.480315, 157.480315, -157.480315
 MS, 5
@@ -65,7 +67,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 54.00
+MY, 53.00
 MZ, -24.00
 PAUSE &wait1
 SO, 3, 1
@@ -121,7 +123,63 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 58.00
+MY, 56.00
+MZ, -24.00
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -22.00
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -20.00
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -18.00
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -16.00
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -14.00
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -12.00
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -10.00
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -8.00
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -6.00
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -4.00
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 59.00
 MZ, -24.00
 PAUSE &wait1
 SO, 3, 1
@@ -233,7 +291,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 66.00
+MY, 65.00
 MZ, -24.00
 PAUSE &wait1
 SO, 3, 1
@@ -289,7 +347,63 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 70.00
+MY, 68.00
+MZ, -24.00
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -22.00
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -20.00
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -18.00
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -16.00
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -14.00
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -12.00
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -10.00
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -8.00
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -6.00
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -4.00
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 71.00
 MZ, -24.00
 PAUSE &wait1
 SO, 3, 1
