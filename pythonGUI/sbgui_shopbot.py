@@ -463,7 +463,7 @@ class sbBox(connectBox):
         '''start the timer that watches for the start of print'''
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.waitForStartTimerFunc)
-        self.timer.start(100) # update every 100 ms
+        self.timer.start(cfg.shopbot.dt) # update every 100 ms
         
     
     def waitForStartTimerFunc(self) -> None:
@@ -494,7 +494,7 @@ class sbBox(connectBox):
         # start the timer to watch for pressure triggers
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.timerFunc)
-        self.timer.start(100) # update every 100 ms
+        self.timer.start(cfg.shopbot.dt) # update every 100 ms
         
         # start the cameras if any flow is triggered in the run
         if min(self.channelsTriggered)<len(self.sbWin.fluBox.pchannels):

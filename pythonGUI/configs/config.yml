@@ -17,16 +17,16 @@ files:
   includeSampleInFile: true
   includeSampleInFolder: true
   includeTimeInFile: true
-  save: C:\Users\lmf1\Videos\Shopbot Videos\210929 vels LapRD LapRD
+  save: C:\Users\lmf1\Videos\Shopbot Videos
   separator: _
-  timeFormat: '%y%m%d_%H%M%S'
+  timeFormat: '%y%m%d_%H%M%S_%f'
 fluigent:
   colors:
   - '#3f8dd1'
   - '#b0401e'
   - '#3e8a5b'
   - '#b8a665'
-  dt: 200
+  dt: 50
   pmax: 7000
   savePressure: true
   trange: 60
@@ -35,5 +35,6 @@ layout:
 savePressure: true
 shopbot:
   autoplay: false
+  dt: 50
   sbpFolder: C:\Users\lmf1\Documents\GitHub\ShopbotPyQt\SBP files
-  sbpName: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files/singleLinesNoZig_2.5.sbp
+  sbpName: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files/singleLinesPics7.sbp

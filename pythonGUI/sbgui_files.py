@@ -7,6 +7,7 @@ import PyQt5.QtWidgets as qtw
 import os, sys
 import subprocess
 import time
+import datetime
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
 
@@ -184,7 +185,12 @@ class fileSettingsBox(qtw.QWidget):
     def time(self) -> str:
         '''Get the current time. This should only be used for files.'''
         if self.iTimeCheck.isChecked():
-            return time.strftime(self.timeFormat())
+#             return time.strftime(self.timeFormat())
+            tf = self.timeFormat()
+            dt = datetime.datetime.now().strftime(tf)
+            if tf[-1]=='f':
+                dt = dt[:-5]
+            return dt
         else:
             return ''
     
@@ -217,7 +223,7 @@ class fileSettingsBox(qtw.QWidget):
     def checkDateFormat(self) -> str:
         '''check if the date format is reasonable based on a list of time string formats'''
         status = ''
-        secondStrings = ['%S', '%-S', '%f', '%c', '%X']
+        secondStrings = ['%S', '%-S', '%c', '%f', '%X']
         timeStrings = ['%H', '%-H', '%I', '%-I', '%p', '%M', '%-M', '%z', '%Z']+secondStrings
         dateformat = self.dateFormat()
         dcheck = self.iDateGroup.checkedId()
