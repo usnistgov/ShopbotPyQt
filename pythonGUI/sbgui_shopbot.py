@@ -9,6 +9,8 @@ import winreg
 import subprocess
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
+import csv
+import re
 
 # local packages
 import Fluigent.SDK as fgt
@@ -192,6 +194,11 @@ class sbBox(connectBox):
         self.sbpNameList = qtw.QListWidget()
         self.sbpNameList.setFixedHeight(100)
         self.addFile(self.sbpName)
+        if os.path.exists(self.sbpName):
+            self.activate(0)
+            self.runButt.setEnabled(True)
+            self.updateRunButt()
+            self.updateStatus('Ready ... ', False)
         self.sbpNameList.itemDoubleClicked.connect(self.activate)
         self.sbpNameList.setAcceptDrops(True)
         self.sbpNameList.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
@@ -377,6 +384,47 @@ class sbBox(connectBox):
     
     ### start/stop
     
+    def findStageSpeed(self) -> float:
+        '''find the stage speed from the current shopbot file'''
+        with open(self.sbpName, mode='r') as f:
+            cont = True
+            l = 'a'
+            while cont and len(l)>0:
+                l = f.readline()
+                if l.startswith('MS'):
+                    cont = False
+        if len(l)==0:
+            return -1
+        else:
+            return float(re.split(',|\n',l)[1])
+    
+                
+    def saveSpeeds(self) -> None:
+        '''create a csv file that describes the run speeds'''
+        try:
+            fullfn = self.sbWin.newFile('speeds', '.csv')
+        except NameError:
+            self.updateStatus('Failed to save speed file', True)
+            return
+
+        with open(fullfn, mode='w', newline='', encoding='utf-8') as c:
+            writer = csv.writer(c, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            for i in range(len(self.sbWin.fluBox.pchannels)):
+                channel = self.sbWin.fluBox.pchannels[i]
+                press = int(channel.constBox.text())
+                writer.writerow([f'ink pressure channel {i}','mbar', press])
+            inkspeed = self.sbWin.calibDialog.speedBox.text()
+            writer.writerow(['ink speed', 'mm/s', inkspeed])
+            supspeed = self.findStageSpeed()
+            writer.writerow(['support speed', 'mm/s', supspeed])
+            caliba = self.sbWin.calibDialog.plot.a
+            writer.writerow(['caliba', 'mm/s/mbar^2', caliba])
+            calibb = self.sbWin.calibDialog.plot.b
+            writer.writerow(['caliba', 'mm/s/mbar', calibb])
+            calibc = self.sbWin.calibDialog.plot.c
+            writer.writerow(['caliba', 'mm/s', calibc])
+            self.updateStatus(f'Saved {fullfn}', True)
+    
     def runFile(self) -> None:
         '''runFile sends a file to the shopbot and tells the GUI to wait for next steps'''
         if not os.path.exists(self.sbpName):
@@ -384,6 +432,7 @@ class sbBox(connectBox):
             return
         
 #         self.abortButt.setEnabled(True)
+
 
         
         ''' allowEnd is a failsafe measure because when the shopbot starts running a file that changes output flags, it asks the user to allow spindle movement to start. While it is waiting for the user to hit ok, only flag 4 would be up, giving a flag value of 8. If critFlag=8 (i.e. we want to stop running after the first extrusion step), this means the GUI will think the file is done before it even starts. We create an extra trigger to say that if we're extruding, we have to wait for extrusion to start before we can let the tracking stop'''
@@ -402,6 +451,8 @@ class sbBox(connectBox):
         
         # wait to start videos and fluigent
         self.runningSBP = True
+        
+        
         self.updateRunButt()
         self.triggerWait()
         
@@ -450,7 +501,7 @@ class sbBox(connectBox):
             for camBox in self.sbWin.camBoxes:
                 if camBox.camInclude.isChecked() and not camBox.camObj.recording:
                     camBox.cameraRec()
-                    
+        self.saveSpeeds()            
         self.sbWin.fluBox.startRecording()
     
     ### wait for end
@@ -531,6 +582,7 @@ class sbBox(connectBox):
             self.runningSBP = False # we're no longer running a sbp file
             self.updateRunButt()
             self.updateStatus('Ready', False)
+
 
     #-----------------------------------------
     

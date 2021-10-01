@@ -12,6 +12,7 @@ import numpy as np
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
 import os, sys
+import traceback
 
 # local packages
 import Fluigent.SDK as fgt
@@ -426,6 +427,7 @@ class fluBox(connectBox):
         self.connect() 
         self.save = False
         self.fileName = ''
+        self.freshFileName = False
 
     def saveConfig(self, cfg1):
         '''save the current settings to a config Box object'''
@@ -561,8 +563,8 @@ class fluBox(connectBox):
         try:
             fullfn = self.sbWin.newFile('Fluigent', '.csv')
         except NameError:
+            self.fileName = ''
             return
-
         self.fileName = fullfn
     
     def startRecording(self) -> None:
@@ -574,7 +576,7 @@ class fluBox(connectBox):
         
     def stopRecording(self) -> None:
         '''Save the recorded pressure readings in a csv'''
-        if self.savePressure:
+        if self.savePressure and self.save:
             self.save = False
             with open(self.fileName, mode='w', newline='', encoding='utf-8') as c:
                 writer = csv.writer(c, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)

@@ -500,7 +500,7 @@ class defVars(sbpCreator):
     def setSpeeds(self, **kwargs):
         '''Set move and jump speeds. Inputs could be m=5, j=20'''
         for i in kwargs:
-            self.file+= i.upper() + 'S, ' + str(kwargs[i]) + '\n'
+            self.file+= f'{i.upper()}S, {kwargs[i]}, {kwargs[i]}\n'
             
     def setUnits(self, **kwargs):
         '''Set the units to mm'''
@@ -579,6 +579,13 @@ class zigzag(sbpCreator):
         self.jz(self.z0) # go to first z position
         self.turnOn(0)
         llpos = 1
+        llf = [self.floatSC(longlist[0]), self.floatSC(longlist[1])]
+        linelen = p(max(llf),t(-1,min(llf)))
+        if llf[0]<llf[1]:
+            mids = [p(longlist[0],2),p(longlist[1],-2)]
+        else:
+            mids = [p(longlist[1],2),p(longlist[0],-2)]
+        self.m1(self.longdir[1], mids[llpos]) # write next line
         self.m1(self.longdir[1], longlist[llpos]) # write first line
         for i in shortlist[1:]:
             if llpos==1:
@@ -589,8 +596,10 @@ class zigzag(sbpCreator):
                 self.turnOff(0)
                 self.j1(self.shortdir[1], i) # zig
                 self.turnOn(0)
+                self.m1(self.longdir[1], mids[llpos]) # write next line
+                self.j1(self.shortdir[1], i) # zero move to fix turnoff
             else:
-                self.m1(self.shortdir[1], i) # zig                
+                self.m1(self.shortdir[1], i) # zig   
             self.m1(self.longdir[1], longlist[llpos]) # write next line
             
         if len(self.positions)>1:
@@ -811,6 +820,8 @@ class verts(sbpCreator):
                     self.j1(self.longdir[1], lpos) 
                     # go to coord if not already there
                 self.turnOn(0)
+                self.m1('z', p(self.zmax,-2)) # draw most of z
+                self.j1(self.longdir[1], lpos0) # zero move to turn off flow at right time
                 self.m1('z', self.zmax) # draw z
                 self.turnOff(0)
             
