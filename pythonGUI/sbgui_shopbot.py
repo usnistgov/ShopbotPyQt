@@ -420,9 +420,9 @@ class sbBox(connectBox):
             caliba = self.sbWin.calibDialog.plot.a
             writer.writerow(['caliba', 'mm/s/mbar^2', caliba])
             calibb = self.sbWin.calibDialog.plot.b
-            writer.writerow(['caliba', 'mm/s/mbar', calibb])
+            writer.writerow(['calibb', 'mm/s/mbar', calibb])
             calibc = self.sbWin.calibDialog.plot.c
-            writer.writerow(['caliba', 'mm/s', calibc])
+            writer.writerow(['calibc', 'mm/s', calibc])
             self.updateStatus(f'Saved {fullfn}', True)
     
     def runFile(self) -> None:

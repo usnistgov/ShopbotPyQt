@@ -1,0 +1,65 @@
+&wait1 = 1
+&wait2 = 1
+'----------horiz vars
+&hy0 = 50.00
+&hdy = 3.00
+&hyreps = 0
+&hz0 = -24.00
+&hdz = 2.00
+&hzreps = 0
+'----------vert vars
+&vy0 = 45.00
+&vdy = -5.00
+&vyreps = 2
+&vz0 = -20.00
+&vdz = 2.00
+&vzreps = 3
+'----------xs vars
+&xy0 = 25.00
+&xdy = -5.00
+&xyreps = 0
+&xz0 = -12.50
+&xdz = 2.00
+&xzreps = 0
+'----------vars
+&slideW = 25.00
+&slideH = 75.00
+&margin = 5.00
+&spacing = 5.00
+&nd = 0.91
+&downdisp = 0.00
+&movespeed = 10.00
+&jogspeed = 20.00
+VD , , 1
+VU, 157.480315, 157.480315, -157.480315
+MS, 10, 10
+JS, 20, 20
+SO, 4, 1
+'----------vert
+&county = 0.00
+&dy = &vdy
+&y0 = &vy0
+&z0 = &vz0
+MY, &y0
+MZ, &z0
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+LABEL3:
+MY, &county*&dy + &y0
+&countz = 0.00
+&dz = &vdz
+&z0 = &vz0
+LABEL4:
+MZ, &countz*&dz + &z0
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+&countz = &countz + 1
+IF &countz<&vzreps THEN GOTO LABEL4
+&county = &county + 1
+PAUSE &wait1
+IF &county<&vyreps THEN GOTO LABEL3
+

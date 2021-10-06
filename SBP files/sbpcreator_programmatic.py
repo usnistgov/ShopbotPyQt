@@ -519,7 +519,7 @@ class defVars(sbpCreator):
     def setSpeeds(self, **kwargs):
         '''Set move and jump speeds. Inputs could be m=5, j=20'''
         for i in kwargs:
-            self.file+= f'{i.upper()}S, {str(kwargs[i])}\n'
+            self.file+= f'{i.upper()}S, {str(kwargs[i])}, {str(kwargs[i])}\n'
             
     def setUnits(self, **kwargs):
         '''Set the units to mm'''
@@ -867,7 +867,7 @@ class pics(sbpCreator):
         self.labelsIndex+=1 # create a new label
         label = f'LABEL{self.labelsIndex}'
         self.file+=f'{label}:\n' # label the top of the loop
-        self.mz(f'z0 + &countz*dz') # move in z
+        self.mz(f'&z0 + &countz*&dz') # move in z
         self.snap() # take picture
         self.defineVars({'countz':'&countz + 1'})
         self.file+=f'IF &countz<{pics} THEN GOTO {label}\n'
@@ -877,13 +877,20 @@ class pics(sbpCreator):
         if type(yreps) is int and yreps<0:
             print(f'Negative number of y reps requested: {y0}, {dy}, {yreps}')
             return
-        self.defineVars({'county':0, 'dy':dy, 'z0':y0})
+        self.defineVars({'county':0, 'dy':dy, 'y0':y0, 'z0':z0})
         self.labelsIndex+=1
+        
+        # go to first picture
+        self.my('&y0')
+        self.mz('&z0')
+        
+        # start loop
         label = f'LABEL{self.labelsIndex}'
         self.file+=f'{label}:\n' # label the top of the loop
-        self.my(f'y0 + &county*dy') # move in z
+        self.my(f'&y0 + &county*&dy') # move in z
         self.vertLine(z0, dz, zreps) # take vertical line
         self.file+='&county = &county + 1\n' # increment count
+        self.file+='PAUSE &wait1\n'
         self.file+=f'IF &county<{yreps} THEN GOTO {label}\n'
         
     

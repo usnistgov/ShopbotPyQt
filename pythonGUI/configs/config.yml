@@ -17,7 +17,7 @@ files:
   includeSampleInFile: true
   includeSampleInFolder: true
   includeTimeInFile: true
-  save: C:\Users\lmf1\Videos\Shopbot Videos
+  save: C:\Users\lmf1\Videos\Shopbot Videos\vels mineral LapRD
   separator: _
   timeFormat: '%y%m%d_%H%M%S_%f'
 fluigent:
@@ -37,4 +37,4 @@ shopbot:
   autoplay: false
   dt: 50
   sbpFolder: C:\Users\lmf1\Documents\GitHub\ShopbotPyQt\SBP files
-  sbpName: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files/singleLinesPics7.sbp
+  sbpName: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files/singleLinesNoZig_2.5.sbp
