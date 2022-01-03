@@ -1,0 +1,76 @@
+<html>
+<head>
+  <link rel="stylesheet" href="user_guide.css">
+</head>
+<body>
+
+
+<h1>Stage assembly</h1>
+
+
+ <img src="img/stage_moving.gif" alt="A CAD model of a shopbot desktop CNC mill with the drill removed and replaced with a stage. A mouse manipulates the stage to see that it can move up and down in z on one rail, left and right in x on another rail and forwards and backwards in y on a third rail." width="400px">
+<p>
+Fundamentally, a CNC mill is just a 3-axis gantry with a drill attached to it. We ordered our Shopbot without the drill, so it just becomes a 3-axis gantry. There are a couple of ways you can set up your printer from here.
+    <br>
+A) Attach the nozzle to the gantry
+    <br>
+ - or - 
+    <br>
+B) Attach the stage to the gantry
+    <br>
+</p>
+<p>
+We chose to attach the stage to the gantry for our research printer. As you will see in later posts, we have a lot of equipment in our printer that coordinates with the nozzle. We have multiple cameras viewing the nozzle, lighting elements aligned with the nozzle, tubes feeding ink into the nozzle, heavy positioning elements that keep everything aligned, and barriers between these elements and the nozzle to protect them from spluttering and splashing. If we mounted the nozzle on the gantry, we would also need to mount all of those other elements on the gantry so they would all move together. That's a lot of weight, much of which will need to be cantilevered out from the mounting position. Ultimately, that means shaky videos and limited print speeds. If you mount the stage on the gantry, all of that weight can be mounted statically on the base of the printer.
+</p>
+<p>
+Another benefit of mounting the stage on the gantry is that you can set up multiple stations. Version 1 of this printer had 3 stations: an ink nozzle, a support nozzle, and a curing lamp. Version 2 had 2 stations: an ink nozzle and a curing lamp. If you mount the stage on the gantry, you can add as many nozzles and stations as you want without adding any weight to the gantry, and you can maintain a distance between curing elements and nozzles, limiting the chance of accidentally curing fluid inside of the nozzle.
+</p>
+This page describes two stage designs: 
+  <ul>
+      <li>A stage for direct ink writing (writing onto a flat plate)</li>
+      <li>A stage for embedded 3D printing (writing into a support bath)</li>
+  </ul>
+
+    <h2>Installing a stage for direct ink writing</h2>
+    <details>
+      <summary>
+          <span class="icon">▼</span><span class="open_text">Open</span><span class="close_text">Close</span>
+      </summary>
+ 
+        <img src="img/DIW_stage.png" alt="A CAD graphic of the shopbot with the stage attached. A black plate with a knob attached to it is mounted vertically on the moving part of the stage. A gray plate with two additional knobs is mounted onto the black plate, flat and extending out towards the front of the printer. A yellow plate is mounted flat at the front edge of the gray plate, extending even further. A glass slide holding a printed hexagon slides into the yellow plate." width="400px">
+        <p>
+        In direct ink writing, fluid ink is extruded out of a nozzle, written layer-by-layer onto a substrate, and then cured after deposition. This is much like the most popular form of 3D printing, Fused Deposition Modeling (FDM). If you've seen a 3D printer in your local library or somebody's house, it was probably an FDM. FDMs work by extruding a thermoplastic filament (i.e. polymer that you can heat up and cool down and maintain the same structure) through a hot nozzle, and letting it solidify by cooling. DIW has a wider range of materials, which could be thermosets (polymers that you can't heat up and cool down and maintain the same structure), ceramic slurries, hydrogels, concrete, chocolate, and more. You might cure DIW inks using light, heat, dipping them into a bath containing crosslinking molecules, and more. 
+        </p>
+        <p>
+            Because DIW is a layer-by-layer process, you print onto a flat plate. We used 3" by 2" glass slides.
+        </p>
+        <img src="img/hexagons_slide.png" alt="A CAD model of a glass slide. An orange outline of a hexagon hugged on its inner and outer edges by blue outlines of hexagons is sitting flat on the glass slide." width="400px">
+        <p>These glass slides fit into a <a href="https://cad.onshape.com/documents/fcce43b9fffe488a149e6c3d/w/142471017943b62403e04a5e/e/f6343b9fb02e3a6d57fb38e3">3D printed adapter</a> we designed, which grips the slide and prevents it from jangling against the stage. It also leaves the space underneath the slide open, so we can collect videos and light the printing process from underneath the stage. The glass slide can slide in and out from within the lip of the holder. The yellow holder is 3D printed using an Objet inkjet printer.</p>
+        <div style="display:block; overflow:auto"><img style="float:left" src="img/slide_holder_1.png" alt="a 3 inch by 2 inch glass slide slides horizontally into a yellow stage, which is rectangular with a large rectangular hole in the middle, underneath the slide. There is a square attached to the side of the stage with a hole in it, fitting a screw." width="300px"> <img style="float:left" src="img/slide_holder_2.png" alt="a 3 inch by 2 inch glass slide is sliding partially out of the stage, horizontally." width="300px"> </div>
+        <br>
+        <p>The slide holder is then mounted onto a tilting stage. A tilting stage is essential when writing directly onto the stage. The one we used was discontinued, but a version from Thorlabs is shown in this CAD image. The knobs on the tilting stage give you fine control over the tilt of the stage, so you can ensure that the stage is perfectly level. If it is not level, the distance between the stage and the nozzle will vary at different points on the stage, which could lead to <a href="https://doi.org/10.1016/j.jcis.2018.05.110">your filament rupturing or leaking out the front of the nozzle.</a></p>
+        <img src="img/stage_on_tilting_stage.png" alt="The yellow slide holder, holding a slide, is screwed onto the front edge of a gray tilting stage. The tilting stage is composed of two gray plates stacked on top of each other, with some space in between, and two knobs that control how the stage tilts." width="400px">
+        <p>Knowing that the distance between the nozzle and the stage is important, we mounted the tilting stage onto a positioning stage. The knob on the positioning stage lets us control the z-position very finely, by hand. Our height calibration procedure contains a step where we bring the stage in contact with the nozzle, then zero the z-position. You can do this using the mechanized controls on the printer, but a manual knob gives you an extra sense to use, so you can feel the point where the stage hits the nozzle.</p>
+        <img src="img/tilting_stage_on_vertical_stage.png" alt="The bottom of the tilting stage is mounted onto the top of an angle bracket. The side of the angle bracket is attached to an upright plate with a vertical knob attached, allowing the whole assembly to move up and down using the knob." width="400px">
+        <p>The vertical positioning stage is mounted directly onto the blue front plate of the Shopbot gantry, which moves up and down. It is easiest to install these components in reverse order, i.e. the vertical positioning stage, then the tilt stage, which we mount with a right-angle bracket to limit vibrations, and then the 3D printed slide holder. The configuration shown below puts some space between the slide and the gantry, to prevent the gantry from crashing into the nozzle and accessories.</p>
+        <img src="img/vertical_stage_on_shopbot.png" alt="The back of the vertical stage is attached to the moving panel of the Shopbot, where the drill would ordinarily be attached." width="400px">
+    </details>
+    
+    
+    <h2>Installing a stage for Embedded 3D printing</h2>
+    <details>
+      <summary>
+          <span class="icon">▼</span><span class="open_text">Open</span><span class="close_text">Close</span>
+      </summary>
+        <img src="img/version_2_shopbot.png" alt="A CAD model of a Shopbot desktop printer with a print bath mounted onto the stage." width="400px">
+        <p>Embedded 3D printing is similar to Direct Ink Writing, in that there is still fluid flowing out of a nozzle. The more popular form of Embedded 3D printing, Embedded Ink Writing, uses filaments, or continuous lines, to create structures. Another form of Embedded 3D printing, Embedded Droplet Printing, uses droplets to create structures. Both use the same stage setup. Instead of printing onto a flat stage, the nozzle is embedded in a bath full of support fluid. Usually, this support fluid is fluid-like when the nozzle is traveling through it and solid-like when the nozzle is absent.</p>
+        <img src="img/stage_with_gasket.png" alt="A box made of glass slides. It is square on one pair of sides and made of longer rectangles on the other four pairs of sides. The top side is open. The box sits in a metallic holder which is rectangular, with a large rectangular hole under the box. The box sits in a recessed slot with a rubber gasket around the edge. The end of the holder is attached to a wider rectangle with two screw holes." width="400px">
+        <p>The support bath design is much less complicated and uses glass boxes. These boxes are just composed of 1" by 3" glass slides, glued together. They slip into a <a href="https://cad.onshape.com/documents/4c22f1d756cf5af90860317f/w/e023bdff93ce3f679eba5cd3/e/7a2c2cf98f50ab8c795ce752">machined aluminum adapter</a>, which contains a depression with a gasket that holds the boxes in place. The advantage of this design is that you can load the support fluid into the bath, mount it on the printer, print your structure, and then remove the whole print from the printer and further process it, all in the same container. This format is also useful for preventing bubbles, for support fluids which are liquid just after mixing, but gel over time. You can pour the fluid directly into glass boxes after mixing and tap gently to remove any bubbles. If the support fluid is poured into the container after gelation, it can be difficult to remove bubbles. The other advantage of this design is that the boxes are transparent on all sides, allowing for comprehensive imaging.
+        </p>
+        <p>
+            This assembly is lightweight and can be mounted onto the Shopbot with a right angle bracket.</p>
+    </details>
+    
+    
+</body>
+</html>

@@ -1,0 +1,41 @@
+details {
+  user-select: none;
+}
+
+details[close]>summary span.icon {
+  width: 24px;
+  height: 24px;
+  transition: all 0.3s;
+}
+
+details[close]>summary span.open_text {
+    display:inline;
+}
+
+details[close]>summary span.close_text {
+    display:none;
+}
+details>summary span.close_text {
+    display:none;
+}
+
+details[open] summary span.icon {
+  transform: rotate(180deg); translate:(-5px, 5px)
+}
+
+details[open]>summary span.open_text {
+    display:none;
+}
+
+details[open]>summary span.close_text {
+    display:inline;
+}
+
+summary {
+  display: flex;
+  cursor: pointer;
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
