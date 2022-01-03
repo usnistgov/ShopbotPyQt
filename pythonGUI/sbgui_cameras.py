@@ -194,7 +194,8 @@ class vidReader(QtCore.QRunnable):
                     if self.cam.diag>1:
                         logging.debug(self.cam.cameraName+'\t'+str(self.vrid)+ '\tPAD\t\t\t\t '+'%2.3f'%self.cam.timeRec)
                     self.cam.framesDropped+=1
-                    self.saveFrame(self.lastFrame[0])
+                    if len(self.lastFrame)>0:
+                        self.saveFrame(self.lastFrame[0])
             if self.cam.diag>1:
                 frameElapsed = ((dnow-self.cam.lastTime).total_seconds())*1000
                 s = self.cam.cameraName+'\t'+str(self.vrid)+'\t'

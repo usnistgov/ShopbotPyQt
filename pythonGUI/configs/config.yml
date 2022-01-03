@@ -4,7 +4,7 @@ calibration:
     (NIST)/NIST/data/material properties/flow rates
   initDensity: 1
   initDiam: '0.603'
-  initSpeed: '5.0'
+  initSpeed: '40'
 camera:
   diag: 1
 files:
@@ -17,7 +17,7 @@ files:
   includeSampleInFile: true
   includeSampleInFolder: true
   includeTimeInFile: true
-  save: C:\Users\lmf1\Videos\Shopbot Videos\PEGDA LapRD
+  save: C:\Users\lmf1\Videos\pendant drops
   separator: _
   timeFormat: '%y%m%d_%H%M%S_%f'
 fluigent:
@@ -37,4 +37,4 @@ shopbot:
   autoplay: false
   dt: 50
   sbpFolder: C:\Users\lmf1\Documents\GitHub\ShopbotPyQt\SBP files
-  sbpName: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files/singleLinesNoZig_5.sbp
+  sbpName: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files/singleLinesNoZig_2.5.sbp
