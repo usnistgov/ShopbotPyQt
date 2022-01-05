@@ -1,0 +1,61 @@
+<html>
+<head>
+  <link rel="stylesheet" href="user_guide.css">
+</head>
+<body>
+
+    <h1>Nozzle assembly</h1>
+    
+    <p><a href="hardware.html">Hardware</a> || <a href="stage_assembly.html">Stage assembly</a> || <a href="nozzle_assembly.html">Nozzle assembly</a> || <a href="lighting_assembly.html">Lighting assembly</a></p>
+    
+    <p>Last updated Jan 3, 2022 by Leanne Friedrich<p>
+
+    <p><i>Certain commercial equipment, instruments, or materials are identified in this user guide in order to describe a specific device. Such identification is not intended to imply recommendation or endorsement by the National Institute of Standards and Technology, nor is it intended to imply that the materials or equipment identified are necessarily the best available for the purpose.</i></p>
+
+    <p>The <a href="stage_assembly.html">previous installment</a> demonstrated how to mount a stage onto the Shopbot gantry, so that the stage will move, but everything else will stay static. This installment describes how to mount a nozzle onto the Shopbot. This post describes two nozzle designs, one for conventional printing and one for direct ink writing with acoustophoresis. Both use a pneumatic mass flow controller to extrude ink out of a reservoir.</p>
+    
+    <p> In Direct Ink Writing, there are many types of nozzles you could use. Here are a few:</p>
+    
+    <div style="display:block; overflow:auto"><img style="float:left" src="img/syringe_pump.png" alt="A syringe pump. A gray box with buttons and a screen holds onto a plastic syringe. Part of the gray box presses on the plunger of the syringe to control flow. A tube is attached to the end of the syringe, and on the other end of the tube, a blue fitting hangs loose. Next to the blue fitting is a yellow needle, which can fit onto the blue fitting." class="graphic" ><div style="float:left; max-width:400px" ><ul><li>A syringe pump, which can control the flow rate of ink out of a syringe, through a tube, through a nozzle. These can control the flow rate directly, but can experience transients that make it difficult to make quick moves.</li></ul></div></div>
+    
+    <div style="display:block; overflow:auto"><img style="float:left" src="img/pneumatic_direct_dispenser.png" alt="A direct dispensing pump. The body is shaped like a jumbo Sharpie, with a nozzle shaped like a fine-tipped Sharpie tip." class="graphic" ><div style="float:left; max-width:400px" ><ul><li><a href="www.nscrypt.com/smartpump">Pneumatic direct dispensing pumps</a>, where you fill a reservoir with ink, and a pump applies pressure to the ink, causing it to flow directly out of the reservoir through a nozzle. I have never used one of these systems, so I can't comment on how it is to work with these, but they are advertised as having very fine control over starts and stops, over a wide range of ink viscosities.</li></ul></div></div>
+    
+    <div style="display:block; overflow:auto"><img style="float:left" src="img/fluigent.jpg" alt="A pneumatic mass flow controller. On the left is a kiwi-sized flow unit, which measures flow rates. Next is a blue block with a button on front and two data ports on top. Attached to the blue block is a slightly larger blue block with a knob, two buttons, and a button that says P=0, a plug on the left, and a tubing hole on top. On the right side of the image is a plastic conical Falcon tube with an adapter on top with two tubing holes." class="graphic" ><div style="float:left; max-width:400px" ><ul><li><a href="https://www.fluigent.com/product/microfluidic-components-3/lineup-series/">A pneumatic mass flow controller.</a> You fill a reservoir with ink, and a pump applies air at a fixed pressure to the reservoir, causing ink to flow out through a tube, which is connected to a nozzle. This is the design that I have used the most. The disadvantages of these systems are that you have to separately calibrate the flow rate of your ink to the requested pressure instead of just plugging in a flow rate, and they can't extrude very viscous inks. However, mass flow controllers have faster starts and stops than syringe pumps and allow for more flexibility and customization at the nozzle end than direct dispensing pumps. As a result, pneumatic mass flow controllers are useful for research applications, low viscosity inks, and custom 3D printer designs.</li></ul></div></div>
+    
+    <h2>Installing a simple nozzle</h2>
+    <details>
+      <summary>
+          <span class="icon">▼</span><span class="open_text">Open</span><span class="close_text">Close</span>
+      </summary>
+        <p>Consumables:</p>
+        <ul>
+            <li><a href="https://www.coleparmer.com/i/masterflex-transfer-tubing-ptfe-1-32-id-x-1-16-od-25-ft/0640741">Ink tubing: Masterflex Transfer Tubing, PTFE, 1/32" ID x 1/16 " OD; 25 ft</a></li>
+            <li><a href="https://www.coleparmer.com/i/masterflex-fitting-polypropylene-straight-male-luer-to-male-luer-25-pk/3080014">Male luer to male luer: Masterflex Fitting, Polypropylene, Straight, Male Luer to Male Luer; 25/PK</a></li>
+            <li><a href="https://www.grainger.com/product/GRAINGER-APPROVED-20-Gauge1-1-2-in-Disposable-5FVK4">Printing nozzle: 20 Gauge1 1/2 in Disposable Probe Needle For Use With Syringes and Dispensing Machines</a></li>
+            <li><a href="https://www.grainger.com/product/GRAINGER-APPROVED-20-Gauge1-2-in-Disposable-5FVH7">Tube fitting nozzle: 20 Gauge1/2 in Disposable Probe Needle For Use With Syringes and Dispensing Machines</a></li>
+        </ul>
+    <img src="img/conventional_nozzle_mounted.png" alt="A shopbot desktop. A black plate sits on the static base of the gantry. A pole sticks up out of the black plate. Another pole attached to the first pole reaches across, toward the right. Various objects are attached to the pole. More detail in close-ups." class="graphic" >
+        <p>For our conventional nozzle, we use a stainless steel blunt-tipped needle. A long needle is useful for embedded 3D printing, where the needle is submerged into a bath. To connect this needle to the <a href="https://www.coleparmer.com/i/masterflex-transfer-tubing-ptfe-1-32-id-x-1-16-od-25-ft/0640741">ink tubing</a> coming out of the reservoir, and to help the nozzle mount onto the printer, we include two adapters. First, a male-male Luer connector fits into the base of the long needle. Then, another shorter needle fits onto the male-male Luer connector. This shorter needle can fit inside of the ink tubing, creating a complete path from the reservoir to the tip of the nozzle.</p>
+        <img src="img/tubing_diagram_conventional.png" alt="A cylindrical Falcon tube is labeled reservoir. The cap of the tube has one inlet port, with an arrow going into it labeled air in, and an outlet port, with an orange tube coming out of it. Along the tube is an arrow, labeled ink flows through tubing. The orange tube slots onto a short needle with a yellow Luer base. The base fits onto an adapter labeled male-male Luer connector. The adapter fits into another, longer needle with a yellow Luer base." class="graphic" >
+        <p>The male-male Luer connector provides a grippable shape that slots into a machined <a href="https://cad.onshape.com/documents/ad157d4ee55316965baf14a2/w/79a550c3f50bcf5675a5fffd/e/f8e84ab7f7abd99161ba470e">2-part adapter</a>. By installing and uninstalling 2 screws, the nozzle can be easily replaced when it gets dirty or damaged.</p>
+        <img src="img/nozzle_adapter.png" alt="The nozzle assembly, containing two yellow needles and a white male-male adapter, fits into a two-part adapter. The larger part of the adapter has a plate with a large hole in it, and another plate fit sideways onto the plate. That plate has a slot that holds onto a lip that runs around the outside of the male-male adapter, and the plate has 2 holes in it. The second part of the adapter is another plate with similar shape, also with two holes. Dotted lines show that the holes should line up." class="graphic" >
+        <p>By slotting a post through the hole of the adapter, the nozzle can then be mounted on the base of the Shopbot.</p>
+        <img src="img/adapter_mounted.png" alt="A large vertical post is attached to a long horizontal post going from left to right. The long horizontal post is attached to a short horizontal post going from front to back. The machined adapter holding the nozzle fits onto the short post." class="graphic" >
+        <p>The reservoir holder can be mounted on the post using a <a href="https://cad.onshape.com/documents/efa853bb55448488321be4d7/v/9b3fdbc5b05842b267ea6840/e/0679f813ccaccda50c98d0ec">3D printed adapter</a>, or using a clamp from a ring stand.</p>
+        <img src="img/reservoir_mounted.png" alt="The reservoir has been added to the end of the long horizontal post in the previous picture, via a yellow box with holes that fit around the post and the reservoir." class="graphic" >
+        <p>The posts near the nozzle can also be used to mount a webcam.</p>
+        <img class="graphic" src="img/nozzle_webcam.png" alt="A pen-shaped webcam is mounted on a post, pointed at the nozzle.">
+        <p>Another useful feature is a <a href="https://cad.onshape.com/documents/84ec9540a846ac0f6983bf39/w/a53ec57976422e587bcf2353/e/8300fec2ca92bc6b68d0a00f">light shield</a>, mounted between the nozzle and any sensitive optical equipment. The lightshield on the shopbot, as of Jan 5 2022, is made of UV-blocking acrylic, with holes cut between the nozzle and the camera and lighting. The holes are covered with glass cover slips, to protect the optical equipment from any ink sputtering out of the nozzle. The advantage of the UV-blocking acrylic is that it can protect the nozzle and reservoir from the UV lamp on the left side of the printer, preventing the ink from curing prematurely. <a href="https://cad.onshape.com/documents/84ec9540a846ac0f6983bf39/w/a53ec57976422e587bcf2353/e/8300fec2ca92bc6b68d0a00f">CAD</a></p>
+        <img class="graphic" src="img/nozzle_shield.png" alt="Orange sheets of acrylic form a three-sided box around the nozzle, sitting to the left of the nozzle where the camera is, below the nozzle where the camera mirror could be mounted, and in front of the nozzle where sheet illumination gear sits.">
+        <br>
+        <img class="diagram" src="img/nozzle_shield_diagrams.png" alt="Diagrams of nozzle light shields." >
+        
+    </details>
+    
+    <h2>Installing a nozzle for acoustic focusing</h2>
+    
+    See <a href="http://leanfried.com/LF_dissertation.pdf">Friedrich, L. M. (2020). Tailored composite microstructures via direct ink writing with acoustophoresis.</a>
+
+
+</body>
+</html>
