@@ -69,13 +69,54 @@ This page describes two stage designs: 
       <summary>
           <span class="icon">▼</span><span class="open_text">Open</span><span class="close_text">Close</span>
       </summary>
+        
+        <h3>Parts list</h3>
+        <table class="tg">
+            <thead>
+                <tr>
+                    <th class="tg-head">Part</th>
+                    <th class="tg-head">Qty</th>
+                    <th class="tg-head">Link</th>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="tg-col">Glass box holder</td>
+                    <td class="tg-col">1</td>
+                    <td class="tg-link"><a href="shop_diagrams/glass_box_holder.pdf">shop_diagrams/glass_box_holder.pdf</a></td>
+                </tr>
+                <tr>
+                    <td class="tg-col">Glass boxes</td>
+                    <td class="tg-col">3 + 2/3 glass slides per box + epoxy</td>
+                    <td class="tg-link"></td>
+                </tr>
+                <tr>
+                    <td class="tg-col">Right angle bracket</td>
+                    <td class="tg-col">1</td>
+                    <td class="tg-link"><a href="https://www.thorlabs.com/thorproduct.cfm?partnumber=AB90A#ad-image-0">thorlabs.com/thorproduct.cfm?partnumber=AB90A</a></td>
+                </tr>
+                <tr>
+                    <td class="tg-col">Mounting plate</td>
+                    <td>1</td>
+                    <td class="tg-link"><a href="https://www.thorlabs.com/thorproduct.cfm?partnumber=UBP2">thorlabs.com/thorproduct.cfm?partnumber=UBP2</a></td>
+                </tr>
+            </tbody>
+            </table>
+        
+        <h3>Assembly</h3>
+        
+        
+        
         <img src="img/version_2_shopbot.png" alt="A CAD model of a Shopbot desktop printer with a print bath mounted onto the stage." class="graphic" >
         <p>Embedded 3D printing is similar to Direct Ink Writing, in that there is still fluid flowing out of a nozzle. The more popular form of Embedded 3D printing, Embedded Ink Writing, uses filaments, or continuous lines, to create structures. Another form of Embedded 3D printing, Embedded Droplet Printing, uses droplets to create structures. Both use the same stage setup. Instead of printing onto a flat stage, the nozzle is embedded in a bath full of support fluid. Usually, this support fluid is fluid-like when the nozzle is traveling through it and solid-like when the nozzle is absent.</p>
-        <img src="img/stage_with_gasket.png" alt="A box made of glass slides. It is square on one pair of sides and made of longer rectangles on the other four pairs of sides. The top side is open. The box sits in a metallic holder which is rectangular, with a large rectangular hole under the box. The box sits in a recessed slot with a rubber gasket around the edge. The end of the holder is attached to a wider rectangle with two screw holes." class="graphic" >
-        <p>The support bath design is much less complicated and uses glass boxes. These boxes are just composed of 1" by 3" glass slides, glued together. They slip into a <a href="https://cad.onshape.com/documents/4c22f1d756cf5af90860317f/w/e023bdff93ce3f679eba5cd3/e/7a2c2cf98f50ab8c795ce752">machined aluminum adapter</a>, which contains a depression with a gasket that holds the boxes in place. The advantage of this design is that you can load the support fluid into the bath, mount it on the printer, print your structure, and then remove the whole print from the printer and further process it, all in the same container. This format is also useful for preventing bubbles, for support fluids which are liquid just after mixing, but gel over time. You can pour the fluid directly into glass boxes after mixing and tap gently to remove any bubbles. If the support fluid is poured into the container after gelation, it can be difficult to remove bubbles. The other advantage of this design is that the boxes are transparent on all sides, allowing for comprehensive imaging.
+        
+        <p>The support bath design is much less complicated and uses glass boxes. These boxes are just composed of 75 mm x 25 mm x 1 mm glass slides, glued together. To assemble a glass box, begin with a full glass slide. Tape the other two glass slides to the bottom slide, such that they sit on top of the slide, flush with the edge. Break another slide into thirds. Tape the squares to ends of the box, such that they sit next to the end of the other slides, flush with the other sides. Once everything is taped together, epoxy the inner edges (use a dispensing nozzle for clean lines), wait for the epoxy to dry, and remove the tape. If done correctly, the entire assembly will have dimensions of 77 mm x 25 mm x 26 mm.</p>
+        <img class="graphic" src="img/glass_box.png" alt="A box made of glass slides. It is square on one pair of sides and made of longer rectangles on the other four pairs of sides. The top side is open.">
+        
+        <p>The glass boxes slip into a <a href="shop_diagrams/glass_box_holder.pdf">machined aluminum adapter</a>, which contains a depression with a gasket that holds the boxes in place. The advantage of this design is that you can load the support fluid into the bath, mount it on the printer, print your structure, and then remove the whole print from the printer and further process it, all in the same container. This format is also useful for preventing bubbles, for support fluids which are liquid just after mixing, but gel over time. You can pour the fluid directly into glass boxes after mixing and tap gently to remove any bubbles. If the support fluid is poured into the container after gelation, it can be difficult to remove bubbles. The other advantage of this design is that the boxes are transparent on all sides, allowing for comprehensive imaging.
         </p>
+        <img src="img/stage_with_gasket.png" alt="A glass box sits in a metallic holder which is rectangular, with a large rectangular hole under the box. The box sits in a recessed slot with a rubber gasket around the edge. The end of the holder is attached to a wider rectangle with two screw holes." class="graphic" >
         <p>
-            This assembly is lightweight and can be mounted onto the Shopbot with a right angle bracket. No tilting stage is necessary, as long as the print does not touch the bottom of the bath, because it won't matter if the print is slightly tilted inside the bath.</p>
+            This assembly is lightweight and can be mounted onto the Shopbot with a right angle bracket. No tilting stage is necessary, as long as the print does not touch the bottom of the bath, because it won't matter if the print is slightly tilted inside the bath. The right angle bracket can be mounted on a universal base plate, and the universal base plate can be mounted onto the moving platform of the Shopbot.</p>
     </details>
     
     
