@@ -3,6 +3,7 @@
 
 # external packages
 from PyQt5 import QtCore, QtGui
+from PyQt5.QtWidgets import QDialog
 import PyQt5.QtWidgets as qtw
 import sip
 import os, sys
@@ -260,7 +261,8 @@ def findSb3() -> str:
     try:
         fold = findSb3Folder()
     except:
-        raise Exception('Sb3.exe not found')
+        logging.warning('Sb3.exe not found')
+        return ''
     try:
         sb3File = findFileInFolder('Sb3.exe', fold)
         subprocess.Popen([sb3File])

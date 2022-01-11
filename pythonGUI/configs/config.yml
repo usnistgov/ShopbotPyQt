@@ -17,7 +17,7 @@ files:
   includeSampleInFile: true
   includeSampleInFolder: true
   includeTimeInFile: true
-  save: C:\Users\lmf1\Videos\pendant drops
+  save: C:\\
   separator: _
   timeFormat: '%y%m%d_%H%M%S_%f'
 fluigent:

@@ -96,3 +96,7 @@ summary::-webkit-details-marker {
     vertical-align:middle
 }
 
+.code{
+    font-family:Courier New;
+    background-color:#EEEEEE
+}

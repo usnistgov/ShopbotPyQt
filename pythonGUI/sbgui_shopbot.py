@@ -116,7 +116,11 @@ class sbBox(connectBox):
         self.sbpName = cfg.shopbot.sbpName
         self.autoPlay = cfg.shopbot.autoplay 
         self.sbpFolder = cfg.shopbot.sbpFolder
-        
+        self.connect()
+
+            
+    def connect(self):
+        '''connect to the SB3 software'''
         try:
             self.sb3File = findSb3()
             self.connectKeys()
@@ -201,8 +205,8 @@ class sbBox(connectBox):
             self.updateStatus('Ready ... ', False)
         self.sbpNameList.itemDoubleClicked.connect(self.activate)
         self.sbpNameList.setAcceptDrops(True)
-        self.sbpNameList.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
-        self.sbpNameList.setDragDropMode(QtGui.QAbstractItemView.InternalMove)
+        self.sbpNameList.setSelectionMode(qtw.QAbstractItemView.MultiSelection)
+        self.sbpNameList.setDragDropMode(qtw.QAbstractItemView.InternalMove)
         self.sbpNameList.setDragEnabled(True)
         self.sbpNameList.setToolTip('Double click to select the next file to run.\nSingle click to select files to delete.\nClick and drag to reorder.')
        
@@ -213,7 +217,10 @@ class sbBox(connectBox):
         
         self.layout.addItem(self.topBar)
         self.layout.addItem(self.fileButts)
-        self.layout.addItem(self.sbWin.fluBox.printButts)
+        try:
+            self.layout.addItem(self.sbWin.fluBox.printButts)
+        except:
+            pass
  
         self.setLayout(self.layout)
     

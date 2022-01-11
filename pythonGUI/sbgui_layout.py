@@ -3,6 +3,7 @@
 
 # external packages
 from PyQt5 import QtGui
+from PyQt5.QtWidgets import QDialog
 import PyQt5.QtWidgets as qtw
 import os, sys
 import ctypes
@@ -40,7 +41,7 @@ class QPlainTextEditLogger(logging.Handler):
     
     def __init__(self, parent):
         super().__init__()
-        self.widget = QtGui.QPlainTextEdit(parent)
+        self.widget = qtw.QPlainTextEdit(parent)
         self.widget.setReadOnly(True)    
 
     def emit(self, record):
@@ -48,7 +49,7 @@ class QPlainTextEditLogger(logging.Handler):
         self.widget.appendPlainText(msg)    
 
 
-class logDialog(QtGui.QDialog):
+class logDialog(QDialog):
     '''Creates a window that displays log messages.'''
     
     def __init__(self, parent):
@@ -59,7 +60,7 @@ class logDialog(QtGui.QDialog):
         logging.getLogger().addHandler(logTextBox)  # display log messages in text box
         logging.getLogger().setLevel(logging.DEBUG) # Set logging level to everything.
 
-        layout = QtGui.QVBoxLayout()
+        layout = qtw.QVBoxLayout()
         layout.addWidget(logTextBox.widget)         # Add the new logging box widget to the layout
         self.setLayout(layout) 
         
@@ -120,7 +121,7 @@ class ProxyStyle(qtw.QProxyStyle):
         
         
         
-class settingsDialog(QtGui.QDialog):
+class settingsDialog(QDialog):
     '''Creates a settings window'''
     
     def __init__(self, parent):
@@ -137,7 +138,10 @@ class settingsDialog(QtGui.QDialog):
         self.tabs.setTabBar(TabBar(self))
         self.tabs.setTabPosition(qtw.QTabWidget.West)
         for box in [self, parent.fileBox, parent.sbBox, parent.basBox, parent.nozBox, parent.web2Box, parent.fluBox]:
-            self.tabs.addTab(box.settingsBox, box.bTitle)     
+            try:
+                self.tabs.addTab(box.settingsBox, box.bTitle)    
+            except:
+                pass
         parent.fileBox.settingsBox.checkFormats() # update the initial file format
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
@@ -148,7 +152,7 @@ class settingsDialog(QtGui.QDialog):
         '''create a tab for settings of settings'''
         self.settingsBox = qtw.QWidget()
         self.bTitle = 'Load/save'
-        layout = QtGui.QVBoxLayout()
+        layout = qtw.QVBoxLayout()
         loadButton = qtw.QPushButton('Load settings from file')
         loadButton.clicked.connect(self.loadSettings)
         loadButton.setIcon(icon('open.png'))

@@ -244,7 +244,7 @@ class calibTable(qtw.QTableWidget):
 #------------------------------------------------------------
         
 
-class pCalibration(QtGui.QDialog):
+class pCalibration(qtw.QDialog):
     '''creates a window with pressure calibration tools'''
     
     def __init__(self, parent):

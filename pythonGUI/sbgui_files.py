@@ -61,7 +61,7 @@ class fileSettingsBox(qtw.QWidget):
         super().__init__(parent)  
         self.parent = parent
         
-        layout = QtGui.QVBoxLayout()
+        layout = qtw.QVBoxLayout()
         
         labelStyle = 'font-weight:bold; color:#31698f'
         
@@ -330,7 +330,10 @@ class fileBox(connectBox):
         appendForm.setSpacing(5)
         
         for camBox in self.sbWin.camBoxes:
-            appendForm.addRow(qtw.QLabel(camBox.camObj.cameraName), camBox.camInclude)
+            try:
+                appendForm.addRow(qtw.QLabel(camBox.camObj.cameraName), camBox.camInclude)
+            except:
+                pass
             
         self.layout.addItem(appendForm)
         self.layout.setSpacing(5)
