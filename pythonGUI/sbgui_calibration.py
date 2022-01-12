@@ -118,9 +118,10 @@ class calibPlot:
     def updateTargetSpeed(self) -> None:
         '''update the target speed line on the plot'''
         p,_ = self.getPS()
-        self.prange = [min(p), max(p)]
-        self.horizLine.setData(self.prange, [self.parent.targetSpeed(), self.parent.targetSpeed()], pen=self.horizPen)
-        self.calcPressure()
+        if len(p)>1:
+            self.prange = [min(p), max(p)]
+            self.horizLine.setData(self.prange, [self.parent.targetSpeed(), self.parent.targetSpeed()], pen=self.horizPen)
+            self.calcPressure()
         
     def updateEq(self) -> None:
         '''update the displayed equation'''

@@ -10,6 +10,8 @@ import ctypes
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
 import traceback
+import ctypes
+
 
 # local packages
 from sbgui_general import *
@@ -268,14 +270,30 @@ class SBwindow(qtw.QMainWindow):
         
         self.fileBox = sbgui_files.fileBox(self)           # general file ops
         self.sbBox = sbgui_shopbot.sbBox(self)             # shopbot box
-              
+        
+        # use different layout depending on screen resolution
+#         app = QtGui.QApplication([])
+#         screen_resolution = app.desktop().screenGeometry()
+#         width, height = screen_resolution.width(), screen_resolution.height()
+        user32 = ctypes.windll.user32
+        width = user32.GetSystemMetrics(0)
+        height = user32.GetSystemMetrics(1)
+
         self.fullLayout = qtw.QGridLayout()
+        self.fullLayout.addWidget(self.sbBox, 0, 0) 
         self.fullLayout.addWidget(self.fileBox, 0, 1)  # row 0, col 1
-        self.fullLayout.addWidget(self.sbBox, 0, 0)  
         self.fullLayout.addWidget(self.basBox, 2, 0)
         self.fullLayout.addWidget(self.nozBox, 2, 1)
-        self.fullLayout.addWidget(self.fluBox, 3, 0)
-        self.fullLayout.addWidget(self.web2Box, 3, 1)
+#         print(width,height)
+        if height<2000:
+            # wide layout
+            logging.info('Low screen resolution: using wide window')
+            self.fullLayout.addWidget(self.fluBox, 0, 2)
+            self.fullLayout.addWidget(self.web2Box, 2, 2)
+        else:
+            # tall layout
+            self.fullLayout.addWidget(self.fluBox, 3, 0)
+            self.fullLayout.addWidget(self.web2Box, 3, 1)
 
         self.central_widget.setLayout(self.fullLayout)
     

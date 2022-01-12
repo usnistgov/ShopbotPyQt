@@ -1037,7 +1037,7 @@ class cameraBox(connectBox):
 #         self.status = qtw.QLabel('Ready')
 #         self.status.setFixedSize(self.camObj.imw - (self.camButts.iconSize().width()+20)*len(buttons), 70)
 #         self.status.setWordWrap(True)
-        self.createStatus(self.camObj.imw - (self.camButts.iconSize().width()+20)*len(buttons), height=70)
+        self.createStatus(self.camObj.imw - (self.camButts.iconSize().width()+20)*len(buttons), height=90)
                 
         buttRow = qtw.QHBoxLayout()
         buttRow.addWidget(self.camButts)

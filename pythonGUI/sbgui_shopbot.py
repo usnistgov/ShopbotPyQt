@@ -194,9 +194,10 @@ class sbBox(connectBox):
             self.sbButts.addWidget(b)
         self.sbButts.setStyleSheet("QToolBar{spacing:5px;}");
         self.sbButts.setOrientation(QtCore.Qt.Vertical)
+        self.sbButts.setFixedHeight(180)
 
         self.sbpNameList = qtw.QListWidget()
-        self.sbpNameList.setFixedHeight(100)
+        self.sbpNameList.setFixedHeight(180)
         self.addFile(self.sbpName)
         if os.path.exists(self.sbpName):
             self.activate(0)

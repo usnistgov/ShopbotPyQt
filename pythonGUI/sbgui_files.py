@@ -66,7 +66,7 @@ class fileSettingsBox(qtw.QWidget):
         labelStyle = 'font-weight:bold; color:#31698f'
         
         # folder creation
-        self.newFolderCheck = fCheckBox(layout, title='Create subfolders', tooltip='Create subfolders for samples, dates', checked=cfg.files.createSubfolders, func=self.changeNewFolder)
+        self.newFolderCheck = fCheckBox(layout, title='Create folders', tooltip='Create folders for samples, dates', checked=cfg.files.createSubfolders, func=self.changeNewFolder)
                 
         # include sample
         iSampleRow = qtw.QVBoxLayout()
@@ -114,7 +114,7 @@ class fileSettingsBox(qtw.QWidget):
         self.separatorBox = fLineEdit(fileForm, title='Separator', text=cfg.files.separator, tooltip='Format for number to add if file already exists. Use python string format', func=self.checkFormats)
         layout.addLayout(fileForm)
 
-        self.status = createStatus(500, height=150, status='')
+        self.status = createStatus(800, height=150, status='')
         layout.addWidget(self.status)
         
         for b in (self.iDateList + self.iSBList):

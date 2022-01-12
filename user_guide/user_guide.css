@@ -1,11 +1,12 @@
 details {
   user-select: none;
+    margin-left:20px
 }
 
 details[close]>summary span.icon {
-  width: 24px;
-  height: 24px;
-  transition: all 0.3s;
+    width: 24px;
+    height: 24px;
+    transition: all 0.3s;
 }
 
 details[close]>summary span.open_text {
@@ -18,10 +19,6 @@ details[close]>summary span.close_text {
 }
 details>summary span.close_text {
     display:none;
-}
-
-details{
-    margin-left:20px
 }
 
 details[open] summary span.icon {
@@ -46,11 +43,13 @@ summary::-webkit-details-marker {
 }
 
 .graphic {
-    width:400px 
+    width:400px;
+    max-width:100%;
 }
 
 .diagram{
-    width:800px
+    width:800px;
+    max-width:100%;
 }
 
 .tabstep{
@@ -99,4 +98,13 @@ summary::-webkit-details-marker {
 .code{
     font-family:Courier New;
     background-color:#EEEEEE
+}
+
+.icon2{
+    width:20px
+}
+
+.blackIcon{
+    width:20px;
+    filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(182deg) brightness(107%) contrast(105%);
 }

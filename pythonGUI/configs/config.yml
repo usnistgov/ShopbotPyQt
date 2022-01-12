@@ -22,12 +22,12 @@ files:
   timeFormat: '%y%m%d_%H%M%S_%f'
 fluigent:
   colors:
-  - '#3f8dd1'
+  - '#3f8d88'
   - '#b0401e'
   - '#3e8a5b'
   - '#b8a665'
   dt: 50
-  pmax: 7000
+  pmax: 100
   savePressure: true
   trange: 60
 layout:

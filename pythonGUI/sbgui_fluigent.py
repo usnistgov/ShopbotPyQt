@@ -61,7 +61,7 @@ class fluChannel:
 #         self.setBox.selectionChanged.connect(self.setSetPressureFocus)
         self.setBox.returnPressed.connect(self.setPressure)
         self.setBox.setToolTip('Set the pressure. Press [enter] or click Go to set the pressure.')
-        objValidator = qtw.QIntValidator()
+        objValidator = QtGui.QIntValidator()
         objValidator.setRange(0, 7000)
         self.setBox.setValidator(objValidator)
         self.setButton = qtw.QPushButton('Go')
@@ -341,7 +341,7 @@ class fluSettingsBox(qtw.QWidget):
         self.savePressureCheck.clicked.connect(self.updateSavePressure)
         layout.addWidget(self.savePressureCheck)
         
-        objValidator = qtw.QIntValidator()
+        objValidator = QtGui.QIntValidator()
         form = qtw.QFormLayout()
         form.setSpacing(10)
         
