@@ -460,11 +460,12 @@ class camera:
                 frame2 = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             else:
                 frame2 = frame
-            image = qtw.QImage(frame2, frame2.shape[1], frame2.shape[0], qtw.QImage.Format_RGB888)
-            pixmap = qtw.QPixmap.fromImage(image)
+            image = QtGui.QImage(frame2, frame2.shape[1], frame2.shape[0], QtGui.QImage.Format_RGB888)
+            pixmap = QtGui.QPixmap.fromImage(image)
             self.prevWindow.setPixmap(pixmap)
         except Exception as e:
             # stop previewing if we can't preview
+            print(e)
             self.updateStatus('Error displaying frame', True)
             self.previewing = False
             self.stopTimer()
