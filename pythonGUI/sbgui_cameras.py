@@ -465,7 +465,7 @@ class camera:
             self.prevWindow.setPixmap(pixmap)
         except Exception as e:
             # stop previewing if we can't preview
-            print(e)
+            logging.warning(str(e))
             self.updateStatus('Error displaying frame', True)
             self.previewing = False
             self.stopTimer()
