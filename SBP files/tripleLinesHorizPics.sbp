@@ -1,0 +1,999 @@
+&slideW = 25.00
+&slideH = 75.00
+&margin = 5.00
+&spacing = 1.25
+&nd = 0.91
+&downdisp = 0.00
+VD , , 1
+VU, 157.480315, 157.480315, -157.480315
+MS, 5, 5
+JS, 20, 20
+&nid = 0.60
+SO, 4, 1
+MX, &slideW/2
+MZ, -0.9*&slideW
+MY, &margin/2
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 1
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 2
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 3
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 4
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 5
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 6
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 7
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -0.7*&slideW
+MY, &margin/2
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 1
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 2
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 3
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 4
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 5
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 6
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 7
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -0.5*&slideW
+MY, &margin/2
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 1
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 2
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 3
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 4
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 5
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 6
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 7
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -0.3*&slideW
+MY, &margin/2
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 1
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 2
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 3
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 4
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 5
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 6
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, &margin/2 + 7
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -0.9*&slideW
+MY, 3*&margin/2 + 7
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 8
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 9
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 10
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 11
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 12
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 13
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 14
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -0.7*&slideW
+MY, 3*&margin/2 + 7
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 8
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 9
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 10
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 11
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 12
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 13
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 14
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -0.5*&slideW
+MY, 3*&margin/2 + 7
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 8
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 9
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 10
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 11
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 12
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 13
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 14
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -0.3*&slideW
+MY, 3*&margin/2 + 7
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 8
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 9
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 10
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 11
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 12
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 13
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 3*&margin/2 + 14
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -0.9*&slideW
+MY, 5*&margin/2 + 14
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 15
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 16
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 17
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 18
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 19
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 20
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 21
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -0.7*&slideW
+MY, 5*&margin/2 + 14
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 15
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 16
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 17
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 18
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 19
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 20
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 21
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -0.5*&slideW
+MY, 5*&margin/2 + 14
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 15
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 16
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 17
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 18
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 19
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 20
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 21
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -0.3*&slideW
+MY, 5*&margin/2 + 14
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 15
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 16
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 17
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 18
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 19
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 20
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 5*&margin/2 + 21
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -0.9*&slideW
+MY, 7*&margin/2 + 21
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 22
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 23
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 24
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 25
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 26
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 27
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 28
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -0.7*&slideW
+MY, 7*&margin/2 + 21
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 22
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 23
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 24
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 25
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 26
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 27
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 28
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -0.5*&slideW
+MY, 7*&margin/2 + 21
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 22
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 23
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 24
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 25
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 26
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 27
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 28
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -0.3*&slideW
+MY, 7*&margin/2 + 21
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 22
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 23
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 24
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 25
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 26
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 27
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 7*&margin/2 + 28
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -0.9*&slideW
+MY, 9*&margin/2 + 28
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 29
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 30
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 31
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 32
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 33
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 34
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 35
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -0.7*&slideW
+MY, 9*&margin/2 + 28
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 29
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 30
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 31
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 32
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 33
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 34
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 35
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -0.5*&slideW
+MY, 9*&margin/2 + 28
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 29
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 30
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 31
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 32
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 33
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 34
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 35
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -0.3*&slideW
+MY, 9*&margin/2 + 28
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 29
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 30
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 31
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 32
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 33
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 34
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 9*&margin/2 + 35
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -0.9*&slideW
+MY, 11*&margin/2 + 35
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 36
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 37
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 38
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 39
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 40
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 41
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 42
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -0.7*&slideW
+MY, 11*&margin/2 + 35
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 36
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 37
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 38
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 39
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 40
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 41
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 42
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -0.5*&slideW
+MY, 11*&margin/2 + 35
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 36
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 37
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 38
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 39
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 40
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 41
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 42
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MZ, -0.3*&slideW
+MY, 11*&margin/2 + 35
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 36
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 37
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 38
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 39
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 40
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 41
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+MY, 11*&margin/2 + 42
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+SO, 4, 0
+MZ, 10.00

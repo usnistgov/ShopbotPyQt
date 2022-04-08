@@ -98,13 +98,19 @@ def mean(*dims) -> Union[str, float]:
 class sbpCreator:
     '''Holds functions necessary for making .sbp files'''
     
-    def __init__(self, **kwargs):
+    def __init__(self, diam:float=0.603, **kwargs):
+        '''diam is the filament diameter in mm'''
+        self.diam=diam
         self.channel = 0    # channel is the pressure channel to turn on
         self.file = ''
         self.cp = [0,0,0] # current point
         self.positions = []
         self.stepPoints = []
         self.vardefs = {}
+        self.volume = 0 # volume of fluid extruded in mm^3
+        self.time = 0 # total time in print, in s
+        self.MS = 0
+        self.JS = 0
         if 'lastPt' in kwargs:
             self.takeLastPt(kwargs['lastPt'])
     
@@ -119,11 +125,20 @@ class sbpCreator:
         scout.positions = self.positions + other.positions
         scout.stepPoints = self.stepPoints + other.stepPoints
         scout.vardefs = {**self.vardefs, **other.vardefs}
+        scout.volume = self.volume + other.volume
+        scout.time = self.time + other.time
+        scout.MS = self.MS
+        scout.JS = self.JS
         return scout
+    
+    def printVolume(self):
+        print('{:0.3f}'.format(self.volume/1000), 'mL,', int(np.floor(self.time/60)), 'min', int(self.time%60), 's')
      
     def takeLastPt(self, other) -> int:
         '''return 1 if the last point is not valid'''
         self.vardefs = {**self.vardefs, **other.vardefs}
+        self.MS = other.MS
+        self.JS = other.JS
         if len(other.positions)>0:
             lp = other.positions[-1]
             self.cp = lp.copy()
@@ -245,13 +260,34 @@ class sbpCreator:
             val = self.cp[idx]
         return val
         
-    def updatePts(self, **kwargs):
-        '''Add point to list of points. e.g. if you are going to z=5, input z=5. If you are going to x=5,y=4, then input x=5,y=4.'''
+    def updatePts(self, pOn:bool=False, mj:str='m', **kwargs):
+        '''Add point to list of points. e.g. if you are going to z=5, input z=5. If you are going to x=5,y=4, then input x=5,y=4.
+        pOn if extrusion pressure is on
+        mj = m for a move, j for a jog'''
         x = self.updatePtsXYZ(kwargs, 'x')
         y = self.updatePtsXYZ(kwargs, 'y')
         z = self.updatePtsXYZ(kwargs, 'z')
+        lastpt = self.cp
+        lastpt = [self.floatSC(i) for i in lastpt]
+        xf = self.floatSC(x)
+        yf = self.floatSC(y)
+        zf = self.floatSC(z)
+        distance = np.sqrt((xf-lastpt[0])**2+(yf-lastpt[1])**2+(zf-lastpt[2])**2) # distance traveled
+        try:
+            if mj=='m':
+                s = self.MS
+            else:
+                s = self.JS
+        except Exception as e:
+            pass
+        else:
+            self.time = self.time + distance/s # time traveled
+        if pOn:
+            # update total extruded
+            self.volume = self.volume + distance*np.pi*(self.diam/2)**2 # total volume
         self.cp = [x,y,z]
         self.positions.append([x,y,z])
+        
         
     
                 
@@ -263,39 +299,39 @@ class sbpCreator:
     # ms is move string ('M' or 'J')
     
     #-----
-    def mj3(self, x:Union[float, str], y:Union[float, str], z:Union[float, str], ms:str) -> str:
+    def mj3(self, x:Union[float, str], y:Union[float, str], z:Union[float, str], ms:str, pOn:bool=False) -> str:
         '''Move or jump in 3D. ms='M' or 'J' '''
         s = ms.upper() + '3, ' + self.fsss(x) + ', ' + self.fsss(y) + ', ' + self.fsss(z) + '\n'
-        self.updatePts(x=x, y=y, z=z)
+        self.updatePts(x=x, y=y, z=z, pOn=pOn)
         self.file+=s
         return s
     
-    def m3(self, x:Union[float, str], y:Union[float, str], z:Union[float, str]) -> str:
+    def m3(self, x:Union[float, str], y:Union[float, str], z:Union[float, str], pOn:bool=False) -> str:
         '''Move in 3D'''
-        return self.mj3(x,y,z,'M')
+        return self.mj3(x,y,z,'M', pOn=pOn)
     
-    def j3(self, x:Union[float, str], y:Union[float, str], z:Union[float, str]) -> str:
+    def j3(self, x:Union[float, str], y:Union[float, str], z:Union[float, str], pOn:bool=False) -> str:
         '''Jump in 3D'''
-        return self.mj3(x,y,z,'J')
+        return self.mj3(x,y,z,'J', pOn=pOn)
     
     #-----
-    def mj2(self, x:Union[float, str], y:Union[float, str], ms:str) -> str:
+    def mj2(self, x:Union[float, str], y:Union[float, str], ms:str, pOn:bool=False) -> str:
         '''Move or jump in 2D'''
         s = ms.upper() + '2, ' + self.fsss(x) + ', ' + self.fsss(y) + '\n'
-        self.updatePts(x=x, y=y)
+        self.updatePts(x=x, y=y, pOn=pOn)
         self.file+=s
         return s
 
-    def m2(self, x:Union[float, str], y:Union[float, str]) -> str:
+    def m2(self, x:Union[float, str], y:Union[float, str], pOn:bool=False) -> str:
         '''Move in 2D'''
-        return self.mj2(x, y, 'M')
+        return self.mj2(x, y, 'M', pOn=pOn)
     
-    def j2(self, x:Union[float, str], y:Union[float, str]) -> str:
+    def j2(self, x:Union[float, str], y:Union[float, str], pOn:bool=False) -> str:
         '''Jump in 2D'''
-        return self.mj2(x, y, 'J')
+        return self.mj2(x, y, 'J', pOn=pOn)
     
     #-----
-    def mj1(self, direc:str, position:Union[float, str], ms:str) -> str:
+    def mj1(self, direc:str, position:Union[float, str], ms:str, pOn:bool=False) -> str:
         '''Move or jump in 1D'''
         if len(direc)>1:
             dire = direc[-1]
@@ -303,51 +339,51 @@ class sbpCreator:
             dire = direc
         s = ms.upper() + dire.upper() + ', ' + self.fsss(position) + '\n'
         if dire.lower()=='x':
-            self.updatePts(x=position)
+            self.updatePts(x=position, pOn=pOn)
         elif dire.lower()=='y':
-            self.updatePts(y=position)
+            self.updatePts(y=position, pOn=pOn)
         else:
-            self.updatePts(z=position)
+            self.updatePts(z=position, pOn=pOn)
         self.file+=s
         return s
     
-    def m1(self, direc:str, position:Union[float, str]) -> str:
+    def m1(self, direc:str, position:Union[float, str], pOn:bool=False) -> str:
         '''Move in 1D'''
-        return self.mj1(direc, position, 'M')
+        return self.mj1(direc, position, 'M', pOn=pOn)
     
-    def mx(self, x:Union[float, str]) -> str:
+    def mx(self, x:Union[float, str], pOn:bool=False) -> str:
         '''Move in x'''
-        return self.mj1('X', x, 'M')
+        return self.mj1('X', x, 'M', pOn=pOn)
     
-    def my(self, y:Union[float, str]) -> str:
+    def my(self, y:Union[float, str], pOn:bool=False) -> str:
         '''Move in y'''
-        return self.mj1('Y', y, 'M')
+        return self.mj1('Y', y, 'M', pOn=pOn)
     
-    def mz(self, z:Union[float, str]) -> str:
+    def mz(self, z:Union[float, str], pOn:bool=False) -> str:
         '''Move in z'''
-        return self.mj1('Z', z, 'M')
+        return self.mj1('Z', z, 'M', pOn=pOn)
     
-    def j1(self, direc:str, position:Union[float, str]) -> str:
+    def j1(self, direc:str, position:Union[float, str], pOn:bool=False) -> str:
         '''Jump in 1D'''
-        return self.mj1(direc, position, 'J')
+        return self.mj1(direc, position, 'J', pOn=pOn)
     
-    def jx(self, x:Union[float, str]) -> str:
+    def jx(self, x:Union[float, str], pOn:bool=False) -> str:
         '''Jump in x'''
-        return self.mj1('X', x, 'J')
+        return self.mj1('X', x, 'J', pOn=pOn)
     
-    def jy(self, y:Union[float, str]) -> str:
+    def jy(self, y:Union[float, str], pOn:bool=False) -> str:
         '''Jump in y'''
-        return self.mj1('Y', y, 'J')
+        return self.mj1('Y', y, 'J', pOn=pOn)
 
-    def jz(self, z:Union[float, str]) -> str:
+    def jz(self, z:Union[float, str], pOn:bool=False) -> str:
         '''Jump in z'''
-        return self.mj1('Z', z, 'J')
+        return self.mj1('Z', z, 'J', pOn=pOn)
     
-    def withdraw(self) -> None:
+    def withdraw(self, pOn=False) -> None:
         '''Go back to the loading zone'''
-        self.mj1('Z', 10, 'J')
-        self.mj1('Y', 150, 'J')
-        self.mj1('X', 80, 'J')
+        self.mj1('Z', 10, 'J', pOn=pOn)
+        self.mj1('Y', 150, 'J', pOn=pOn)
+        self.mj1('X', 80, 'J', pOn=pOn)
         return 
 
     #------------
@@ -484,6 +520,12 @@ class sbpCreator:
         File_object.write(fout)
         File_object.close()
         print("Exported file %s" % filename)
+        
+    def addVar(self, key:str, val:float) -> None:
+        '''add the variable to the file and store the definition'''
+        self.file+=f'&{key} = {fs(val)}\n'
+        self.vardefs[key] = val
+        
     
     
 ############---------------------------------
@@ -494,13 +536,13 @@ class defVars(sbpCreator):
     def __init__(self, **kwargs):
         super(defVars, self).__init__()
         for key, val in kwargs.items():
-            self.file+='&' + key + ' = ' + fs(val) + '\n'
-        self.vardefs = {**self.vardefs, **kwargs}
+            self.addVar(key, val)
     
     def setSpeeds(self, **kwargs):
         '''Set move and jump speeds. Inputs could be m=5, j=20'''
         for i in kwargs:
             self.file+= f'{i.upper()}S, {kwargs[i]}, {kwargs[i]}\n'
+            setattr(self, f'{i.upper()}S', kwargs[i]) # store speed
             
     def setUnits(self, **kwargs):
         '''Set the units to mm'''
@@ -570,12 +612,13 @@ class zigzag(sbpCreator):
         return shortlist
         
     def sbp(self) -> str:
-        '''Create the sbp file'''
+        '''Create the sbp file. diam is the filament diameter'''
+
         longlist = self.getLongList()
         shortlist = self.getShortList()
         
         self.reset()  # reset the file and position lists
-        self.m2(self.x0, self.y0) # go to first xy position
+        self.m2(self.x0, self.y0, pOn=False) # go to first xy position
         self.jz(self.z0) # go to first z position
         self.turnOn(0)
         llpos = 1
@@ -585,8 +628,8 @@ class zigzag(sbpCreator):
             mids = [p(longlist[0],2),p(longlist[1],-2)]
         else:
             mids = [p(longlist[1],2),p(longlist[0],-2)]
-        self.m1(self.longdir[1], mids[llpos]) # write next line
-        self.m1(self.longdir[1], longlist[llpos]) # write first line
+        self.m1(self.longdir[1], mids[llpos], pOn=True) # write first part of first line
+        self.m1(self.longdir[1], longlist[llpos], pOn=True) # write rest of first line
         for i in shortlist[1:]:
             if llpos==1:
                 llpos = 0
@@ -594,13 +637,13 @@ class zigzag(sbpCreator):
                 llpos = 1
             if self.killZigs:
                 self.turnOff(0)
-                self.j1(self.shortdir[1], i) # zig
+                self.j1(self.shortdir[1], i, pOn=False) # zig
                 self.turnOn(0)
-                self.m1(self.longdir[1], mids[llpos]) # write next line
-                self.j1(self.shortdir[1], i) # zero move to fix turnoff
+                self.m1(self.longdir[1], mids[llpos], pOn=True) # write next line
+                self.j1(self.shortdir[1], i, pOn=False) # zero move to fix turnoff
             else:
-                self.m1(self.shortdir[1], i) # zig   
-            self.m1(self.longdir[1], longlist[llpos]) # write next line
+                self.m1(self.shortdir[1], i, pOn=True) # zig   
+            self.m1(self.longdir[1], longlist[llpos], pOn=True) # write next line
             
         if len(self.positions)>1:
             self.stepPoints = [self.positions[1]]
@@ -717,7 +760,7 @@ class verts(sbpCreator):
         long1 = self.floatSC(self.longlist0[1])
         long2 = self.floatSC(self.longlist0[0])
 
-        self.longreps = int(np.floor(2*abs(long1 - long2)/(sp1+sp2)))
+        self.longreps = int(np.ceil(2*abs(long1 - long2)/(sp1+sp2)))
         if not self.spacing1==self.spacing2:
             if self.longreps%2==1:
                 self.longreps+=1
@@ -750,6 +793,15 @@ class verts(sbpCreator):
             self.setSpacing(spacing1, kwargs['spacing2'])
         else:
             self.setSpacing(spacing1)
+            
+    def upDownRowReps(self, direc:str='+y', p0:float=0, const:float=0, spacing:float=1, reps:int=2) -> None:
+        '''given a direction (direct), an initial point p0, a constant dimension for the other direction const, a spacing between lines, and a number of reps, set the lists'''
+        longlist = [p(p0, t(spacing, i)) for i in range(reps)] # list of points
+        self.upDownRow(direc, longlist, const)
+        self.longreps = reps
+        self.longlist = longlist
+        self.spacing1=spacing
+        
         
         
     def matchToVerts(self, **kwargs) -> None:
@@ -820,9 +872,9 @@ class verts(sbpCreator):
                     self.j1(self.longdir[1], lpos) 
                     # go to coord if not already there
                 self.turnOn(0)
-                self.m1('z', p(self.zmax,-2)) # draw most of z
+                self.m1('z', p(self.zmax,-2), pOn=True) # draw most of z
                 self.j1(self.longdir[1], lpos0) # zero move to turn off flow at right time
-                self.m1('z', self.zmax) # draw z
+                self.m1('z', self.zmax, pOn=True) # draw z
                 self.turnOff(0)
             
         if len(self.positions)>1:
