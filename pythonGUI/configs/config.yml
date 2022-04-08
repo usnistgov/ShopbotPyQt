@@ -4,7 +4,7 @@ calibration:
     (NIST)/NIST/data/material properties/flow rates
   initDensity: 1
   initDiam: '0.603'
-  initSpeed: '40'
+  initSpeed: '10'
 camera:
   diag: 1
 files:
@@ -17,7 +17,7 @@ files:
   includeSampleInFile: true
   includeSampleInFolder: true
   includeTimeInFile: true
-  save: C:\\
+  save: \\cfs2e.nist.gov\642\internal\3D Printing Lab\Shopbot\videos\test
   separator: _
   timeFormat: '%y%m%d_%H%M%S_%f'
 fluigent:
@@ -27,7 +27,7 @@ fluigent:
   - '#3e8a5b'
   - '#b8a665'
   dt: 50
-  pmax: 100
+  pmax: 2000
   savePressure: true
   trange: 60
 layout:
@@ -37,4 +37,4 @@ shopbot:
   autoplay: false
   dt: 50
   sbpFolder: C:\Users\lmf1\Documents\GitHub\ShopbotPyQt\SBP files
-  sbpName: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files/singleLinesNoZig_2.5.sbp
+  sbpName: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files/singleLinesPics8.sbp
