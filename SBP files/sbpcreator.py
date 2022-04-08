@@ -629,6 +629,7 @@ class zigzag(sbpCreator):
         else:
             mids = [p(longlist[1],2),p(longlist[0],-2)]
         self.m1(self.longdir[1], mids[llpos], pOn=True) # write first part of first line
+        self.j1(self.shortdir[1], shortlist[0], pOn=False) # zero move to fix turnoff
         self.m1(self.longdir[1], longlist[llpos], pOn=True) # write rest of first line
         for i in shortlist[1:]:
             if llpos==1:

@@ -11,6 +11,7 @@ from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
 import csv
 import re
+import time
 
 # local packages
 import Fluigent.SDK as fgt
@@ -573,15 +574,15 @@ class sbBox(connectBox):
     def triggerEndOfPrint(self) -> None:
         '''stop watching for changes in pressure, stop recording  '''
         if self.runningSBP:
+            self.sbWin.fluBox.resetAllChannels(-1) # turn off all channels
             for camBox in self.sbWin.camBoxes:
-                if camBox.camInclude.isChecked() and camBox.camObj.recording:
-                    camBox.cameraRec()
-            self.sbWin.fluBox.stopRecording()
+                if camBox.camInclude.isChecked() and camBox.camObj.recording: 
+                    camBox.cameraRec() # stop recording
+            self.sbWin.fluBox.stopRecording()  # save fluigent
             try:
                 self.timer.stop()
             except:
                 pass
-            self.sbWin.fluBox.resetAllChannels(-1)
         self.activateNext() # activate the next sbp file in the list
         if self.autoPlay and self.sbpNumber()>0: # if we're in autoplay and we're not at the beginning of the list, play the next file
             self.updateStatus('Autoplay is on: Running next file.', True)
