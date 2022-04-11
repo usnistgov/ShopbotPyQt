@@ -288,6 +288,11 @@ class sbpCreator:
         self.cp = [x,y,z]
         self.positions.append([x,y,z])
         
+    def pause(self, time):
+        '''pause in the file'''
+        self.file+=f'PAUSE {time}\n'
+        self.time = self.time+self.floatSC(time)
+        
         
     
                 
@@ -897,9 +902,9 @@ class pics(sbpCreator):
         
     def snap(self):
         self.stepPoints.append(self.cp)
-        self.file+='PAUSE &wait1\n'
+        self.pause('&wait1')
         self.turnOn(self.channel)
-        self.file+='PAUSE &wait2\n'
+        self.pause('&wait2')
         self.turnOff(self.channel)       
     
     def sbp(self):
