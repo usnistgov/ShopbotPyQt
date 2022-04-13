@@ -272,10 +272,8 @@ class fluPlot:
         '''read the pressure and update the plot display'''
         try:
             # add pressures to table if we're saving
-            print(self.fluBox.save, self.fluBox.bonus)
             if self.fluBox.save:
                 self.fluBox.saveTable.append([self.pw.time[-1]]+[j[-1] for j in self.pw.pressures])
-                self.fluBox.bonus+=1
             for i in range(self.numChans):
                 # update the plot
                 self.datalines[i].setData(self.pw.time, self.pw.pressures[i], pen=self.pens[i])
@@ -430,7 +428,6 @@ class fluBox(connectBox):
         self.save = False
         self.fileName = ''
         self.freshFileName = False
-        self.bonus=0
 
     def saveConfig(self, cfg1):
         '''save the current settings to a config Box object'''
@@ -576,15 +573,13 @@ class fluBox(connectBox):
             self.saveTable = []
             self.save = True
             self.getFileName() # determine the current file name
-            self.bonus = 0 # add more frames at the end
         
     def stopRecording(self) -> None:
         '''Save the recorded pressure readings in a csv'''
-        self.bonus=0
         dummy = 0
-        while self.bonus<10 and dummy<10:
-            time.sleep(1)
-            print(self.bonus)
+        while dummy<10:
+            time.sleep(self.dt/1000)  
+            self.fluPlot.update()
             dummy+=1
         if self.savePressure and self.save:
             self.save = False

@@ -296,6 +296,7 @@ class camera:
         
     def setFrameRateAuto(self) -> int:
         return self.setFrameRate(self.getFrameRate())
+
     
     
     def closeCam(self) -> None:
@@ -630,6 +631,10 @@ class webcam(camera):
             else:
                 if self.diag>0:
                     logging.info(self.cameraName + ' closed')
+                    
+    def saveConfig(self, cfg1):
+        '''save the current settings to a config Box object'''
+        return cfg1
     
 
 #########################################      
@@ -675,7 +680,10 @@ class bascam(camera):
             self.converter.OutputBitAlignment = pylon.OutputBitAlignment_MsbAligned
             
             # get camera stats
-            self.setFrameRateAuto()                             # read the default frame rate from the camera
+           # self.setFrameRateAuto()                             # read the default frame rate from the camera
+        
+            self.setFrameRate(cfg.camera.bascam.fps)
+
             tryFrame = 0
             while tryFrame<10:
                 try:
@@ -808,6 +816,11 @@ class bascam(camera):
         else:
             if self.diag>0:
                 logging.info('Basler camera closed')
+                
+    def saveConfig(self, cfg1):
+        '''save the current settings to a config Box object'''
+        cfg1.bascam.fps = self.fps
+        return cfg1
             
 ################################################
         
@@ -966,6 +979,7 @@ class cameraBox(connectBox):
         
     def saveConfig(self, cfg1):
         '''save the current settings to a config Box object'''
+        self.camObj.saveConfig(cfg1)
         return cfg1
     
     def loadConfig(self, cfg1):

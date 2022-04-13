@@ -4,20 +4,22 @@ calibration:
     (NIST)/NIST/data/material properties/flow rates
   initDensity: 1
   initDiam: '0.603'
-  initSpeed: '10'
+  initSpeed: '10.0'
 camera:
   diag: 1
+  bascam:
+      fps: 100
 files:
   createSubfolders: true
   dateFormat: '%y%m%d'
   duplicateFormat: '{0:0=3d}'
   includeDateRadio: 0
   includeSBInFile: true
-  includeSBRadio: 2
+  includeSBRadio: 1
   includeSampleInFile: true
   includeSampleInFolder: true
   includeTimeInFile: true
-  save: \\cfs2e.nist.gov\642\internal\3D Printing Lab\Shopbot\videos\test
+  save: C:\Users\lmf1\Videos\Shopbot Videos\220412 mineral LapRD
   separator: _
   timeFormat: '%y%m%d_%H%M%S_%f'
 fluigent:
@@ -37,4 +39,4 @@ shopbot:
   autoplay: false
   dt: 50
   sbpFolder: C:\Users\lmf1\Documents\GitHub\ShopbotPyQt\SBP files
-  sbpName: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files/tripleLinesHoriz.sbp
+  sbpName: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files/tripleLinesHorizPics.sbp

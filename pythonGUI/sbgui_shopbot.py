@@ -510,8 +510,10 @@ class sbBox(connectBox):
             for camBox in self.sbWin.camBoxes:
                 if camBox.camInclude.isChecked() and not camBox.camObj.recording:
                     camBox.cameraRec()
-        self.saveSpeeds()            
-        self.sbWin.fluBox.startRecording()
+        if len(self.channelsTriggered)>0 and not self.channelsTriggered==[2]:
+            # only record if there is extrusion
+            self.saveSpeeds() 
+            self.sbWin.fluBox.startRecording()
     
     ### wait for end
     

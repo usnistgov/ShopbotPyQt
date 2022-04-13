@@ -1,0 +1,112 @@
+&slideW = 25.00
+&slideH = 75.00
+&margin = 5.00
+&spacing = 5.00
+&nd = 0.91
+&downdisp = 0.00
+&diam = 0.60
+&wait1 = 0.50
+&wait2 = 0.50
+VD , , 1
+VU, 157.480315, 157.480315, -157.480315
+MS, 10, 10
+JS, 20, 20
+&nid = 0.60
+SO, 4, 1
+J2, 12.50, &margin/2
+JZ, -0.5*&margin - 0.5*&slideW
+JX, 12.50
+JY, &margin/2
+JZ, &margin/2 -&slideW
+SO, 1, 1
+MZ, -&margin/2 - 0.5*&slideW - 2.0
+JY, &margin/2
+MZ, -0.5*&margin - 0.5*&slideW
+SO, 1, 0
+JY, &margin/2 + &nid/2
+JZ, &margin/2 -&slideW
+SO, 1, 1
+MZ, -&margin/2 - 0.5*&slideW - 2.0
+JY, &margin/2 + &nid/2
+MZ, -0.5*&margin - 0.5*&slideW
+SO, 1, 0
+JY, &margin/2 + &nid
+JZ, &margin/2 -&slideW
+SO, 1, 1
+MZ, -&margin/2 - 0.5*&slideW - 2.0
+JY, &margin/2 + &nid
+MZ, -0.5*&margin - 0.5*&slideW
+SO, 1, 0
+JZ, -&margin
+JX, 12.50
+JY, &margin/2
+JZ, -0.5*&slideW
+SO, 1, 1
+MZ, -&margin - 2.0
+JY, &margin/2
+MZ, -&margin
+SO, 1, 0
+JY, &margin/2 + &nid/2
+JZ, -0.5*&slideW
+SO, 1, 1
+MZ, -&margin - 2.0
+JY, &margin/2 + &nid/2
+MZ, -&margin
+SO, 1, 0
+JY, &margin/2 + &nid
+JZ, -0.5*&slideW
+SO, 1, 1
+MZ, -&margin - 2.0
+JY, &margin/2 + &nid
+MZ, -&margin
+SO, 1, 0
+JY, 3*&margin/2 + &nid
+JZ, -0.5*&margin - 0.5*&slideW
+JX, 12.50
+JY, 3*&margin/2 + &nid
+JZ, &margin/2 -&slideW
+SO, 1, 1
+MZ, -&margin/2 - 0.5*&slideW - 2.0
+JY, 3*&margin/2 + &nid
+MZ, -0.5*&margin - 0.5*&slideW
+SO, 1, 0
+JY, 1.5*&margin + 1.5*&nid
+JZ, &margin/2 -&slideW
+SO, 1, 1
+MZ, -&margin/2 - 0.5*&slideW - 2.0
+JY, 1.5*&margin + 1.5*&nid
+MZ, -0.5*&margin - 0.5*&slideW
+SO, 1, 0
+JY, 1.5*&margin + 2.0*&nid
+JZ, &margin/2 -&slideW
+SO, 1, 1
+MZ, -&margin/2 - 0.5*&slideW - 2.0
+JY, 1.5*&margin + 2.0*&nid
+MZ, -0.5*&margin - 0.5*&slideW
+SO, 1, 0
+JZ, -&margin
+JX, 12.50
+JY, 3*&margin/2 + &nid
+JZ, -0.5*&slideW
+SO, 1, 1
+MZ, -&margin - 2.0
+JY, 3*&margin/2 + &nid
+MZ, -&margin
+SO, 1, 0
+JY, 1.5*&margin + 1.5*&nid
+JZ, -0.5*&slideW
+SO, 1, 1
+MZ, -&margin - 2.0
+JY, 1.5*&margin + 1.5*&nid
+MZ, -&margin
+SO, 1, 0
+JY, 1.5*&margin + 2.0*&nid
+JZ, -0.5*&slideW
+SO, 1, 1
+MZ, -&margin - 2.0
+JY, 1.5*&margin + 2.0*&nid
+MZ, -&margin
+SO, 1, 0
+JY, 2.5*&margin + 2.0*&nid
+SO, 4, 0
+MZ, 10.00

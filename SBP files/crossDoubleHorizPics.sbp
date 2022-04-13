@@ -13,7 +13,13 @@ MS, 10, 10
 JS, 20, 20
 &nid = 0.60
 SO, 4, 1
+MS, 5, 5
+JS, 20, 20
 MX, &slideW/2
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
 MZ, &margin/2 - &slideW
 MY, 3*&margin/4
 PAUSE &wait1

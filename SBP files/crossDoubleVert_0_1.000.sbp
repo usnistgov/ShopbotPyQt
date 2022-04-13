@@ -1,0 +1,111 @@
+&slideW = 25.00
+&slideH = 75.00
+&margin = 5.00
+&spacing = 5.00
+&nd = 0.91
+&downdisp = 0.00
+&diam = 0.60
+&wait1 = 0.50
+&wait2 = 0.50
+VD , , 1
+VU, 157.480315, 157.480315, -157.480315
+MS, 10, 10
+JS, 20, 20
+&nid = 0.60
+SO, 4, 1
+JZ, -&margin
+JX, 12.50
+JY, 9.0*&margin + 11.0*&nid
+JZ, -&slideW/2
+SO, 1, 1
+MZ, -&margin - 2.0
+JY, 9.0*&margin + 11.0*&nid
+MZ, -&margin
+SO, 1, 0
+JY, 9.0*&margin + 12.0*&nid
+JZ, -&slideW/2
+SO, 1, 1
+MZ, -&margin - 2.0
+JY, 9.0*&margin + 12.0*&nid
+MZ, -&margin
+SO, 1, 0
+J2, 12.5 - 0.5*&margin, 9.0*&margin + 13.0*&nid
+JZ, -&slideW/2
+SO, 1, 1
+MX, 0.5*&margin + 10.5
+JZ, -&slideW/2
+MX, 0.5*&margin + 12.5
+SO, 1, 0
+JZ, &margin/3 - &slideW/2
+SO, 1, 1
+MX, 14.5 - 0.5*&margin
+JZ, &margin/3 - &slideW/2
+MX, 12.5 - 0.5*&margin
+SO, 1, 0
+JZ, 2*&margin/3 - &slideW/2
+SO, 1, 1
+MX, 0.5*&margin + 10.5
+JZ, 2*&margin/3 - &slideW/2
+MX, 0.5*&margin + 12.5
+SO, 1, 0
+JZ, &margin - &slideW/2
+SO, 1, 1
+MX, 14.5 - 0.5*&margin
+JZ, &margin - &slideW/2
+MX, 12.5 - 0.5*&margin
+SO, 1, 0
+JZ, 1.33333333333333*&margin - &slideW/2
+SO, 1, 1
+MX, 0.5*&margin + 10.5
+JZ, 1.33333333333333*&margin - &slideW/2
+MX, 0.5*&margin + 12.5
+SO, 1, 0
+JZ, -&margin
+JX, 12.50
+JY, 9.5*&margin + 13.0*&nid
+JZ, -&slideW/2
+SO, 1, 1
+MZ, -&margin - 2.0
+JY, 9.5*&margin + 13.0*&nid
+MZ, -&margin
+SO, 1, 0
+JY, 9.5*&margin + 14.0*&nid
+JZ, -&slideW/2
+SO, 1, 1
+MZ, -&margin - 2.0
+JY, 9.5*&margin + 14.0*&nid
+MZ, -&margin
+SO, 1, 0
+J2, 12.5 - 0.5*&margin, 9.5*&margin + 15.0*&nid
+JZ, -&slideW/2
+SO, 1, 1
+MX, 0.5*&margin + 10.5
+JZ, -&slideW/2
+MX, 0.5*&margin + 12.5
+SO, 1, 0
+JZ, &margin/3 - &slideW/2
+SO, 1, 1
+MX, 14.5 - 0.5*&margin
+JZ, &margin/3 - &slideW/2
+MX, 12.5 - 0.5*&margin
+SO, 1, 0
+JZ, 2*&margin/3 - &slideW/2
+SO, 1, 1
+MX, 0.5*&margin + 10.5
+JZ, 2*&margin/3 - &slideW/2
+MX, 0.5*&margin + 12.5
+SO, 1, 0
+JZ, &margin - &slideW/2
+SO, 1, 1
+MX, 14.5 - 0.5*&margin
+JZ, &margin - &slideW/2
+MX, 12.5 - 0.5*&margin
+SO, 1, 0
+JZ, 1.33333333333333*&margin - &slideW/2
+SO, 1, 1
+MX, 0.5*&margin + 10.5
+JZ, 1.33333333333333*&margin - &slideW/2
+MX, 0.5*&margin + 12.5
+SO, 1, 0
+SO, 4, 0
+MZ, 10.00

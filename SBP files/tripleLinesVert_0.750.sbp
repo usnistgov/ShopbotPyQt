@@ -1,0 +1,112 @@
+&slideW = 25.00
+&slideH = 75.00
+&margin = 5.00
+&spacing = 5.00
+&nd = 0.91
+&downdisp = 0.00
+&diam = 0.60
+&wait1 = 0.50
+&wait2 = 0.50
+VD , , 1
+VU, 157.480315, 157.480315, -157.480315
+MS, 10, 10
+JS, 20, 20
+&nid = 0.60
+SO, 4, 1
+J2, 12.50, 4.5*&margin + 4.5*&nid
+JZ, -0.5*&margin - 0.5*&slideW
+JX, 12.50
+JY, 4.5*&margin + 4.5*&nid
+JZ, &margin/2 -&slideW
+SO, 1, 1
+MZ, -&margin/2 - 0.5*&slideW - 2.0
+JY, 4.5*&margin + 4.5*&nid
+MZ, -0.5*&margin - 0.5*&slideW
+SO, 1, 0
+JY, 4.5*&margin + 5.25*&nid
+JZ, &margin/2 -&slideW
+SO, 1, 1
+MZ, -&margin/2 - 0.5*&slideW - 2.0
+JY, 4.5*&margin + 5.25*&nid
+MZ, -0.5*&margin - 0.5*&slideW
+SO, 1, 0
+JY, 4.5*&margin + 6.0*&nid
+JZ, &margin/2 -&slideW
+SO, 1, 1
+MZ, -&margin/2 - 0.5*&slideW - 2.0
+JY, 4.5*&margin + 6.0*&nid
+MZ, -0.5*&margin - 0.5*&slideW
+SO, 1, 0
+JZ, -&margin
+JX, 12.50
+JY, 4.5*&margin + 4.5*&nid
+JZ, -0.5*&slideW
+SO, 1, 1
+MZ, -&margin - 2.0
+JY, 4.5*&margin + 4.5*&nid
+MZ, -&margin
+SO, 1, 0
+JY, 4.5*&margin + 5.25*&nid
+JZ, -0.5*&slideW
+SO, 1, 1
+MZ, -&margin - 2.0
+JY, 4.5*&margin + 5.25*&nid
+MZ, -&margin
+SO, 1, 0
+JY, 4.5*&margin + 6.0*&nid
+JZ, -0.5*&slideW
+SO, 1, 1
+MZ, -&margin - 2.0
+JY, 4.5*&margin + 6.0*&nid
+MZ, -&margin
+SO, 1, 0
+JY, 5.5*&margin + 6.0*&nid
+JZ, -0.5*&margin - 0.5*&slideW
+JX, 12.50
+JY, 5.5*&margin + 6.0*&nid
+JZ, &margin/2 -&slideW
+SO, 1, 1
+MZ, -&margin/2 - 0.5*&slideW - 2.0
+JY, 5.5*&margin + 6.0*&nid
+MZ, -0.5*&margin - 0.5*&slideW
+SO, 1, 0
+JY, 5.5*&margin + 6.75*&nid
+JZ, &margin/2 -&slideW
+SO, 1, 1
+MZ, -&margin/2 - 0.5*&slideW - 2.0
+JY, 5.5*&margin + 6.75*&nid
+MZ, -0.5*&margin - 0.5*&slideW
+SO, 1, 0
+JY, 5.5*&margin + 7.5*&nid
+JZ, &margin/2 -&slideW
+SO, 1, 1
+MZ, -&margin/2 - 0.5*&slideW - 2.0
+JY, 5.5*&margin + 7.5*&nid
+MZ, -0.5*&margin - 0.5*&slideW
+SO, 1, 0
+JZ, -&margin
+JX, 12.50
+JY, 5.5*&margin + 6.0*&nid
+JZ, -0.5*&slideW
+SO, 1, 1
+MZ, -&margin - 2.0
+JY, 5.5*&margin + 6.0*&nid
+MZ, -&margin
+SO, 1, 0
+JY, 5.5*&margin + 6.75*&nid
+JZ, -0.5*&slideW
+SO, 1, 1
+MZ, -&margin - 2.0
+JY, 5.5*&margin + 6.75*&nid
+MZ, -&margin
+SO, 1, 0
+JY, 5.5*&margin + 7.5*&nid
+JZ, -0.5*&slideW
+SO, 1, 1
+MZ, -&margin - 2.0
+JY, 5.5*&margin + 7.5*&nid
+MZ, -&margin
+SO, 1, 0
+JY, 6.5*&margin + 7.5*&nid
+SO, 4, 0
+MZ, 10.00

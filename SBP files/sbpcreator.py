@@ -531,6 +531,11 @@ class sbpCreator:
         self.file+=f'&{key} = {fs(val)}\n'
         self.vardefs[key] = val
         
+    def setSpeeds(self, **kwargs):
+        '''Set move and jump speeds. Inputs could be m=5, j=20'''
+        for i in kwargs:
+            self.file+= f'{i.upper()}S, {kwargs[i]}, {kwargs[i]}\n'
+            setattr(self, f'{i.upper()}S', kwargs[i]) # store speed
     
     
 ############---------------------------------
@@ -543,11 +548,6 @@ class defVars(sbpCreator):
         for key, val in kwargs.items():
             self.addVar(key, val)
     
-    def setSpeeds(self, **kwargs):
-        '''Set move and jump speeds. Inputs could be m=5, j=20'''
-        for i in kwargs:
-            self.file+= f'{i.upper()}S, {kwargs[i]}, {kwargs[i]}\n'
-            setattr(self, f'{i.upper()}S', kwargs[i]) # store speed
             
     def setUnits(self, **kwargs):
         '''Set the units to mm'''
@@ -623,7 +623,7 @@ class zigzag(sbpCreator):
         shortlist = self.getShortList()
         
         self.reset()  # reset the file and position lists
-        self.m2(self.x0, self.y0, pOn=False) # go to first xy position
+        self.j2(self.x0, self.y0, pOn=False) # go to first xy position
         self.jz(self.z0) # go to first z position
         self.turnOn(0)
         llpos = 1
@@ -645,10 +645,12 @@ class zigzag(sbpCreator):
                 self.turnOff(0)
                 self.j1(self.shortdir[1], i, pOn=False) # zig
                 self.turnOn(0)
-                self.m1(self.longdir[1], mids[llpos], pOn=True) # write next line
-                self.j1(self.shortdir[1], i, pOn=False) # zero move to fix turnoff
+#                 self.m1(self.longdir[1], mids[llpos], pOn=True) # write next line
+#                 self.j1(self.shortdir[1], i, pOn=False) # zero move to fix turnoff
             else:
-                self.m1(self.shortdir[1], i, pOn=True) # zig   
+                self.m1(self.shortdir[1], i, pOn=True) # zig  
+            self.m1(self.longdir[1], mids[llpos], pOn=True) # write next line
+            self.j1(self.shortdir[1], i, pOn=False) # zero move to fix turnoff
             self.m1(self.longdir[1], longlist[llpos], pOn=True) # write next line
             
         if len(self.positions)>1:
