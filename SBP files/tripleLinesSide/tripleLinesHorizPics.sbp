@@ -41,11 +41,6 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, &margin/2 + 8
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MZ, 0.5*&nid - 0.7*&slideW
 MY, &margin/2
 PAUSE &wait1
@@ -63,11 +58,6 @@ SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MY, &margin/2 + 6
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, &margin/2 + 8
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -93,11 +83,6 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, &margin/2 + 8
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MZ, 0.5*&nid - 0.3*&slideW
 MY, &margin/2
 PAUSE &wait1
@@ -119,527 +104,422 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, &margin/2 + 8
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MZ, 0.625*&nid - 0.9*&slideW
-MY, 2.875*&margin
+MY, 3.0*&margin
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 2.875*&margin + 2
+MY, 3.0*&margin + 2
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 2.875*&margin + 4
+MY, 3.0*&margin + 4
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 2.875*&margin + 6
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 2.875*&margin + 8
+MY, 3.0*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MZ, 0.625*&nid - 0.7*&slideW
-MY, 2.875*&margin
+MY, 3.0*&margin
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 2.875*&margin + 2
+MY, 3.0*&margin + 2
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 2.875*&margin + 4
+MY, 3.0*&margin + 4
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 2.875*&margin + 6
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 2.875*&margin + 8
+MY, 3.0*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MZ, 0.625*&nid - 0.5*&slideW
-MY, 2.875*&margin
+MY, 3.0*&margin
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 2.875*&margin + 2
+MY, 3.0*&margin + 2
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 2.875*&margin + 4
+MY, 3.0*&margin + 4
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 2.875*&margin + 6
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 2.875*&margin + 8
+MY, 3.0*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MZ, 0.625*&nid - 0.3*&slideW
-MY, 2.875*&margin
+MY, 3.0*&margin
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 2.875*&margin + 2
+MY, 3.0*&margin + 2
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 2.875*&margin + 4
+MY, 3.0*&margin + 4
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 2.875*&margin + 6
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 2.875*&margin + 8
+MY, 3.0*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MZ, 0.75*&nid - 0.9*&slideW
-MY, 5.25*&margin
+MY, 5.5*&margin
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 5.25*&margin + 2
+MY, 5.5*&margin + 2
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 5.25*&margin + 4
+MY, 5.5*&margin + 4
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 5.25*&margin + 6
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 5.25*&margin + 8
+MY, 5.5*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MZ, 0.75*&nid - 0.7*&slideW
-MY, 5.25*&margin
+MY, 5.5*&margin
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 5.25*&margin + 2
+MY, 5.5*&margin + 2
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 5.25*&margin + 4
+MY, 5.5*&margin + 4
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 5.25*&margin + 6
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 5.25*&margin + 8
+MY, 5.5*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MZ, 0.75*&nid - 0.5*&slideW
-MY, 5.25*&margin
+MY, 5.5*&margin
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 5.25*&margin + 2
+MY, 5.5*&margin + 2
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 5.25*&margin + 4
+MY, 5.5*&margin + 4
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 5.25*&margin + 6
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 5.25*&margin + 8
+MY, 5.5*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MZ, 0.75*&nid - 0.3*&slideW
-MY, 5.25*&margin
+MY, 5.5*&margin
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 5.25*&margin + 2
+MY, 5.5*&margin + 2
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 5.25*&margin + 4
+MY, 5.5*&margin + 4
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 5.25*&margin + 6
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 5.25*&margin + 8
+MY, 5.5*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MZ, 0.875*&nid - 0.9*&slideW
-MY, 7.625*&margin
+MY, 8.0*&margin
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 7.625*&margin + 2
+MY, 8.0*&margin + 2
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 7.625*&margin + 4
+MY, 8.0*&margin + 4
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 7.625*&margin + 6
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 7.625*&margin + 8
+MY, 8.0*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MZ, 0.875*&nid - 0.7*&slideW
-MY, 7.625*&margin
+MY, 8.0*&margin
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 7.625*&margin + 2
+MY, 8.0*&margin + 2
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 7.625*&margin + 4
+MY, 8.0*&margin + 4
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 7.625*&margin + 6
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 7.625*&margin + 8
+MY, 8.0*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MZ, 0.875*&nid - 0.5*&slideW
-MY, 7.625*&margin
+MY, 8.0*&margin
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 7.625*&margin + 2
+MY, 8.0*&margin + 2
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 7.625*&margin + 4
+MY, 8.0*&margin + 4
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 7.625*&margin + 6
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 7.625*&margin + 8
+MY, 8.0*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MZ, 0.875*&nid - 0.3*&slideW
-MY, 7.625*&margin
+MY, 8.0*&margin
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 7.625*&margin + 2
+MY, 8.0*&margin + 2
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 7.625*&margin + 4
+MY, 8.0*&margin + 4
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 7.625*&margin + 6
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 7.625*&margin + 8
+MY, 8.0*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MZ, &nid - 0.9*&slideW
-MY, 10.0*&margin
+MY, 10.5*&margin
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 10.0*&margin + 2
+MY, 10.5*&margin + 2
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 10.0*&margin + 4
+MY, 10.5*&margin + 4
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 10.0*&margin + 6
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 10.0*&margin + 8
+MY, 10.5*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MZ, &nid - 0.7*&slideW
-MY, 10.0*&margin
+MY, 10.5*&margin
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 10.0*&margin + 2
+MY, 10.5*&margin + 2
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 10.0*&margin + 4
+MY, 10.5*&margin + 4
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 10.0*&margin + 6
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 10.0*&margin + 8
+MY, 10.5*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MZ, &nid - 0.5*&slideW
-MY, 10.0*&margin
+MY, 10.5*&margin
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 10.0*&margin + 2
+MY, 10.5*&margin + 2
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 10.0*&margin + 4
+MY, 10.5*&margin + 4
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 10.0*&margin + 6
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 10.0*&margin + 8
+MY, 10.5*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MZ, &nid - 0.3*&slideW
-MY, 10.0*&margin
+MY, 10.5*&margin
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 10.0*&margin + 2
+MY, 10.5*&margin + 2
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 10.0*&margin + 4
+MY, 10.5*&margin + 4
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 10.0*&margin + 6
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 10.0*&margin + 8
+MY, 10.5*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MZ, 1.25*&nid - 0.9*&slideW
-MY, 12.375*&margin
+MY, 13.0*&margin
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 12.375*&margin + 2
+MY, 13.0*&margin + 2
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 12.375*&margin + 4
+MY, 13.0*&margin + 4
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 12.375*&margin + 6
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 12.375*&margin + 8
+MY, 13.0*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MZ, 1.25*&nid - 0.7*&slideW
-MY, 12.375*&margin
+MY, 13.0*&margin
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 12.375*&margin + 2
+MY, 13.0*&margin + 2
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 12.375*&margin + 4
+MY, 13.0*&margin + 4
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 12.375*&margin + 6
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 12.375*&margin + 8
+MY, 13.0*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MZ, 1.25*&nid - 0.5*&slideW
-MY, 12.375*&margin
+MY, 13.0*&margin
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 12.375*&margin + 2
+MY, 13.0*&margin + 2
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 12.375*&margin + 4
+MY, 13.0*&margin + 4
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 12.375*&margin + 6
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 12.375*&margin + 8
+MY, 13.0*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MZ, 1.25*&nid - 0.3*&slideW
-MY, 12.375*&margin
+MY, 13.0*&margin
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 12.375*&margin + 2
+MY, 13.0*&margin + 2
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 12.375*&margin + 4
+MY, 13.0*&margin + 4
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 12.375*&margin + 6
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 12.375*&margin + 8
+MY, 13.0*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2

@@ -114,6 +114,7 @@ class sbpCreator:
         self.cp = [0,0,0] # current point
         self.positions = []
         self.stepPoints = []
+        self.snapPoints = []
         self.written = [] # moves with extrusion on, as list of pairs of points
         self.jogs = [] # jogs, as list of pairs of points
         self.unwritten = [] # moves with extrusion off, as list of pairs of points
@@ -139,6 +140,7 @@ class sbpCreator:
         scout.jogs = self.jogs + other.jogs
         scout.unwritten = self.unwritten + other.unwritten
         scout.stepPoints = self.stepPoints + other.stepPoints
+        scout.snapPoints = self.snapPoints + other.snapPoints
         scout.vardefs = {**self.vardefs, **other.vardefs}
         scout.volume = self.volume + other.volume
         scout.time = self.time + other.time
@@ -201,6 +203,7 @@ class sbpCreator:
             self.cp = self.positions[0]
         self.positions = []
         self.stepPoints = []
+        self.snapPoints = []
         self.written = [] # moves with extrusion on, as list of pairs of points
         self.jogs = [] # jogs, as list of pairs of points
         self.unwritten = [] # moves with extrusion off, as list of pairs of points
@@ -533,17 +536,26 @@ class sbpCreator:
 #         scale[3,3]=1.0
         ax.get_proj=lambda: np.dot(Axes3D.get_proj(ax), scale)
 
-
+        if grids:
+            lw = 4
+        else:
+            lw = 1
         
         for rowi in self.jogs:
             row = self.convertPts(rowi)
-            ax.plot(row[:,0], row[:,1], zs=row[:,2], c='#a1a1a1', linestyle='dashed', linewidth=1, clip_on=False)
+            if row[1,0]<xdim and row[1,1]<ydim and row[1,2]<zdim:
+                ax.plot(row[:,0], row[:,1], zs=row[:,2], c='#a1a1a1', linestyle='dashed', linewidth=lw, clip_on=False)
         for rowi in self.unwritten:
             row = self.convertPts(rowi)
-            ax.plot(row[:,0], row[:,1], zs=row[:,2], c='#f7b2d6', linewidth=1, clip_on=False)
+            if row[1,0]<xdim and row[1,1]<ydim and row[1,2]<zdim:
+                ax.plot(row[:,0], row[:,1], zs=row[:,2], c='#f7b2d6', linewidth=lw, clip_on=False)
         for rowi in self.written:
             row = self.convertPts(rowi)
-            ax.plot(row[:,0], row[:,1], zs=row[:,2], c='#3374a0', linewidth=1.5, clip_on=False)
+            ax.plot(row[:,0], row[:,1], zs=row[:,2], c='#3374a0', linewidth=lw*1.5, clip_on=False)
+        
+        if len(self.snapPoints)>0:
+            snaps = self.convertPts(self.snapPoints)
+            ax.scatter(snaps[:,0], snaps[:,1], zs=snaps[:,2], c='#90db74', s = lw*50, clip_on=False)
         
         
         fig.subplots_adjust(left=0, right=1, bottom=0, top=1, wspace=0)
@@ -963,7 +975,7 @@ class pics(sbpCreator):
         self.wait = wait
         
     def snap(self):
-        self.stepPoints.append(self.cp)
+        self.snapPoints.append(self.cp)
         self.pause('&wait1')
         self.turnOn(self.channel)
         self.pause('&wait2')

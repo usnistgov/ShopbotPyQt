@@ -1,0 +1,128 @@
+&slideW = 25.00
+&slideH = 75.00
+&margin = 5.00
+&spacing = 5.00
+&nd = 0.91
+&downdisp = 0.00
+&diam = 0.60
+&wait1 = 0.50
+&wait2 = 0.50
+VD , , 1
+VU, 157.480315, 157.480315, -157.480315
+MS, 10, 10
+JS, 20, 20
+&nid = 0.60
+SO, 4, 1
+J2, 12.50, 5.0*&margin
+JZ, -0.75*&nid - 0.5*&slideW
+SO, 1, 1
+MY, 7.0*&margin - 2.0
+JZ, -0.75*&nid - 0.5*&slideW
+MY, 7.0*&margin
+MZ, -0.5*&slideW
+MY, 5.0*&margin + 2.0
+JZ, -0.5*&slideW
+MY, 5.0*&margin
+SO, 1, 0
+J2, 12.5 - 0.3*&margin, 5.25*&margin
+JZ, 0.75*&nid - 0.5*&slideW
+SO, 1, 1
+MX, 0.3*&margin + 10.5
+JY, 5.25*&margin
+MX, 0.3*&margin + 12.5
+SO, 1, 0
+JY, 5.75*&margin
+SO, 1, 1
+MX, 14.5 - 0.3*&margin
+JY, 5.75*&margin
+MX, 12.5 - 0.3*&margin
+SO, 1, 0
+JY, 6.25*&margin
+SO, 1, 1
+MX, 0.3*&margin + 10.5
+JY, 6.25*&margin
+MX, 0.3*&margin + 12.5
+SO, 1, 0
+JY, 6.75*&margin
+SO, 1, 1
+MX, 14.5 - 0.3*&margin
+JY, 6.75*&margin
+MX, 12.5 - 0.3*&margin
+SO, 1, 0
+MZ, &margin/2 + 0.75*&nid - 0.5*&slideW
+J2, 12.50, 5.0*&margin
+JZ, &margin/2 - 0.75*&nid - 0.5*&slideW
+SO, 1, 1
+MY, 7.0*&margin - 2.0
+JZ, &margin/2 - 0.75*&nid - 0.5*&slideW
+MY, 7.0*&margin
+MZ, 0.5*&margin - 0.5*&slideW
+MY, 5.0*&margin + 2.0
+JZ, 0.5*&margin - 0.5*&slideW
+MY, 5.0*&margin
+SO, 1, 0
+J2, 12.5 - 0.3*&margin, 5.25*&margin
+JZ, &margin/2 + 0.75*&nid - 0.5*&slideW
+SO, 1, 1
+MX, 0.3*&margin + 10.5
+JY, 5.25*&margin
+MX, 0.3*&margin + 12.5
+SO, 1, 0
+JY, 5.75*&margin
+SO, 1, 1
+MX, 14.5 - 0.3*&margin
+JY, 5.75*&margin
+MX, 12.5 - 0.3*&margin
+SO, 1, 0
+JY, 6.25*&margin
+SO, 1, 1
+MX, 0.3*&margin + 10.5
+JY, 6.25*&margin
+MX, 0.3*&margin + 12.5
+SO, 1, 0
+JY, 6.75*&margin
+SO, 1, 1
+MX, 14.5 - 0.3*&margin
+JY, 6.75*&margin
+MX, 12.5 - 0.3*&margin
+SO, 1, 0
+MZ, &margin + 0.75*&nid - 0.5*&slideW
+J2, 12.50, 5.0*&margin
+JZ, 1.0*&margin - 0.75*&nid - 0.5*&slideW
+SO, 1, 1
+MY, 7.0*&margin - 2.0
+JZ, 1.0*&margin - 0.75*&nid - 0.5*&slideW
+MY, 7.0*&margin
+MZ, 1.0*&margin - 0.5*&slideW
+MY, 5.0*&margin + 2.0
+JZ, 1.0*&margin - 0.5*&slideW
+MY, 5.0*&margin
+SO, 1, 0
+J2, 12.5 - 0.3*&margin, 5.25*&margin
+JZ, 1.0*&margin + 0.75*&nid - 0.5*&slideW
+SO, 1, 1
+MX, 0.3*&margin + 10.5
+JY, 5.25*&margin
+MX, 0.3*&margin + 12.5
+SO, 1, 0
+JY, 5.75*&margin
+SO, 1, 1
+MX, 14.5 - 0.3*&margin
+JY, 5.75*&margin
+MX, 12.5 - 0.3*&margin
+SO, 1, 0
+JY, 6.25*&margin
+SO, 1, 1
+MX, 0.3*&margin + 10.5
+JY, 6.25*&margin
+MX, 0.3*&margin + 12.5
+SO, 1, 0
+JY, 6.75*&margin
+SO, 1, 1
+MX, 14.5 - 0.3*&margin
+JY, 6.75*&margin
+MX, 12.5 - 0.3*&margin
+SO, 1, 0
+MZ, 1.5*&margin + 0.75*&nid - 0.5*&slideW
+SO, 4, 0
+MZ, 10.00
