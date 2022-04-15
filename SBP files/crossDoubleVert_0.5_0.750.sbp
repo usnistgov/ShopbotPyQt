@@ -45,20 +45,28 @@ MZ, -&margin/2 - &slideW/2 - 2.0
 JY, 5.5*&margin + 6.75*&nid
 MZ, -&margin/2 - &slideW/2
 SO, 1, 0
-J2, 12.5 - 0.75*&nid, 4.5*&margin + 6.0*&nid
+J2, 12.5 - 0.75*&nid, 4.5*&margin + 5.625*&nid
 JZ, &margin/2 - &slideW
 SO, 1, 1
-MY, 6.0*&margin + 6.0*&nid - 2.0
+MY, 6.0*&margin + 5.625*&nid - 2.0
 JZ, &margin/2 - &slideW
-MY, 6.0*&margin + 6.0*&nid
+MY, 6.0*&margin + 5.625*&nid
 MZ, 5*&margin/6 - &slideW
-MY, 4.5*&margin + 6.0*&nid
+MY, 4.5*&margin + 5.625*&nid + 2.0
+JZ, 5*&margin/6 - &slideW
+MY, 4.5*&margin + 5.625*&nid
 MZ, 7*&margin/6 - &slideW
-MY, 6.0*&margin + 6.0*&nid
+MY, 6.0*&margin + 5.625*&nid - 2.0
+JZ, 7*&margin/6 - &slideW
+MY, 6.0*&margin + 5.625*&nid
 MZ, 1.5*&margin - &slideW
-MY, 4.5*&margin + 6.0*&nid
+MY, 4.5*&margin + 5.625*&nid + 2.0
+JZ, 1.5*&margin - &slideW
+MY, 4.5*&margin + 5.625*&nid
 MZ, 1.83333333333333*&margin - &slideW
-MY, 6.0*&margin + 6.0*&nid
+MY, 6.0*&margin + 5.625*&nid - 2.0
+JZ, 1.83333333333333*&margin - &slideW
+MY, 6.0*&margin + 5.625*&nid
 SO, 1, 0
 SO, 4, 0
 MZ, 10.00

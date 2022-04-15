@@ -576,11 +576,12 @@ class sbBox(connectBox):
     def triggerEndOfPrint(self) -> None:
         '''stop watching for changes in pressure, stop recording  '''
         if self.runningSBP:
+            time.sleep(5)
             self.sbWin.fluBox.resetAllChannels(-1) # turn off all channels
+            self.sbWin.fluBox.stopRecording()  # save fluigent
             for camBox in self.sbWin.camBoxes:
                 if camBox.camInclude.isChecked() and camBox.camObj.recording: 
                     camBox.cameraRec() # stop recording
-            self.sbWin.fluBox.stopRecording()  # save fluigent
             try:
                 self.timer.stop()
             except:

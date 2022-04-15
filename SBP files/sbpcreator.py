@@ -1,17 +1,25 @@
 #!/usr/bin/env python
 '''Functions for creating shopbot files'''
 
+# external packages
 import math
 import numpy as np
 import os
 import sys
 import re
 from typing import List, Dict, Tuple, Union, Any, TextIO
+import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import sympy as sy
 import copy
 
+# plotting
+matplotlib.rcParams['svg.fonttype'] = 'none'
+matplotlib.rc('font', family='Arial')
+matplotlib.rc('font', size='8')
+
+# metadata
 __author__ = "Leanne Friedrich"
 __copyright__ = "This data is publicly available according to the NIST statements of copyright, fair use and licensing; see https://www.nist.gov/director/copyright-fair-use-and-licensing-statements-srd-data-and-software"
 __credits__ = ["Leanne Friedrich"]
@@ -106,11 +114,15 @@ class sbpCreator:
         self.cp = [0,0,0] # current point
         self.positions = []
         self.stepPoints = []
+        self.written = [] # moves with extrusion on, as list of pairs of points
+        self.jogs = [] # jogs, as list of pairs of points
+        self.unwritten = [] # moves with extrusion off, as list of pairs of points
         self.vardefs = {}
         self.volume = 0 # volume of fluid extruded in mm^3
         self.time = 0 # total time in print, in s
         self.MS = 0
         self.JS = 0
+        self.created=False
         if 'lastPt' in kwargs:
             self.takeLastPt(kwargs['lastPt'])
     
@@ -123,6 +135,9 @@ class sbpCreator:
         scout.file = self.file + other.file
         scout.cp = other.cp
         scout.positions = self.positions + other.positions
+        scout.written = self.written + other.written
+        scout.jogs = self.jogs + other.jogs
+        scout.unwritten = self.unwritten + other.unwritten
         scout.stepPoints = self.stepPoints + other.stepPoints
         scout.vardefs = {**self.vardefs, **other.vardefs}
         scout.volume = self.volume + other.volume
@@ -182,7 +197,13 @@ class sbpCreator:
     def reset(self):
         '''Clear the file and list of positions'''
         self.file = ''
+        if len(self.positions)>1:
+            self.cp = self.positions[0]
         self.positions = []
+        self.stepPoints = []
+        self.written = [] # moves with extrusion on, as list of pairs of points
+        self.jogs = [] # jogs, as list of pairs of points
+        self.unwritten = [] # moves with extrusion off, as list of pairs of points
     
     def sbp(self):
         '''Just the sbp file string'''
@@ -260,13 +281,17 @@ class sbpCreator:
             val = self.cp[idx]
         return val
         
-    def updatePts(self, pOn:bool=False, mj:str='m', **kwargs):
+    def updatePts(self, pOn:bool=False, ms:str='m', **kwargs):
         '''Add point to list of points. e.g. if you are going to z=5, input z=5. If you are going to x=5,y=4, then input x=5,y=4.
         pOn if extrusion pressure is on
-        mj = m for a move, j for a jog'''
+        ms = m for a move, j for a jog'''
         x = self.updatePtsXYZ(kwargs, 'x')
         y = self.updatePtsXYZ(kwargs, 'y')
         z = self.updatePtsXYZ(kwargs, 'z')
+        if self.floatSC(x)==self.floatSC(self.cp[0]) and self.floatSC(y)==self.floatSC(self.cp[1]) and self.floatSC(z)==self.floatSC(self.cp[2]):
+            # already at that point
+            return
+        
         lastpt = self.cp
         lastpt = [self.floatSC(i) for i in lastpt]
         xf = self.floatSC(x)
@@ -274,7 +299,7 @@ class sbpCreator:
         zf = self.floatSC(z)
         distance = np.sqrt((xf-lastpt[0])**2+(yf-lastpt[1])**2+(zf-lastpt[2])**2) # distance traveled
         try:
-            if mj=='m':
+            if ms=='m':
                 s = self.MS
             else:
                 s = self.JS
@@ -285,6 +310,14 @@ class sbpCreator:
         if pOn:
             # update total extruded
             self.volume = self.volume + distance*np.pi*(self.diam/2)**2 # total volume
+            self.written.append([self.cp, [x,y,z]])
+        else:
+            if ms=='m':
+                self.unwritten.append([self.cp, [x,y,z]])
+            else:
+                self.jogs.append([self.cp, [x,y,z]])  
+                
+#         print([self.floatSC(i) for i in self.cp], '\t',[self.floatSC(i) for i in [x,y,z]], '\t', ms, pOn)
         self.cp = [x,y,z]
         self.positions.append([x,y,z])
         
@@ -307,7 +340,7 @@ class sbpCreator:
     def mj3(self, x:Union[float, str], y:Union[float, str], z:Union[float, str], ms:str, pOn:bool=False) -> str:
         '''Move or jump in 3D. ms='M' or 'J' '''
         s = ms.upper() + '3, ' + self.fsss(x) + ', ' + self.fsss(y) + ', ' + self.fsss(z) + '\n'
-        self.updatePts(x=x, y=y, z=z, pOn=pOn)
+        self.updatePts(x=x, y=y, z=z, pOn=pOn, ms=ms.lower())
         self.file+=s
         return s
     
@@ -323,7 +356,7 @@ class sbpCreator:
     def mj2(self, x:Union[float, str], y:Union[float, str], ms:str, pOn:bool=False) -> str:
         '''Move or jump in 2D'''
         s = ms.upper() + '2, ' + self.fsss(x) + ', ' + self.fsss(y) + '\n'
-        self.updatePts(x=x, y=y, pOn=pOn)
+        self.updatePts(x=x, y=y, pOn=pOn, ms=ms.lower())
         self.file+=s
         return s
 
@@ -344,11 +377,11 @@ class sbpCreator:
             dire = direc
         s = ms.upper() + dire.upper() + ', ' + self.fsss(position) + '\n'
         if dire.lower()=='x':
-            self.updatePts(x=position, pOn=pOn)
+            self.updatePts(x=position, pOn=pOn, ms=ms.lower())
         elif dire.lower()=='y':
-            self.updatePts(y=position, pOn=pOn)
+            self.updatePts(y=position, pOn=pOn, ms=ms.lower())
         else:
-            self.updatePts(z=position, pOn=pOn)
+            self.updatePts(z=position, pOn=pOn, ms=ms.lower())
         self.file+=s
         return s
     
@@ -469,21 +502,10 @@ class sbpCreator:
         return out
     
     
-    def plot(self, ele:float = 70, azi:float=35) -> None:
+    def plot(self, ele:float = 70, azi:float=35, export:bool=False, fn:str='', grids:bool=False) -> None:
         '''plot the toolpath'''
         self.sbp()
-        if len(self.positions)==0:
-            raise Exception('No points to plot')
-        try:
-            pts = self.convertPts(self.positions)
-            sp = self.convertPts(self.stepPoints)
-        except Exception as e:
-            raise e
-
-        fig = plt.figure(figsize=(15,15))
-        ax = fig.add_subplot(111, projection='3d')
-        ax.view_init(elev=ele, azim=azi)
-        
+            
         xdim = 25
         ydim = 75
         zdim = 25
@@ -491,32 +513,61 @@ class sbpCreator:
         x_scale=xdim/mindim
         y_scale=ydim/mindim
         z_scale=zdim/mindim
-
-        scale=np.diag([x_scale, y_scale, z_scale, 1.0])
-        scale=scale*(1.0/scale.max())
-        scale[3,3]=1.0
-
-        def short_proj():
-            return np.dot(Axes3D.get_proj(ax), scale)
-
-        ax.get_proj=short_proj
-
-        mx = min(pts[:,0])
-        my = min(pts[:,1])
-        mz = min(pts[:,2])
-        maxdim = max([max(pts[:,0]) - mx, max(pts[:,1]) - my, max(pts[:,2]) - mz])
+        if export:
+            figsize = 6.5*zdim/ydim
+        else:
+            figsize=9.5
+        fig = plt.figure(figsize=(figsize, figsize))
+        ax = fig.add_subplot(111, projection='3d', proj_type = 'ortho')
+        ax.view_init(elev=ele, azim=azi)
+        plt.rc('font', size=16) 
+        
+        # set limits of the axes
         ax.set_xlim3d(0, xdim)
         ax.set_ylim3d(0, ydim)
         ax.set_zlim3d(-zdim, 0)
-        ax.plot(pts[:,0], pts[:,1], zs=pts[:,2])
-             
-        ax.scatter([sp[:,0]], [sp[:,1]], [sp[:,2]], c='red')
-        ax.set_xlabel('$X$')
-        ax.set_ylabel('$Y$')
-        ax.set_zlabel('$Z$')
-        #fig.subplots_adjust(left=0, right=1, bottom=0, top=1)
+
+        # set dimensions of all axes to same scale
+        scale=np.diag([x_scale, y_scale, z_scale, 1.0])
+        scale=scale*(1.0/z_scale)
+#         scale[3,3]=1.0
+        ax.get_proj=lambda: np.dot(Axes3D.get_proj(ax), scale)
+
+
         
-        return ax
+        for rowi in self.jogs:
+            row = self.convertPts(rowi)
+            ax.plot(row[:,0], row[:,1], zs=row[:,2], c='#a1a1a1', linestyle='dashed', linewidth=1, clip_on=False)
+        for rowi in self.unwritten:
+            row = self.convertPts(rowi)
+            ax.plot(row[:,0], row[:,1], zs=row[:,2], c='#f7b2d6', linewidth=1, clip_on=False)
+        for rowi in self.written:
+            row = self.convertPts(rowi)
+            ax.plot(row[:,0], row[:,1], zs=row[:,2], c='#3374a0', linewidth=1.5, clip_on=False)
+        
+        
+        fig.subplots_adjust(left=0, right=1, bottom=0, top=1, wspace=0)
+        ax.grid(grids)
+        
+        if not grids:
+            ax.set_xlabel('')
+            ax.set_ylabel('')
+            ax.set_zlabel('')
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.set_zticks([])
+        else:
+            ax.set_xlabel('$X$')
+            ax.set_ylabel('$Y$')
+            ax.set_zlabel('$Z$')
+        
+        if export:
+            if len(fn)>0 and len(os.path.dirname(fn))>0 and os.path.exists(os.path.dirname(fn)):
+                fig.savefig(fn, bbox_inches='tight', dpi=300, transparent=True)
+                print(f'Exported {fn}')
+            plt.close()
+        
+        return
     
     def export(self, filename:str, *args) -> None:
         '''Export the .sbp file'''
@@ -618,6 +669,11 @@ class zigzag(sbpCreator):
         
     def sbp(self) -> str:
         '''Create the sbp file. diam is the filament diameter'''
+        
+        if self.created:
+            # if already created, use the existing file
+            return self.file
+        self.created=True
 
         longlist = self.getLongList()
         shortlist = self.getShortList()
@@ -829,6 +885,12 @@ class verts(sbpCreator):
     
     def sbp(self):
         '''Create the sbp file'''
+        
+        if self.created:
+            return self.file
+        
+        self.created=True
+        
         m1 = float(self.longdir[0]+'1') # sign of the long direction
         if type(self.downdisp) is float:
             self.downdisp = abs(self.downdisp)
@@ -837,8 +899,6 @@ class verts(sbpCreator):
             ddfl = self.floatSC(self.downdisp)
             if not np.sign(ddfl)==np.sign(m1):
                 self.downdisp = t(-1, self.downdisp)
-
-                
 
         longlist = self.longlist
         shortlist = self.shortlist
