@@ -422,9 +422,10 @@ class sbpCreator:
     
     def withdraw(self, pOn=False) -> None:
         '''Go back to the loading zone'''
-        self.mj1('Z', 10, 'J', pOn=pOn)
-        self.mj1('Y', 150, 'J', pOn=pOn)
-        self.mj1('X', 80, 'J', pOn=pOn)
+        self.mj1('Z', 10, 'J', pOn=pOn)  # down
+        self.mj1('Y', 180, 'J', pOn=pOn) # back
+        self.mj1('X', -75, 'J', pOn=pOn) # left
+        self.mj1('Y', 40, 'J', pOn=pOn)  # forward
         return 
 
     #------------
@@ -543,11 +544,11 @@ class sbpCreator:
         
         for rowi in self.jogs:
             row = self.convertPts(rowi)
-            if row[1,0]<xdim and row[1,1]<ydim and row[1,2]<zdim:
+            if row[1,0]<xdim and row[1,1]<ydim and row[1,2]>-zdim and row[1,0]>0 and row[1,1]>0 and row[1,2]<0:
                 ax.plot(row[:,0], row[:,1], zs=row[:,2], c='#a1a1a1', linestyle='dashed', linewidth=lw, clip_on=False)
         for rowi in self.unwritten:
             row = self.convertPts(rowi)
-            if row[1,0]<xdim and row[1,1]<ydim and row[1,2]<zdim:
+            if row[1,0]<xdim and row[1,1]<ydim and row[1,2]>-zdim and row[1,0]>0 and row[1,1]>0 and row[1,2]<0:
                 ax.plot(row[:,0], row[:,1], zs=row[:,2], c='#f7b2d6', linewidth=lw, clip_on=False)
         for rowi in self.written:
             row = self.convertPts(rowi)

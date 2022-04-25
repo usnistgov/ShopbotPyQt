@@ -13,9 +13,9 @@ MS, 10, 10
 JS, 20, 20
 &nid = 0.60
 SO, 4, 1
-MZ, &slideW/2
+MZ, -&slideW/2
 J2, 0.5*&nid + 0.8*&slideW, &margin/2
-JZ, &slideW/2
+JZ, -&slideW/2
 SO, 1, 1
 MY, 2.325*&margin - 2.0
 JX, 0.5*&nid + 0.8*&slideW
@@ -34,7 +34,7 @@ JX, -0.5*&nid + 0.8*&slideW
 MY, 2.325*&margin
 SO, 1, 0
 J2, 0.5*&nid + 0.6*&slideW, &margin/2
-JZ, &slideW/2
+JZ, -&slideW/2
 SO, 1, 1
 MY, 2.325*&margin - 2.0
 JX, 0.5*&nid + 0.6*&slideW
@@ -53,7 +53,7 @@ JX, -0.5*&nid + 0.6*&slideW
 MY, 2.325*&margin
 SO, 1, 0
 J2, 0.5*&nid + 0.4*&slideW, &margin/2
-JZ, &slideW/2
+JZ, -&slideW/2
 SO, 1, 1
 MY, 2.325*&margin - 2.0
 JX, 0.5*&nid + 0.4*&slideW
@@ -72,7 +72,7 @@ JX, -0.5*&nid + 0.4*&slideW
 MY, 2.325*&margin
 SO, 1, 0
 J2, 0.5*&nid + 0.2*&slideW, &margin/2
-JZ, &slideW/2
+JZ, -&slideW/2
 SO, 1, 1
 MY, 2.325*&margin - 2.0
 JX, 0.5*&nid + 0.2*&slideW

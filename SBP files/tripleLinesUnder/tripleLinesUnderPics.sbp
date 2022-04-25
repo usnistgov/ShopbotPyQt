@@ -15,7 +15,7 @@ JS, 20, 20
 SO, 4, 1
 MS, 5, 5
 JS, 20, 20
-MZ, &slideW/2
+MZ, -&slideW/2
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -26,17 +26,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, &margin/2 + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, &margin/2 + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, &margin/2 + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -52,17 +42,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, &margin/2 + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, &margin/2 + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, &margin/2 + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -78,17 +58,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, &margin/2 + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, &margin/2 + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, &margin/2 + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -104,17 +74,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, &margin/2 + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, &margin/2 + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, &margin/2 + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -130,17 +90,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 2.875*&margin + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, 2.875*&margin + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 2.875*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -156,17 +106,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 2.875*&margin + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, 2.875*&margin + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 2.875*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -182,17 +122,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 2.875*&margin + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, 2.875*&margin + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 2.875*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -208,17 +138,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 2.875*&margin + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, 2.875*&margin + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 2.875*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -234,17 +154,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 5.25*&margin + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, 5.25*&margin + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 5.25*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -260,17 +170,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 5.25*&margin + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, 5.25*&margin + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 5.25*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -286,17 +186,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 5.25*&margin + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, 5.25*&margin + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 5.25*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -312,17 +202,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 5.25*&margin + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, 5.25*&margin + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 5.25*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -338,17 +218,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 7.625*&margin + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, 7.625*&margin + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 7.625*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -364,17 +234,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 7.625*&margin + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, 7.625*&margin + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 7.625*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -390,17 +250,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 7.625*&margin + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, 7.625*&margin + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 7.625*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -416,17 +266,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 7.625*&margin + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, 7.625*&margin + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 7.625*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -442,17 +282,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 10.0*&margin + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, 10.0*&margin + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 10.0*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -468,17 +298,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 10.0*&margin + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, 10.0*&margin + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 10.0*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -494,17 +314,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 10.0*&margin + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, 10.0*&margin + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 10.0*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -520,17 +330,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 10.0*&margin + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, 10.0*&margin + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 10.0*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -546,17 +346,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 12.375*&margin + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, 12.375*&margin + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 12.375*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -572,17 +362,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 12.375*&margin + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, 12.375*&margin + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 12.375*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -598,17 +378,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 12.375*&margin + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, 12.375*&margin + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 12.375*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -624,17 +394,7 @@ PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MY, 12.375*&margin + 2
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
 MY, 12.375*&margin + 4
-PAUSE &wait1
-SO, 3, 1
-PAUSE &wait2
-SO, 3, 0
-MY, 12.375*&margin + 6
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
@@ -646,5 +406,6 @@ PAUSE &wait2
 SO, 3, 0
 SO, 4, 0
 JZ, 10.00
-JY, 150.00
-JX, 80.00
+JY, 180.00
+JX, -75.00
+JY, 40.00
