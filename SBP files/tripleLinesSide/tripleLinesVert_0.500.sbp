@@ -108,5 +108,5 @@ JY, 1.5*&margin + 2.0*&nid
 MZ, -&margin
 SO, 1, 0
 JY, 2.5*&margin + 2.0*&nid
-SO, 4, 0
 MZ, 10.00
+SO, 4, 0

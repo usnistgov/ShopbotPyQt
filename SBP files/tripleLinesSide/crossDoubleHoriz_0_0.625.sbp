@@ -5,7 +5,7 @@
 &nd = 0.91
 &downdisp = 0.00
 &diam = 0.60
-&wait1 = 0.50
+&wait1 = 1.00
 &wait2 = 0.50
 VD , , 1
 VU, 157.480315, 157.480315, -157.480315
@@ -124,5 +124,5 @@ JY, 4.5*&margin
 MX, 12.5 - 0.3*&margin
 SO, 1, 0
 MZ, 1.5*&margin + 0.625*&nid - 0.5*&slideW
-SO, 4, 0
 MZ, 10.00
+SO, 4, 0

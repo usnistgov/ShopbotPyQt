@@ -93,5 +93,5 @@ JZ, 2*&nid - 0.3*&slideW
 MX, &margin + &slideW/2
 SO, 1, 0
 JZ, -0.19999999999999998*&slideW
-SO, 4, 0
 MZ, 10.00
+SO, 4, 0

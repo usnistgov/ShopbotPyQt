@@ -424,8 +424,7 @@ class sbpCreator:
         '''Go back to the loading zone'''
         self.mj1('Z', 10, 'J', pOn=pOn)  # down
         self.mj1('Y', 180, 'J', pOn=pOn) # back
-        self.mj1('X', -75, 'J', pOn=pOn) # left
-        self.mj1('Y', 40, 'J', pOn=pOn)  # forward
+        self.mj1('X', 30, 'J', pOn=pOn) # right
         return 
 
     #------------
@@ -714,12 +713,13 @@ class zigzag(sbpCreator):
                 self.turnOff(0)
                 self.j1(self.shortdir[1], i, pOn=False) # zig
                 self.turnOn(0)
-#                 self.m1(self.longdir[1], mids[llpos], pOn=True) # write next line
-#                 self.j1(self.shortdir[1], i, pOn=False) # zero move to fix turnoff
+                self.m1(self.longdir[1], mids[llpos], pOn=True) # write next line
+                self.j1(self.shortdir[1], i, pOn=False) # zero move to fix turnoff
             else:
                 self.m1(self.shortdir[1], i, pOn=True) # zig  
-            self.m1(self.longdir[1], mids[llpos], pOn=True) # write next line
-            self.j1(self.shortdir[1], i, pOn=False) # zero move to fix turnoff
+                if i==shortlist[-1]:
+                    self.m1(self.longdir[1], mids[llpos], pOn=True) # partial line
+                    self.j1(self.shortdir[1], i, pOn=False) # zero move to fix turnoff
             self.m1(self.longdir[1], longlist[llpos], pOn=True) # write next line
             
         if len(self.positions)>1:

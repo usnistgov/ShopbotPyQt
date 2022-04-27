@@ -5,7 +5,7 @@
 &nd = 0.91
 &downdisp = 0.00
 &diam = 0.60
-&wait1 = 0.50
+&wait1 = 1.00
 &wait2 = 0.50
 VD , , 1
 VU, 157.480315, 157.480315, -157.480315
@@ -20,20 +20,12 @@ MY, 2.5*&margin - 2.0
 JX, &margin/2 + &slideW/2
 MY, 5*&margin/2
 MX, &margin/2 + &nid/2 + &slideW/2
-MY, &margin/2 + 2.0
-JX, &margin/2 + &nid/2 + &slideW/2
 MY, &margin/2
 MX, &margin + &slideW/2
-MY, 2.5*&margin - 2.0
-JX, &margin + &slideW/2
 MY, 5*&margin/2
 MX, &margin + &nid/2 + &slideW/2
-MY, &margin/2 + 2.0
-JX, &margin + &nid/2 + &slideW/2
 MY, &margin/2
 MX, 1.5*&margin + &slideW/2
-MY, 2.5*&margin - 2.0
-JX, 1.5*&margin + &slideW/2
 MY, 5*&margin/2
 MX, 1.5*&margin + &nid/2 + &slideW/2
 MY, &margin/2 + 2.0
@@ -48,17 +40,13 @@ MX, -&margin/2 + &slideW - 2.0
 JY, 3*&margin/4
 MX, 0.25*&margin + 0.5*&slideW
 MY, 5*&margin/4
-MX, 0.25*&margin + 0.5*&slideW + 2.0
-JY, 5*&margin/4
 MX, -&margin/2 + &slideW
 MY, 7*&margin/4
-MX, -&margin/2 + &slideW - 2.0
-JY, 7*&margin/4
 MX, 0.25*&margin + 0.5*&slideW
 MY, 2.25*&margin
 MX, 0.25*&margin + 0.5*&slideW + 2.0
 JY, 2.25*&margin
 MX, -&margin/2 + &slideW
 SO, 1, 0
-SO, 4, 0
 MZ, 10.00
+SO, 4, 0

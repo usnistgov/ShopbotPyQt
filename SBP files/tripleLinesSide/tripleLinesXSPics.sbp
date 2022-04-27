@@ -5,7 +5,7 @@
 &nd = 0.91
 &downdisp = 0.00
 &diam = 0.60
-&wait1 = 0.50
+&wait1 = 1.00
 &wait2 = 0.50
 VD , , 1
 VU, 157.480315, 157.480315, -157.480315
@@ -21,258 +21,258 @@ SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MY, &margin
-MZ, -0.9*&slideW
+MZ, 0.5 - 0.9*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, -0.7*&slideW
+MZ, 0.5 - 0.7*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, -0.5*&slideW
+MZ, 0.5 - 0.5*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, -0.3*&slideW
+MZ, 0.5 - 0.3*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MY, 2*&margin +&nid
-MZ, -0.9*&slideW
+MZ, 0.5 - 0.9*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, -0.7*&slideW
+MZ, 0.5 - 0.7*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, -0.5*&slideW
+MZ, 0.5 - 0.5*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, -0.3*&slideW
+MZ, 0.5 - 0.3*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MY, 3*&margin + 2.25*&nid
-MZ, -0.9*&slideW
+MZ, 0.5 - 0.9*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, -0.7*&slideW
+MZ, 0.5 - 0.7*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, -0.5*&slideW
+MZ, 0.5 - 0.5*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, -0.3*&slideW
+MZ, 0.5 - 0.3*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MY, 4*&margin + 3.75*&nid
-MZ, -0.9*&slideW
+MZ, 0.5 - 0.9*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, -0.7*&slideW
+MZ, 0.5 - 0.7*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, -0.5*&slideW
+MZ, 0.5 - 0.5*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, -0.3*&slideW
+MZ, 0.5 - 0.3*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MY, 5*&margin + 5.5*&nid
-MZ, -0.9*&slideW
+MZ, 0.5 - 0.9*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, -0.7*&slideW
+MZ, 0.5 - 0.7*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, -0.5*&slideW
+MZ, 0.5 - 0.5*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, -0.3*&slideW
+MZ, 0.5 - 0.3*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MY, 6*&margin + 7.5*&nid
-MZ, -0.9*&slideW
+MZ, 0.5 - 0.9*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, -0.7*&slideW
+MZ, 0.5 - 0.7*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, -0.5*&slideW
+MZ, 0.5 - 0.5*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, -0.3*&slideW
+MZ, 0.5 - 0.3*&slideW
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MY, 7*&margin + 10.0*&nid
-MZ, 0.5*&nid - 0.9*&slideW
+MZ, 0.5*&nid - 0.9*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, 0.5*&nid - 0.7*&slideW
+MZ, 0.5*&nid - 0.7*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, 0.5*&nid - 0.5*&slideW
+MZ, 0.5*&nid - 0.5*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, 0.5*&nid - 0.3*&slideW
+MZ, 0.5*&nid - 0.3*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MY, 8*&margin + 10.0*&nid
-MZ, 0.625*&nid - 0.9*&slideW
+MZ, 0.625*&nid - 0.9*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, 0.625*&nid - 0.7*&slideW
+MZ, 0.625*&nid - 0.7*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, 0.625*&nid - 0.5*&slideW
+MZ, 0.625*&nid - 0.5*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, 0.625*&nid - 0.3*&slideW
+MZ, 0.625*&nid - 0.3*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MY, 9*&margin + 10.0*&nid
-MZ, 0.75*&nid - 0.9*&slideW
+MZ, 0.75*&nid - 0.9*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, 0.75*&nid - 0.7*&slideW
+MZ, 0.75*&nid - 0.7*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, 0.75*&nid - 0.5*&slideW
+MZ, 0.75*&nid - 0.5*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, 0.75*&nid - 0.3*&slideW
+MZ, 0.75*&nid - 0.3*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MY, 10.0*&margin + 10.0*&nid
-MZ, 0.875*&nid - 0.9*&slideW
+MZ, 0.875*&nid - 0.9*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, 0.875*&nid - 0.7*&slideW
+MZ, 0.875*&nid - 0.7*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, 0.875*&nid - 0.5*&slideW
+MZ, 0.875*&nid - 0.5*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, 0.875*&nid - 0.3*&slideW
+MZ, 0.875*&nid - 0.3*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MY, 11*&margin + 10.0*&nid
-MZ, &nid - 0.9*&slideW
+MZ, &nid - 0.9*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, &nid - 0.7*&slideW
+MZ, &nid - 0.7*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, &nid - 0.5*&slideW
+MZ, &nid - 0.5*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, &nid - 0.3*&slideW
+MZ, &nid - 0.3*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 MY, 12*&margin + 10.0*&nid
-MZ, 1.25*&nid - 0.9*&slideW
+MZ, 1.25*&nid - 0.9*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, 1.25*&nid - 0.7*&slideW
+MZ, 1.25*&nid - 0.7*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, 1.25*&nid - 0.5*&slideW
+MZ, 1.25*&nid - 0.5*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
-MZ, 1.25*&nid - 0.3*&slideW
+MZ, 1.25*&nid - 0.3*&slideW + 0.5
 PAUSE &wait1
 SO, 3, 1
 PAUSE &wait2
 SO, 3, 0
 SO, 4, 0
 JZ, 10.00
-JY, 150.00
-JX, 80.00
+JY, 180.00
+JX, 30.00

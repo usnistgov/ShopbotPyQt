@@ -44,6 +44,8 @@ class sbSettingsBox(qtw.QWidget):
         layout = qtw.QVBoxLayout()
         layout.addStretch()
         
+        self.showFolderCheck = fCheckBox(layout, title='Show folder name', tooltip='Show folder name in the file display box', checked=cfg.shopbot.showFolder, func=self.parent.reformatFileList)
+        
         self.autoPlayRow = qtw.QVBoxLayout()
         self.autoPlayLabel = qtw.QLabel('When the print is done:')
         self.autoPlayRow.addWidget(self.autoPlayLabel)
@@ -115,6 +117,7 @@ class sbBox(connectBox):
         self.prevFlag = 0
         self.currentFlag = 0
         self.sbpName = cfg.shopbot.sbpName
+        self.sbpRealList = [self.sbpName]
         self.autoPlay = cfg.shopbot.autoplay 
         self.sbpFolder = cfg.shopbot.sbpFolder
         self.connect()
@@ -189,9 +192,14 @@ class sbBox(connectBox):
         self.deleteButt.setIcon(icon('delete.png'))
         self.deleteButt.clicked.connect(self.removeFiles)
         
+        self.breakButt = qtw.QToolButton()
+        self.breakButt.setToolTip('Add a breakpoint to the list')
+        self.breakButt.setIcon(icon('breakpoint.png'))
+        self.breakButt.clicked.connect(self.addBreakPoint)
+        
         self.sbButts = qtw.QToolBar()
         self.sbButts.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
-        for b in [self.loadButt, self.deleteButt]:
+        for b in [self.loadButt, self.deleteButt, self.breakButt]:
             self.sbButts.addWidget(b)
         self.sbButts.setStyleSheet("QToolBar{spacing:5px;}");
         self.sbButts.setOrientation(QtCore.Qt.Vertical)
@@ -226,6 +234,17 @@ class sbBox(connectBox):
  
         self.setLayout(self.layout)
     
+    def reformatFileList(self) -> None:
+        '''change the display of the file list'''
+        showfolders = self.settingsBox.showFolderCheck.isChecked()
+        
+        for i,item in enumerate(self.sbpNameList.items()):
+            if showfolders:
+                item.setText(self.getFullPath(item.text()))
+            else:
+                item.setText(os.path.basename(item.text()))
+        
+    
     def updateRunButt(self) -> None:
         '''Update the appearance of the run button'''
         if self.runningSBP:
@@ -233,7 +252,7 @@ class sbBox(connectBox):
                 self.runButt.clicked.disconnect()
             except:
                 pass
-            self.runButt.clicked.connect(self.triggerEndOfPrint)
+            self.runButt.clicked.connect(self.triggerKill)
             self.runButt.setStyleSheet("background-color: #de8383; border-radius:10px")
             self.runButt.setToolTip('Stop print')
             self.runButt.setIcon(icon('stop.png'))
@@ -278,7 +297,9 @@ class sbBox(connectBox):
                 item = self.sbpNameList.item(item)
           
         # make sure this is a real file
-        if not os.path.exists(item.text()):
+
+        
+        if not os.path.exists(self.getFullPath(item.text())) and not item.text()=='BREAK':
             logging.warning(f'Cannot activate {item.text()}: file not found')
             return
         
@@ -286,8 +307,10 @@ class sbBox(connectBox):
         for i in range(self.sbpNameList.count()):
             self.updateItem(self.sbpNameList.item(i), False)
             
-        self.sbpName = item.text() # new run file name
+        self.sbpName = self.getFullPath(item.text()) # find the full path name of the item
+#         self.sbpName = item.text() # new run file name
         self.updateItem(item, True)
+        self.sbpNameList.scrollToItem(item, QtGui.QAbstractItemView.PositionAtTop) # scroll to the current item
         
             
     def activateNext(self) -> None:
@@ -303,16 +326,34 @@ class sbBox(connectBox):
     
     def addFile(self, fn) -> None:
         '''Add this file to the list of files, and remove the original placeholder if it's still there.'''
-        item = qtw.QListWidgetItem(fn) # create an item
+        
+        self.sbpRealList.append(fn)
+        
+        if fn=='BREAK':
+            short=fn
+        else:
+            short = os.path.basename(fn)
+        
+        if self.settingsBox.showFolderCheck.isChecked():
+            # show the full path name
+            item = qtw.QListWidgetItem(fn) # create an item
+        else:
+            item = qtw.QListWidgetItem(short) # create an item with basename
         item.setData(QtCore.Qt.UserRole, False)
         self.sbpNameList.addItem(item) # add it to the list
-        
         if self.sbpNameList.count()>1: # if there was already an item in the list
             item0 = self.sbpNameList.item(0) # take the first item
-            if not os.path.exists(item0.text()): # if the original item isn't a real file
+            if not os.path.exists(self.getFullPath(item0.text())) and not item0.text()=='BREAK': # if the original item isn't a real file
                 self.activate(1) # activate the next item in the list
-                self.sbpNameList.takeItem(0) # remove bad name from the list                
+                self.sbpNameList.takeItem(0) # remove bad name from the list
+                self.sbpRealList.pop(0) # remove bad name from full path list
         return
+    
+    def getFullPath(self, file:str) -> str:
+        '''get the full path name of the file'''
+        for fullpath in self.sbpRealList:
+            if file in fullpath:
+                return fullpath
     
     def removeFiles(self) -> None:
         '''Remove the selected file from the list'''
@@ -322,8 +363,11 @@ class sbBox(connectBox):
             if item.data(QtCore.Qt.UserRole):
                 # we're removing the current file. go to the next file.
                 self.activateNext()
+
+            self.sbpRealList.remove(self.getFullPath(item.text())) # remove the file from the list of full paths
             row = self.sbpNameList.row(item)
             self.sbpNameList.takeItem(row)
+            
         if len(self.sbpNameList)==0:
             # if we've deleted all the files, go back to placeholder text
             self.sbpName = 'No file selected'
@@ -348,6 +392,11 @@ class sbBox(connectBox):
                 self.addFile(sbpn)
                 logging.debug(f'Added file to queue: {sbpn}')
                 self.updateStatus('Ready ... ', False)
+                
+    def addBreakPoint(self) -> None:
+        '''add a stop point to the list of files, where autoplay will stop'''
+        self.addFile('BREAK')
+        self.updateStatus('Added break point', False)
             
     ########
     # communicating with the shopbot
@@ -437,7 +486,13 @@ class sbBox(connectBox):
     def runFile(self) -> None:
         '''runFile sends a file to the shopbot and tells the GUI to wait for next steps'''
         if not os.path.exists(self.sbpName):
-            self.updateStatus('SBP file does not exist: ' + self.sbpName, True)
+            if self.sbpName=='BREAK':
+                self.updateStatus('Break point hit.', True)
+            else:
+                self.updateStatus('SBP file does not exist: ' + self.sbpName, True)
+            self.runningSBP=False
+            self.updateRunButt()
+            self.activateNext()
             return
         
 #         self.abortButt.setEnabled(True)
@@ -460,8 +515,6 @@ class sbBox(connectBox):
         
         # wait to start videos and fluigent
         self.runningSBP = True
-        
-        
         self.updateRunButt()
         self.triggerWait()
         
@@ -548,6 +601,7 @@ class sbBox(connectBox):
                 if i<len(self.sbWin.fluBox.pchannels):
                     channel = self.sbWin.fluBox.pchannels[i]
                     press = int(channel.constBox.text())
+                    fgt.fgt_set_pressure(i, press*1.1)
                     fgt.fgt_set_pressure(i, press)
 
                      # set the other channels to 0
@@ -573,10 +627,9 @@ class sbBox(connectBox):
     
     ### end           
       
-    def triggerEndOfPrint(self) -> None:
+    def stopRunning(self) -> None:
         '''stop watching for changes in pressure, stop recording  '''
         if self.runningSBP:
-            time.sleep(5)
             self.sbWin.fluBox.resetAllChannels(-1) # turn off all channels
             self.sbWin.fluBox.stopRecording()  # save fluigent
             for camBox in self.sbWin.camBoxes:
@@ -586,6 +639,18 @@ class sbBox(connectBox):
                 self.timer.stop()
             except:
                 pass
+        
+    def triggerKill(self) -> None:
+        '''the stop buttonw was hit, so stop'''
+        self.stopRunning()
+        self.activateNext() # activate the next sbp file in the list
+        self.runningSBP = False # we're no longer running a sbp file
+        self.updateRunButt()
+        self.updateStatus('Stop button was clicked', False)
+        
+    def triggerEndOfPrint(self) -> None:
+        '''we finished the file, so stop and move onto the next one'''
+        self.stopRunning()
         self.activateNext() # activate the next sbp file in the list
         if self.autoPlay and self.sbpNumber()>0: # if we're in autoplay and we're not at the beginning of the list, play the next file
             self.updateStatus('Autoplay is on: Running next file.', True)
