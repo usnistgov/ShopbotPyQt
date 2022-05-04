@@ -471,7 +471,7 @@ class fluBox(connectBox):
         self.resetLayout()                  # erase the old layout
         self.layout = qtw.QVBoxLayout()     # whole fluigent layout
         
-        self.createStatus(600)              # 600 px wide status bar
+        self.createStatus(800)              # 800 px wide status bar
         self.layout.addWidget(self.status)
         
         self.fluButts = qtw.QGridLayout()   # fluigent operations grid
