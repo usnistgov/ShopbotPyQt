@@ -30,6 +30,9 @@ __status__ = "Development"
 
 ##################################################  
 
+
+
+
       
 class sbSettingsBox(qtw.QWidget):
     '''This opens a window that holds settings about logging for the shopbot.'''
@@ -98,7 +101,6 @@ class sbSettingsBox(qtw.QWidget):
 ###########################################
 
 
-
 class sbBox(connectBox):
     '''Holds shopbot functions and GUI items'''
     
@@ -120,18 +122,137 @@ class sbBox(connectBox):
         self.sbpRealList = [self.sbpName]
         self.autoPlay = cfg.shopbot.autoplay 
         self.sbpFolder = cfg.shopbot.sbpFolder
+        self.msg = ''
         self.connect()
+        
 
             
     def connect(self):
         '''connect to the SB3 software'''
         try:
-            self.sb3File = findSb3()
             self.connectKeys()
-        except:
+            self.findSb3()
+        except Exception as e:
+            print(e)
             self.failLayout()
         else:
             self.successLayout()
+            self.updateLoc()
+            
+     ########
+    # communicating with the shopbot
+    
+    def connectKeys(self) -> None:
+        '''connects to the windows registry keys for the Shopbot flags'''
+        try:
+            aKey = r'Software\VB and VBA Program Settings\Shopbot\UserData'
+            aReg = winreg.ConnectRegistry(None, winreg.HKEY_CURRENT_USER)
+            self.aKey = winreg.OpenKey(aReg, aKey)
+            self.keyConnected = True
+        except:
+            self.keyConnected = False
+            self.updateStatus('Failed to connect to Shopbot', True)
+            
+    def sbStatus(self) -> int:
+        '''find the status of the shopbot'''
+        try:
+            status, _ = winreg.QueryValueEx(self.aKey, 'Status')
+        except:  
+            # if we fail to get the registry key, we have no way of knowing 
+            # if the print is over, so just stop it now
+            self.triggerEndOfPrint()
+            self.updateStatus('Failed to connect to Shopbot keys', True)
+            self.keyConnected = False
+        return int(status)
+    
+    def findSb3(self) -> None:
+        '''find the sb3.exe file'''
+        try:
+            path, _ = winreg.QueryValueEx(self.aKey, 'uAppPath')
+        except:  
+            # if we fail to get the registry key, we have no way of knowing 
+            # if the print is over, so just stop it now
+            self.triggerEndOfPrint()
+            self.updateStatus('Failed to connect to Shopbot keys', True)
+            self.keyConnected = False
+        self.sb3File = os.path.join(path, 'Sb3.exe')
+    
+    def getSBFlag(self) -> int:
+        '''run this function continuously during print to watch the shopbot status'''
+        self.prevFlag = self.currentFlag
+        try:
+            sbFlag, _ = winreg.QueryValueEx(self.aKey, 'OutPutSwitches')
+        except:  
+            # if we fail to get the registry key, we have no way of knowing 
+            # if the print is over, so just stop it now
+            self.triggerEndOfPrint()
+            self.updateStatus('Failed to connect to Shopbot keys', True)
+            self.keyConnected = False
+            
+        # if the flag has reached a critical value that signals the 
+        # shopbot is done printing, stop tracking pressures and recording vids
+        sbFlag = int(sbFlag)
+        self.currentFlag = sbFlag
+        return sbFlag
+    
+    def getCommand(self) -> int:
+        '''run this function continuously during print to watch the shopbot status'''
+        self.prevFlag = self.currentFlag
+        try:
+            c, _ = winreg.QueryValueEx(self.aKey, 'uCommand')
+            c1, _ = winreg.QueryValueEx(self.aKey, 'uCommandQ1')
+        except:  
+            # if we fail to get the registry key, we have no way of knowing 
+            # if the print is over, so just stop it now
+            self.triggerEndOfPrint()
+            self.updateStatus('Failed to connect to Shopbot keys', True)
+            self.keyConnected = False
+            
+        print(c, '\t', c1)
+    
+    def getLoc(self) -> Tuple[int,int,int]:
+        '''get the x,y,z location of the shopbot'''
+        try:
+            x, _ = winreg.QueryValueEx(self.aKey, 'Loc_1')
+            y, _ = winreg.QueryValueEx(self.aKey, 'Loc_2')
+            z, _ = winreg.QueryValueEx(self.aKey, 'Loc_3')
+        except:  
+            # if we fail to get the registry key, we have no way of knowing 
+            # if the print is over, so just stop it now
+            self.triggerEndOfPrint()
+            self.updateStatus('Failed to connect to Shopbot keys', True)
+            self.keyConnected = False
+            self.x = ''
+            self.y = ''
+            self.z = ''
+        self.x = float(x)
+        self.y = float(y)
+        self.z = float(z)   
+        
+    def updateLoc(self) -> None:
+        '''update the location in the status bar'''
+        self.getLoc()
+        self.pos.setText(f'x={self.x}, y={self.y}, z={self.z}')
+        
+    def readMsg(self) -> None:
+        '''read messages from the shopbot'''
+        try:
+            msg, _ = winreg.QueryValueEx(self.aKey, 'uMsgBoxMessage')
+        except:  
+            # if we fail to get the registry key, we have no way of knowing 
+            # if the print is over, so just stop it now
+            self.triggerEndOfPrint()
+            self.updateStatus('Failed to connect to Shopbot keys', True)
+            self.keyConnected = False
+        if len(msg)>0:
+            if not msg==self.msg:
+                self.msg = msg
+                self.updateStatus(f'Shopbot message: {msg}', True)
+        else:
+            self.msg = ''
+            
+    #-------------
+            
             
     def saveConfig(self, cfg1):
         '''save the current settings to a config Box object'''
@@ -150,16 +271,7 @@ class sbBox(connectBox):
         self.autoPlay = cfg1.shopbot.autoplay  
         self.sbpFolder = checkPath(cfg1.shopbot.sbpFolder)
             
-    def connectKeys(self) -> None:
-        '''connects to the windows registry keys for the Shopbot flags'''
-        try:
-            aKey = r'Software\VB and VBA Program Settings\Shopbot\UserData'
-            aReg = winreg.ConnectRegistry(None, winreg.HKEY_CURRENT_USER)
-            self.aKey = winreg.OpenKey(aReg, aKey)
-            self.keyConnected = True
-        except:
-            self.keyConnected = False
-            self.updateStatus('Failed to connect to Shopbot', True)
+
 
     def successLayout(self) -> None:
         '''layout if we found the sb3 files and windows registry keys'''
@@ -175,6 +287,9 @@ class sbBox(connectBox):
         self.runButt.setEnabled(False)
 #         self.runButt.setStyleSheet('border-radius:10px; padding:5px; border-style: outset; border: 2px solid #555;')
         self.updateRunButt()
+    
+        self.pos = qtw.QLabel(f'x= , y= , z= ')
+        self.pos.setFixedSize(725,25)
         
         self.createStatus(725, height=50, status='Waiting for file ...')
 #         self.status = qtw.QLabel('Waiting for file ...')
@@ -183,7 +298,10 @@ class sbBox(connectBox):
         
         self.topBar = qtw.QHBoxLayout()
         self.topBar.addWidget(self.runButt)
-        self.topBar.addWidget(self.status)
+        self.topStatus = qtw.QVBoxLayout()
+        self.topStatus.addWidget(self.pos)
+        self.topStatus.addWidget(self.status)
+        self.topBar.addLayout(self.topStatus)
         self.topBar.setSpacing(10)
         
         self.loadButt = qtw.QToolButton()
@@ -406,27 +524,7 @@ class sbBox(connectBox):
         self.addFile('BREAK')
         self.updateStatus('Added break point', False)
             
-    ########
-    # communicating with the shopbot
-    
-    
-    def getSBFlag(self) -> int:
-        '''run this function continuously during print to watch the shopbot status'''
-        self.prevFlag = self.currentFlag
-        try:
-            sbFlag, _ = winreg.QueryValueEx(self.aKey, 'OutPutSwitches')
-        except:  
-            # if we fail to get the registry key, we have no way of knowing 
-            # if the print is over, so just stop it now
-            self.triggerEndOfPrint()
-            self.updateStatus('Failed to connect to Shopbot keys', True)
-            self.keyConnected = False
-            
-        # if the flag has reached a critical value that signals the 
-        # shopbot is done printing, stop tracking pressures and recording vids
-        sbFlag = int(sbFlag)
-        self.currentFlag = sbFlag
-        return sbFlag
+   
             
             
     ####################            
@@ -490,9 +588,35 @@ class sbBox(connectBox):
             calibc = self.sbWin.calibDialog.plot.c
             writer.writerow(['calibc', 'mm/s', calibc])
             self.updateStatus(f'Saved {fullfn}', True)
+            
+    def waitForSBReady(self) -> None:
+        '''wait for the shopbot to be ready before starting the file'''
+        status = self.sbStatus()
+        if status>0:
+            inames = []
+            for i in range(6):
+                if status%2**(i+1)==2**i:
+                    inames.append({0:'FileRunning', 1:'PreviewMode', 2:'KeyPadOpen', 3:'PauseinFile', 4:'StopHit', 5:'StackRunning'}[i])
+            self.updateStatus(f'{inames}: waiting for SB to be ready', False)
+        else:
+            self.updateStatus('Shopbot is ready', True)
+        self.SBstatus = status
+        
+
     
     def runFile(self) -> None:
-        '''runFile sends a file to the shopbot and tells the GUI to wait for next steps'''
+        '''runFile sends a file to the shopbot and tells the GUI to wait for next steps. first, check if the shopbot is ready'''
+    
+        self.waitForSBReady() # wait until the shopbot is ready for another file
+        while self.SBstatus>0:
+            time.sleep(1)
+            self.waitForSBReady()
+
+        self.runFileContinue()
+    
+    def runFileContinue(self) -> None:
+        '''runFile sends a file to the shopbot and tells the GUI to wait for next steps. second, send the file over'''
+        # check if the file exists
         if not os.path.exists(self.sbpName):
             if self.sbpName=='BREAK':
                 self.updateStatus('Break point hit.', True)
@@ -504,8 +628,6 @@ class sbBox(connectBox):
             return
         
 #         self.abortButt.setEnabled(True)
-
-
         
         ''' allowEnd is a failsafe measure because when the shopbot starts running a file that changes output flags, it asks the user to allow spindle movement to start. While it is waiting for the user to hit ok, only flag 4 would be up, giving a flag value of 8. If critFlag=8 (i.e. we want to stop running after the first extrusion step), this means the GUI will think the file is done before it even starts. We create an extra trigger to say that if we're extruding, we have to wait for extrusion to start before we can let the tracking stop'''
         self.critFlag = self.getCritFlag()
@@ -591,6 +713,8 @@ class sbBox(connectBox):
     def watchSBFlags(self) -> None:
         '''Runs continuously while we're printing. Checks the Shopbot flags and changes the pressure if the flags have changed. Triggers the end if we hit the critical flag.'''
         sbFlag = self.getSBFlag()
+        self.updateLoc() # update x,y,z display
+        self.getCommand() # read message
         self.updateStatus(f'Running file, Shopbot output flag = {sbFlag}, end at {self.critFlag}', False)
         
         if self.allowEnd and (sbFlag==self.critFlag or sbFlag==0):
@@ -663,12 +787,7 @@ class sbBox(connectBox):
         self.activateNext() # activate the next sbp file in the list
         if self.autoPlay and self.sbpNumber()>0: # if we're in autoplay and we're not at the beginning of the list, play the next file
             self.updateStatus('Autoplay is on: Running next file.', True)
-            
-#             timer = QtCore.QTimer()  # set up your QTimer
-#             timer.timeout.connect(self.runFile)  # connect it to your update function
-#             timer.start(1000)  # set it to timeout in 5000 ms
-            
-            QtCore.QTimer.singleShot(2000, self.runFile)
+            QtCore.QTimer.singleShot(2000, self.runFile) # wait 2 seconds, then call runFile
 #             self.runFile()
         else:
             self.runningSBP = False # we're no longer running a sbp file

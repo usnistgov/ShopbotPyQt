@@ -273,7 +273,10 @@ class fluPlot:
         try:
             # add pressures to table if we're saving
             if self.fluBox.save:
-                self.fluBox.saveTable.append([self.pw.time[-1]]+[j[-1] for j in self.pw.pressures])
+                tlist = [self.pw.time[-1]]
+                plist = [j[-1] for j in self.pw.pressures]
+                xyzlist = [self.fluBox.sbWin.sbBox.x, self.fluBox.sbWin.sbBox.y, self.fluBox.sbWin.sbBox.z]
+                self.fluBox.saveTable.append(tlist+plist+xyzlist)
             for i in range(self.numChans):
                 # update the plot
                 self.datalines[i].setData(self.pw.time, self.pw.pressures[i], pen=self.pens[i])
@@ -585,7 +588,7 @@ class fluBox(connectBox):
             self.save = False
             with open(self.fileName, mode='w', newline='', encoding='utf-8') as c:
                 writer = csv.writer(c, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                writer.writerow(['time (s)']+[f'Channel {i} pressure (mbar)' for i in range(self.numChans)]) # header
+                writer.writerow(['time(s)']+[f'Channel_{i}_pressure(mbar)' for i in range(self.numChans)]+['x(mm)', 'y(mm)', 'z(mm)']) # header
                 for row in self.saveTable:
                     writer.writerow(row)
             self.updateStatus(f'Saved {self.fileName}', True)

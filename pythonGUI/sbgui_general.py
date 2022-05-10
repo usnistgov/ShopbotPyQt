@@ -226,50 +226,50 @@ class fButton(qtw.QPushButton):
 
 #####################################################
 
-def findFileInFolder(file:str, folder:str) -> str:
-    '''findFileInFolder finds the full path name for a file in a folder
-    file is the basename string
-    folder is the folder to search in
-    this searches recursively and returns an exception if it doesn't find the file'''
-    f1 = os.path.join(folder, file)
-    if os.path.exists(f1):
-        return f1
-    for subfold in os.listdir(folder):
-        subfoldfull = os.path.join(folder, subfold)
-        if os.path.isdir(subfoldfull):
-            try:
-                file = findFileInFolder(file, subfoldfull)
-            except:
-                pass
-            else:
-                return file
-    raise Exception(file+' not found')
+# def findFileInFolder(file:str, folder:str) -> str:
+#     '''findFileInFolder finds the full path name for a file in a folder
+#     file is the basename string
+#     folder is the folder to search in
+#     this searches recursively and returns an exception if it doesn't find the file'''
+#     f1 = os.path.join(folder, file)
+#     if os.path.exists(f1):
+#         return f1
+#     for subfold in os.listdir(folder):
+#         subfoldfull = os.path.join(folder, subfold)
+#         if os.path.isdir(subfoldfull):
+#             try:
+#                 file = findFileInFolder(file, subfoldfull)
+#             except:
+#                 pass
+#             else:
+#                 return file
+#     raise Exception(file+' not found')
 
 
-def findSb3Folder() -> str:
-    '''find the folder that the Sb3 program files are in'''
-    for fold in [r'C:\\Program files', r'C:\\Program files (x86)']:
-        for f in os.listdir(fold):
-            if 'ShopBot'.lower() in f.lower():
-                return os.path.join(fold, f)
-    raise Exception('Shopbot folder not found')
+# def findSb3Folder() -> str:
+#     '''find the folder that the Sb3 program files are in'''
+#     for fold in [r'C:\\Program files', r'C:\\Program files (x86)']:
+#         for f in os.listdir(fold):
+#             if 'ShopBot'.lower() in f.lower():
+#                 return os.path.join(fold, f)
+#     raise Exception('Shopbot folder not found')
 
 
-def findSb3() -> str:
-    '''find the full path name for the Sb3.exe program
-    raises an exception if it doesn't find the file'''
-    try:
-        fold = findSb3Folder()
-    except:
-        logging.warning('Sb3.exe not found')
-        return ''
-    try:
-        sb3File = findFileInFolder('Sb3.exe', fold)
-        subprocess.Popen([sb3File])
-    except:
-        raise Exception('Sb3.exe not found')
-    else:
-        return sb3File
+# def findSb3() -> str:
+#     '''find the full path name for the Sb3.exe program
+#     raises an exception if it doesn't find the file'''
+#     try:
+#         fold = findSb3Folder()
+#     except:
+#         logging.warning('Sb3.exe not found')
+#         return ''
+#     try:
+#         sb3File = findFileInFolder('Sb3.exe', fold)
+#         subprocess.Popen([sb3File])
+#     except:
+#         raise Exception('Sb3.exe not found')
+#     else:
+#         return sb3File
 
 ##############################################################
 

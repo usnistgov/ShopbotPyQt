@@ -19,9 +19,9 @@ files:
   includeSampleInFile: true
   includeSampleInFolder: true
   includeTimeInFile: true
-  save: C:\Users\lmf1\Videos\Shopbot Videos\220503 PDMS silicone
+  save: C:\Users\lmf1\Videos\Shopbot Videos\test
   separator: _
-  tag: I_PDMSS12.5_S_4.00
+  tag: test
   timeFormat: '%y%m%d_%H%M%S_%f'
 fluigent:
   colors:
@@ -37,7 +37,7 @@ layout:
   save: true
 savePressure: true
 shopbot:
-  autoplay: true
+  autoplay: false
   dt: 50
   sbpFiles:
   - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files/tripleLinesSide/crossDoubleHoriz_0.5_0.500.sbp
@@ -122,6 +122,7 @@ shopbot:
   - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files/tripleLinesUnder/tripleLinesUnder_0.875.sbp
   - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files/tripleLinesUnder/tripleLinesUnder_1.000.sbp
   - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files/tripleLinesUnder/tripleLinesUnder_1.250.sbp
+  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files/singleLines/speed test.sbp
   sbpFolder: C:\Users\lmf1\Documents\GitHub\ShopbotPyQt\SBP files
-  sbpName: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files/tripleLinesSide/tripleLinesXS_+y_0.500.sbp
+  sbpName: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files/tripleLinesSide/tripleLinesHoriz_0.625.sbp
   showFolder: false

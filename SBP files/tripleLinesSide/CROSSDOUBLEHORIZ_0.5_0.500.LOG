@@ -64,3 +64,7 @@ Last Complete  |Cut Mode|  Elapsed: 00:00:24  ConsoleMvSpeed 10  FileEndSpeed 10
  File Completed:Yes Ln:66 Max: 12.50, 12.50, 10.00  Min: 12.20, 2.50,- 23.75  Offset:no  Brks=0  TBCs: -22.035, -174.187, -47.949  Props: 1.000, 1.000, 1.000
 Last Complete  |Cut Mode|  Elapsed: 00:00:24  ConsoleMvSpeed 10  FileEndSpeed 10    15:39:14  05-03-2022
  File Completed:Yes Ln:66 Max: 12.50, 12.50, 10.00  Min: 12.20, 2.50,- 23.75  Offset:no  Brks=0  TBCs: -22.035, -174.187, -47.949  Props: 1.000, 1.000, 1.000
+Last Complete  |Cut Mode|  Elapsed: 00:00:25  ConsoleMvSpeed 10  FileEndSpeed 10    15:44:33  05-10-2022
+ File Completed:Yes Ln:66 Max: 12.50, 12.50, 10.00  Min: 12.20, 2.50,- 23.75  Offset:no  Brks=0  TBCs: -22.035, -174.187, -47.949  Props: 1.000, 1.000, 1.000
+Last Not Complete Stopped@Line 54 |Cut Mode|  Elapsed: 00:00:27  ConsoleMvSpeed 10  FileEndSpeed 10    15:50:53  05-10-2022
+ File Completed:No  Ln:54 Max: 12.50, 12.50, 12.70  Min: 12.20, 2.50,- 23.75  Offset:no  Brks=1  TBCs: -22.035, -174.187, -47.949  Props: 1.000, 1.000, 1.000
