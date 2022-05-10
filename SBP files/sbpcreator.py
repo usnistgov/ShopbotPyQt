@@ -704,7 +704,7 @@ class zigzag(sbpCreator):
         self.m1(self.longdir[1], mids[llpos], pOn=True) # write first part of first line
         self.j1(self.shortdir[1], shortlist[0], pOn=False) # zero move to fix turnoff
         self.m1(self.longdir[1], longlist[llpos], pOn=True) # write rest of first line
-        for i in shortlist[1:]:
+        for index,i in enumerate(shortlist[1:]):
             if llpos==1:
                 llpos = 0
             else:
@@ -717,7 +717,7 @@ class zigzag(sbpCreator):
                 self.j1(self.shortdir[1], i, pOn=False) # zero move to fix turnoff
             else:
                 self.m1(self.shortdir[1], i, pOn=True) # zig  
-                if i==shortlist[-1]:
+                if index==len(shortlist[1:])-1:
                     self.m1(self.longdir[1], mids[llpos], pOn=True) # partial line
                     self.j1(self.shortdir[1], i, pOn=False) # zero move to fix turnoff
             self.m1(self.longdir[1], longlist[llpos], pOn=True) # write next line

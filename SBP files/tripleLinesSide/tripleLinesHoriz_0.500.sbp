@@ -5,7 +5,7 @@
 &nd = 0.91
 &downdisp = 0.00
 &diam = 0.60
-&wait1 = 1.00
+&wait1 = 1.25
 &wait2 = 0.50
 VD , , 1
 VU, 157.480315, 157.480315, -157.480315
@@ -20,15 +20,9 @@ SO, 1, 1
 MY, 2.325*&margin - 2.0
 JZ, -0.9*&slideW
 MY, 2.325*&margin
-SO, 1, 0
-JZ, 0.5*&nid - 0.9*&slideW
-SO, 1, 1
-MY, &margin/2 + 2.0
-JZ, 0.5*&nid - 0.9*&slideW
+MZ, 0.5*&nid - 0.9*&slideW
 MY, &margin/2
-SO, 1, 0
-JZ, 1.0*&nid - 0.9*&slideW
-SO, 1, 1
+MZ, 1.0*&nid - 0.9*&slideW
 MY, 2.325*&margin - 2.0
 JZ, 1.0*&nid - 0.9*&slideW
 MY, 2.325*&margin
@@ -41,15 +35,9 @@ SO, 1, 1
 MY, 2.325*&margin - 2.0
 JZ, -0.7*&slideW
 MY, 2.325*&margin
-SO, 1, 0
-JZ, 0.5*&nid - 0.7*&slideW
-SO, 1, 1
-MY, &margin/2 + 2.0
-JZ, 0.5*&nid - 0.7*&slideW
+MZ, 0.5*&nid - 0.7*&slideW
 MY, &margin/2
-SO, 1, 0
-JZ, 1.0*&nid - 0.7*&slideW
-SO, 1, 1
+MZ, 1.0*&nid - 0.7*&slideW
 MY, 2.325*&margin - 2.0
 JZ, 1.0*&nid - 0.7*&slideW
 MY, 2.325*&margin
@@ -62,15 +50,9 @@ SO, 1, 1
 MY, 2.325*&margin - 2.0
 JZ, -0.5*&slideW
 MY, 2.325*&margin
-SO, 1, 0
-JZ, 0.5*&nid - 0.5*&slideW
-SO, 1, 1
-MY, &margin/2 + 2.0
-JZ, 0.5*&nid - 0.5*&slideW
+MZ, 0.5*&nid - 0.5*&slideW
 MY, &margin/2
-SO, 1, 0
-JZ, 1.0*&nid - 0.5*&slideW
-SO, 1, 1
+MZ, 1.0*&nid - 0.5*&slideW
 MY, 2.325*&margin - 2.0
 JZ, 1.0*&nid - 0.5*&slideW
 MY, 2.325*&margin
@@ -83,15 +65,9 @@ SO, 1, 1
 MY, 2.325*&margin - 2.0
 JZ, -0.3*&slideW
 MY, 2.325*&margin
-SO, 1, 0
-JZ, 0.5*&nid - 0.3*&slideW
-SO, 1, 1
-MY, &margin/2 + 2.0
-JZ, 0.5*&nid - 0.3*&slideW
+MZ, 0.5*&nid - 0.3*&slideW
 MY, &margin/2
-SO, 1, 0
-JZ, 1.0*&nid - 0.3*&slideW
-SO, 1, 1
+MZ, 1.0*&nid - 0.3*&slideW
 MY, 2.325*&margin - 2.0
 JZ, 1.0*&nid - 0.3*&slideW
 MY, 2.325*&margin

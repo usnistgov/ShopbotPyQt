@@ -52,12 +52,8 @@ MY, 12.0*&margin + 16.875*&nid - 2.0
 JZ, 3*&margin/4 - &slideW
 MY, 12.0*&margin + 16.875*&nid
 MZ, 13*&margin/12 - &slideW
-MY, 10.5*&margin + 16.875*&nid + 2.0
-JZ, 13*&margin/12 - &slideW
 MY, 10.5*&margin + 16.875*&nid
 MZ, 17*&margin/12 - &slideW
-MY, 12.0*&margin + 16.875*&nid - 2.0
-JZ, 17*&margin/12 - &slideW
 MY, 12.0*&margin + 16.875*&nid
 MZ, 1.75*&margin - &slideW
 MY, 10.5*&margin + 16.875*&nid + 2.0

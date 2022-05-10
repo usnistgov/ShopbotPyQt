@@ -135,9 +135,13 @@ class sbBox(connectBox):
             
     def saveConfig(self, cfg1):
         '''save the current settings to a config Box object'''
-        cfg1.shopbot.sbpName = self.sbpName
+        cfg1.shopbot.sbpName = self.getFullPath(self.sbpName)
         cfg1.shopbot.autoplay = self.autoPlay   
         cfg1.shopbot.sbpFolder = self.sbpFolder
+        l = []
+        for x in range(self.sbpNameList.count()):
+            l.append(self.getFullPath(self.sbpNameList.item(x).text()))
+        cfg1.shopbot.sbpFiles = l
         return cfg1
     
     def loadConfig(self, cfg1):
@@ -207,7 +211,9 @@ class sbBox(connectBox):
 
         self.sbpNameList = qtw.QListWidget()
         self.sbpNameList.setFixedHeight(180)
-        self.addFile(self.sbpName)
+        for file in cfg.shopbot.sbpFiles:
+            self.addFile(file)
+#         self.addFile(self.sbpName)
         if os.path.exists(self.sbpName):
             self.activate(0)
             self.runButt.setEnabled(True)
@@ -351,6 +357,8 @@ class sbBox(connectBox):
     
     def getFullPath(self, file:str) -> str:
         '''get the full path name of the file'''
+        if file=='BREAK':
+            return file
         for fullpath in self.sbpRealList:
             if file in fullpath:
                 return fullpath
@@ -601,8 +609,9 @@ class sbBox(connectBox):
                 if i<len(self.sbWin.fluBox.pchannels):
                     channel = self.sbWin.fluBox.pchannels[i]
                     press = int(channel.constBox.text())
-                    fgt.fgt_set_pressure(i, press*1.1)
                     fgt.fgt_set_pressure(i, press)
+#                     QtCore.QTimer.singleShot(500, lambda:fgt.fgt_set_pressure(i,press))
+#                     fgt.fgt_set_pressure(i, press)
 
                      # set the other channels to 0
                     self.sbWin.fluBox.resetAllChannels(i)   
@@ -654,7 +663,13 @@ class sbBox(connectBox):
         self.activateNext() # activate the next sbp file in the list
         if self.autoPlay and self.sbpNumber()>0: # if we're in autoplay and we're not at the beginning of the list, play the next file
             self.updateStatus('Autoplay is on: Running next file.', True)
-            self.runFile()
+            
+#             timer = QtCore.QTimer()  # set up your QTimer
+#             timer.timeout.connect(self.runFile)  # connect it to your update function
+#             timer.start(1000)  # set it to timeout in 5000 ms
+            
+            QtCore.QTimer.singleShot(2000, self.runFile)
+#             self.runFile()
         else:
             self.runningSBP = False # we're no longer running a sbp file
             self.updateRunButt()

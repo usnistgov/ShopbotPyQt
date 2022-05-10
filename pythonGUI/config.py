@@ -29,7 +29,7 @@ def getConfigDir() -> str:
             raise FileNotFoundError(f"No configs directory found")
     return configdir
 
-def dumpConfigs(cfg, path:str) -> None:
+def dumpConfigs(cfg, path:str) -> int:
     '''Saves config file. cfg could be a Box or a dict'''
     with open(path, "w") as ymlout:
         if type(cfg) is Box:
@@ -37,8 +37,9 @@ def dumpConfigs(cfg, path:str) -> None:
         elif type(cfg) is dict:
             cout = cfg
         else:
-            return
-        yaml.dump(cout, ymlout)
+            return 1
+        yaml.safe_dump(cout, ymlout)
+        return 0
         
 def loadConfigFile(path:str) -> Box:
     with open(path, "r") as ymlfile:

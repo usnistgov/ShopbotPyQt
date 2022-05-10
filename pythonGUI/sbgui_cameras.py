@@ -819,7 +819,7 @@ class bascam(camera):
                 
     def saveConfig(self, cfg1):
         '''save the current settings to a config Box object'''
-        cfg1.bascam.fps = self.fps
+        cfg1.camera.bascam.fps = self.fps
         return cfg1
             
 ################################################

@@ -300,6 +300,7 @@ class fileBox(connectBox):
     def saveConfig(self, cfg1):
         '''save the current settings to a config Box object'''
         cfg1.files.save = self.saveFolder
+        cfg1.files.tag = self.appendName.text()
         cfg1 = self.settingsBox.saveConfig(cfg1)
         return cfg1
     
@@ -320,7 +321,7 @@ class fileBox(connectBox):
         self.fsor.saveFolderLink.clicked.connect(self.openSaveFolder)
 
         self.appendName = qtw.QLineEdit()
-        self.appendName.setText('')
+        self.appendName.setText(cfg.files.tag)
         self.appendName.setToolTip('This gets added to the file names')
         self.appendName.textChanged.connect(self.settingsBox.checkFormats)
         

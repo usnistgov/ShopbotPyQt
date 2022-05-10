@@ -192,12 +192,20 @@ class settingsDialog(QDialog):
         
     def saveCfg(self, file:str):
         '''save the config file to file'''
+        print('saving config')
         parent = self.parent
         from config import cfg
         for box in [parent.fileBox, parent.sbBox, parent.basBox, parent.nozBox, parent.web2Box, parent.fluBox, parent.calibDialog]:
-            cfg = box.saveConfig(cfg)
-        dumpConfigs(cfg, file)
-        logging.info(f'Saved settings to {file}')
+            try:
+                cfg = box.saveConfig(cfg)
+            except Exception as e:
+                logging.info(e)
+                logging.info(box)
+        out = dumpConfigs(cfg, file)
+        if out==0:
+            logging.info(f'Saved settings to {file}')
+        else:
+            logging.info(f'Error saving settings to {file}')
             
     def saveSettings(self):
         '''Save all settings to file'''
