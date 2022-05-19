@@ -599,6 +599,10 @@ class sbpCreator:
         for i in kwargs:
             self.file+= f'{i.upper()}S, {kwargs[i]}, {kwargs[i]}\n'
             setattr(self, f'{i.upper()}S', kwargs[i]) # store speed
+            
+    def setRamps(self, mr:float=10.060, jr:float=10.060, rate:float=5.080, thresh:float=100, dist:float=3.810, corner:int=65):
+        '''Set move and jump ramp speeds. Inputs could be m=5, j=20'''
+        self.file+=f'VR,{mr}, {mr}, {mr}, {mr}, {jr}, {jr}, {jr}, {jr}, {rate}, {rate}, {thresh}, {dist}, {corner}, , , {rate}\n'
     
     
 ############---------------------------------
