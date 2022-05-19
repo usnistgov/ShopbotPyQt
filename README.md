@@ -1,5 +1,7 @@
 ### NIST Repository:
-ShopbotPyQt: A GUI for controlling a Shopbot, Basler camera, webcam, and Fluigent mass flow controller
+ShopbotPyQt: A GUI for controlling a Shopbot, Basler camera, webcam, and Fluigent mass flow controller.
+
+To view the user guide in browser, visit https://htmlpreview.github.io/?https://github.com/usnistgov/ShopbotPyQt/blob/main/user_guide/user_guide.html
 
 Version 1.0.4
 

@@ -980,6 +980,7 @@ class pics(sbpCreator):
         self.wait = wait
         
     def snap(self):
+        self.m3(self.cp[0], self.cp[1], self.cp[2]) # add a zero move to fix timing issue
         self.snapPoints.append(self.cp)
         self.pause('&wait1')
         self.turnOn(self.channel)
