@@ -7,7 +7,7 @@ calibration:
   initSpeed: '10.0'
 camera:
   bascam:
-    fps: 100
+    fps: 0
   diag: 1
 files:
   createSubfolders: true
@@ -124,5 +124,5 @@ shopbot:
   - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files/tripleLinesUnder/tripleLinesUnder_1.250.sbp
   - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files/singleLines/speed test.sbp
   sbpFolder: C:\Users\lmf1\Documents\GitHub\ShopbotPyQt\SBP files
-  sbpName: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files/tripleLinesSide/tripleLinesHoriz_0.625.sbp
+  sbpName: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files/tripleLinesSide/crossDoubleHoriz_0.5_0.500.sbp
   showFolder: false

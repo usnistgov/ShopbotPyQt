@@ -434,7 +434,7 @@ class sbBox(connectBox):
         self.sbpName = self.getFullPath(item.text()) # find the full path name of the item
 #         self.sbpName = item.text() # new run file name
         self.updateItem(item, True)
-        self.sbpNameList.scrollToItem(item, QtGui.QAbstractItemView.PositionAtTop) # scroll to the current item
+        self.sbpNameList.scrollToItem(item, qtw.QAbstractItemView.PositionAtTop) # scroll to the current item
         
             
     def activateNext(self) -> None:
