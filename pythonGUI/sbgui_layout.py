@@ -192,7 +192,6 @@ class settingsDialog(QDialog):
         
     def saveCfg(self, file:str):
         '''save the config file to file'''
-        print('saving config')
         parent = self.parent
         from config import cfg
         for box in [parent.fileBox, parent.sbBox, parent.basBox, parent.nozBox, parent.web2Box, parent.fluBox, parent.calibDialog]:

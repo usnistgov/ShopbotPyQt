@@ -12,6 +12,7 @@ import logging
 import csv
 import re
 import time
+import win32gui, win32api, win32con
 
 # local packages
 import Fluigent.SDK as fgt
@@ -71,7 +72,53 @@ class sbSettingsBox(qtw.QWidget):
         
         layout.addLayout(folderRow)
         
+        self.savePosCheck = fCheckBox(layout, title='Save x,y,z in Fluigent table', checked=cfg.shopbot.includePositionInTable, func=self.updateSavePos)
+        layout.addWidget(self.savePosCheck)
+        
+        metaLabel = qtw.QLabel('Metadata to save for each print in *_speeds_*.csv:')
+        layout.addWidget(metaLabel)
+        self.metaTable = qtw.QTableWidget(30,3)
+        self.metaTable.setColumnWidth(0, 200);
+        self.metaTable.setColumnWidth(1, 100);
+        self.metaTable.setColumnWidth(2, 100);
+        self.metaTable.setMinimumHeight(600)
+        self.metaTable.setMinimumWidth(300)
+        newitem = qtw.QTableWidgetItem('property')
+        self.metaTable.setItem(0, 0, newitem)
+        newitem = qtw.QTableWidgetItem('value')
+        self.metaTable.setItem(0, 1, newitem)
+        newitem = qtw.QTableWidgetItem('units')
+        self.metaTable.setItem(0, 2, newitem)
+        self.parent.meta = {}
+        for ii,row in enumerate(cfg.shopbot.meta):
+            try:
+                value = str(cfg.shopbot.meta[row].value)
+                units = str(cfg.shopbot.meta[row].units)
+            except:
+                logging.error(f'Missing data in {cfg.shopbot.meta[row]}')
+            else:
+                self.parent.meta[row] = [value, units]
+                newitem = qtw.QTableWidgetItem(str(row))
+                self.metaTable.setItem(ii+1, 0, newitem)
+                newitem = qtw.QTableWidgetItem(value)
+                self.metaTable.setItem(ii+1, 1, newitem)
+                newitem = qtw.QTableWidgetItem(units)
+                self.metaTable.setItem(ii+1, 2, newitem)
+        self.metaTable.itemChanged.connect(self.changeMeta)
+        layout.addWidget(self.metaTable)
+        
         self.setLayout(layout)
+        
+        
+    def changeMeta(self) -> None:
+        '''update meta table'''
+        for ii in range(self.metaTable.rowCount()):
+            row = self.metaTable.item(ii,0).text()
+            if len(row)>0:
+                value = self.metaTable.item(ii,1).text()
+                units = self.metaTable.item(ii,2).text()
+                self.parent.meta[row] = [value, units]
+        
         
     def changeautoPlay(self, autoPlayButton) -> None:
         '''Change autoPlay settings'''
@@ -82,6 +129,13 @@ class sbSettingsBox(qtw.QWidget):
         else:
             self.parent.autoPlay = False
             self.parent.updateStatus('Turned off autoplay', True)
+            
+    def updateSavePos(self) -> None:
+        '''update whether to save position in table'''
+        if self.savePosCheck.isChecked():
+            self.parent.savePos=True
+        else:
+            self.parent.savePos=False
             
 #     def updateFolder(self, folder:str) -> None:
 #         self.parent.sbpFolder = folder
@@ -123,7 +177,9 @@ class sbBox(connectBox):
         self.autoPlay = cfg.shopbot.autoplay 
         self.sbpFolder = cfg.shopbot.sbpFolder
         self.msg = ''
+        self.meta = {}
         self.connect()
+        self.savePos = cfg.shopbot.includePositionInTable
         
 
             
@@ -152,6 +208,8 @@ class sbBox(connectBox):
         except:
             self.keyConnected = False
             self.updateStatus('Failed to connect to Shopbot', True)
+        self.findSb3()
+        subprocess.Popen([self.sb3File])
             
     def sbStatus(self) -> int:
         '''find the status of the shopbot'''
@@ -176,6 +234,7 @@ class sbBox(connectBox):
             self.updateStatus('Failed to connect to Shopbot keys', True)
             self.keyConnected = False
         self.sb3File = os.path.join(path, 'Sb3.exe')
+        
     
     def getSBFlag(self) -> int:
         '''run this function continuously during print to watch the shopbot status'''
@@ -195,20 +254,18 @@ class sbBox(connectBox):
         self.currentFlag = sbFlag
         return sbFlag
     
-    def getCommand(self) -> int:
-        '''run this function continuously during print to watch the shopbot status'''
-        self.prevFlag = self.currentFlag
-        try:
-            c, _ = winreg.QueryValueEx(self.aKey, 'uCommand')
-            c1, _ = winreg.QueryValueEx(self.aKey, 'uCommandQ1')
-        except:  
-            # if we fail to get the registry key, we have no way of knowing 
-            # if the print is over, so just stop it now
-            self.triggerEndOfPrint()
-            self.updateStatus('Failed to connect to Shopbot keys', True)
-            self.keyConnected = False
-            
-        print(c, '\t', c1)
+#     def getCommand(self) -> int:
+#         '''run this function continuously during print to watch the shopbot status'''
+#         self.prevFlag = self.currentFlag
+#         try:
+#             c, _ = winreg.QueryValueEx(self.aKey, 'uCommand')
+#             c1, _ = winreg.QueryValueEx(self.aKey, 'uCommandQ1')
+#         except:  
+#             # if we fail to get the registry key, we have no way of knowing 
+#             # if the print is over, so just stop it now
+#             self.triggerEndOfPrint()
+#             self.updateStatus('Failed to connect to Shopbot keys', True)
+#             self.keyConnected = False
     
     def getLoc(self) -> Tuple[int,int,int]:
         '''get the x,y,z location of the shopbot'''
@@ -263,6 +320,9 @@ class sbBox(connectBox):
         for x in range(self.sbpNameList.count()):
             l.append(self.getFullPath(self.sbpNameList.item(x).text()))
         cfg1.shopbot.sbpFiles = l
+        for key in self.meta:
+            cfg1.shopbot.meta[key].value = self.meta[key][0]
+            cfg1.shopbot.meta[key].units = self.meta[key][1]
         return cfg1
     
     def loadConfig(self, cfg1):
@@ -587,6 +647,9 @@ class sbBox(connectBox):
             writer.writerow(['calibb', 'mm/s/mbar', calibb])
             calibc = self.sbWin.calibDialog.plot.c
             writer.writerow(['calibc', 'mm/s', calibc])
+            for key in self.meta:
+                # ad hoc metadata
+                writer.writerow([key, self.meta[key][1], self.meta[key][0]])
             self.updateStatus(f'Saved {fullfn}', True)
             
     def waitForSBReady(self) -> None:
@@ -668,6 +731,14 @@ class sbBox(connectBox):
     
     def waitForStart(self) -> None:
         '''Loop this while we're waiting for the extrude command. Checks the shopbot flags and triggers the watch for pressure triggers if the test has started'''
+        
+        hwndMain = win32gui.FindWindow(None, 'NOW STARTING ROUTER/SPINDLE !')
+        if hwndMain>0:
+            # disable the spindle warning
+            hwndChild = win32gui.GetWindow(hwndMain, win32con.GW_CHILD)
+            win32gui.SetForegroundWindow(hwndChild)
+            win32api.PostMessage( hwndChild, win32con.WM_KEYDOWN, win32con.VK_RETURN, 0)
+        
         sbFlag = self.getSBFlag()
         cf = 8 + 2**(self.channelsTriggered[0]) # the critical flag at which flow starts
         self.updateStatus(f'Waiting to start file, Shopbot output flag = {sbFlag}, start at {cf}', False)
@@ -691,8 +762,9 @@ class sbBox(connectBox):
         # start the cameras if any flow is triggered in the run
         if min(self.channelsTriggered)<len(self.sbWin.fluBox.pchannels):
             for camBox in self.sbWin.camBoxes:
-                if camBox.camInclude.isChecked() and not camBox.camObj.recording:
-                    camBox.cameraRec()
+                if camBox.camObj.connected:
+                    if camBox.camInclude.isChecked() and not camBox.camObj.recording:
+                        camBox.cameraRec()
         if len(self.channelsTriggered)>0 and not self.channelsTriggered==[2]:
             # only record if there is extrusion
             self.saveSpeeds() 
@@ -714,7 +786,7 @@ class sbBox(connectBox):
         '''Runs continuously while we're printing. Checks the Shopbot flags and changes the pressure if the flags have changed. Triggers the end if we hit the critical flag.'''
         sbFlag = self.getSBFlag()
         self.updateLoc() # update x,y,z display
-        self.getCommand() # read message
+#         self.getCommand() # read message
         self.updateStatus(f'Running file, Shopbot output flag = {sbFlag}, end at {self.critFlag}', False)
         
         if self.allowEnd and (sbFlag==self.critFlag or sbFlag==0):
@@ -743,10 +815,11 @@ class sbBox(connectBox):
                     if not sbFlag==self.prevFlag:
                         # if we triggered a flag that doesn't correspond to a pressure channel, take a snapshot with all checked cameras. Only do this once, right after the flag is flipped.
                         for camBox in self.sbWin.camBoxes:
-                            if camBox.camInclude.isChecked() and not camBox.camObj.recording:
-                                if camBox.camObj.recording:
-                                    camBox.cameraRec()
-                                camBox.cameraPic()
+                            if camBox.camObj.connected:
+                                if camBox.camInclude.isChecked() and not camBox.camObj.recording:
+                                    if camBox.camObj.recording:
+                                        camBox.cameraRec()
+                                    camBox.cameraPic()
                                 
                         # originally, I had this set to turn the flag back off, but I can't get around the permissions, so instead you'll just have to program a wait into the .sbp file, using "PAUSE 5" for 5 seconds, etc.
 #                         newkey = sbFlag-4
@@ -766,8 +839,9 @@ class sbBox(connectBox):
             self.sbWin.fluBox.resetAllChannels(-1) # turn off all channels
             self.sbWin.fluBox.stopRecording()  # save fluigent
             for camBox in self.sbWin.camBoxes:
-                if camBox.camInclude.isChecked() and camBox.camObj.recording: 
-                    camBox.cameraRec() # stop recording
+                if camBox.camObj.connected:
+                    if camBox.camInclude.isChecked() and camBox.camObj.recording: 
+                        camBox.cameraRec() # stop recording
             try:
                 self.timer.stop()
             except:

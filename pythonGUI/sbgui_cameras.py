@@ -414,6 +414,7 @@ class camera:
     #---------------------------------
     # start the timer if there is not already a timer
     def startTimer(self) -> None:
+
         if not self.timerRunning:
             self.timer = QtCore.QTimer()
             self.timer.timeout.connect(self.timerFunc)        # run the timerFunc every mspf milliseconds
@@ -1075,6 +1076,8 @@ class cameraBox(connectBox):
     
     def cameraPrev(self) -> None:
         '''start or stop previewing and update button appearance'''
+        if not self.camObj.connected:
+            return
         if self.previewing:
             # we're already previewing: stop the preview and update the button appearance
             self.camObj.stopPreview()
@@ -1094,6 +1097,8 @@ class cameraBox(connectBox):
     
     def cameraRec(self) -> None:
         '''start or stop recording and update button appearance'''
+        if not self.camObj.connected:
+            return
         if self.recording:
             self.setRecButtStart()
             self.camObj.stopRecording()

@@ -7,7 +7,7 @@ calibration:
   initSpeed: '10.0'
 camera:
   bascam:
-    fps: 0
+    fps: 150
   diag: 1
 files:
   createSubfolders: true
@@ -35,10 +35,39 @@ fluigent:
   trange: 60
 layout:
   save: true
-savePressure: true
+savePressure: false
 shopbot:
   autoplay: false
   dt: 50
+  includePositionInTable: true
+  meta:
+    camera_magnification:
+      units: x
+      value: '0.5'
+    camera_position:
+      units: None
+      value: side
+    nozzle_inner_diameter:
+      units: mm
+      value: '0.603'
+    nozzle_length:
+      units: mm
+      value: '38'
+    nozzle_material:
+      units: None
+      value: stainless steel
+    nozzle_outer_diameter:
+      units: mm
+      value: '0.908'
+    tubing_inner_diameter:
+      units: mm
+      value: '0.79375'
+    tubing_length:
+      units: mm
+      value: '280'
+    tubing_material:
+      units: None
+      value: PTFE
   sbpFiles:
   - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files/tripleLinesSide/crossDoubleHoriz_0.5_0.500.sbp
   - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP files/tripleLinesSide/crossDoubleHoriz_0.5_0.625.sbp

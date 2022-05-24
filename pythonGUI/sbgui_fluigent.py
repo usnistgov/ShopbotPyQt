@@ -199,6 +199,7 @@ class plotRunnable(QtCore.QRunnable):
         self.signals = fluSignals()   # lets us send messages and data back to the GUI
         self.dprev = datetime.datetime.now()  # the last time when we read the pressures
         self.fluBox = fluBox
+        self.connected = fluBox.connected
 
     
     def run(self) -> None:
@@ -214,7 +215,10 @@ class plotRunnable(QtCore.QRunnable):
                 newtime.append(newtime[-1] + dt)         # Add the current time to the list
                 for i in range(self.numChans):
                     newpressures[i] = newpressures[i][1:]
-                    pnew = checkPressure(i)
+                    if self.connected:
+                        pnew = checkPressure(i)
+                    else:
+                        pnew = 0
                     newpressures[i].append(pnew)         # Add the current pressure to the list, for each channel
             except Exception as e:
                 self.signals.error.emit(f'Error reading pressure', True)
@@ -234,6 +238,7 @@ class fluPlot:
         fb is a pointer to the fluigent box that contains this plot'''
         self.fluBox = fb # parent box
         self.numChans = self.fluBox.numChans
+        self.connected = fb.connected
         
         
         # create the plot
@@ -274,14 +279,23 @@ class fluPlot:
             # add pressures to table if we're saving
             if self.fluBox.save:
                 tlist = [self.pw.time[-1]]
-                plist = [j[-1] for j in self.pw.pressures]
-                xyzlist = [self.fluBox.sbWin.sbBox.x, self.fluBox.sbWin.sbBox.y, self.fluBox.sbWin.sbBox.z]
+                if self.fluBox.savePressure and self.connected:
+                    plist = [j[-1] for j in self.pw.pressures]
+                else:
+                    plist = []
+                if self.fluBox.sbWin.sbBox.savePos:
+                    xyzlist = [self.fluBox.sbWin.sbBox.x, self.fluBox.sbWin.sbBox.y, self.fluBox.sbWin.sbBox.z]
+                else:
+                    xyzlist = []
                 self.fluBox.saveTable.append(tlist+plist+xyzlist)
-            for i in range(self.numChans):
-                # update the plot
-                self.datalines[i].setData(self.pw.time, self.pw.pressures[i], pen=self.pens[i])
-                # update the pressure reading
-                self.fluBox.updateReading(i, str(self.pw.pressures[i][-1]))  
+                
+            # update display
+            if self.connected:
+                for i in range(self.numChans):
+                    # update the plot
+                    self.datalines[i].setData(self.pw.time, self.pw.pressures[i], pen=self.pens[i])
+                    # update the pressure reading
+                    self.fluBox.updateReading(i, str(self.pw.pressures[i][-1]))  
         except:
             pass
         
@@ -463,6 +477,8 @@ class fluBox(connectBox):
             self.successLayout()
         else:
             self.failLayout()
+            self.pcolors = cfg.fluigent.colors
+            self.fluPlot = fluPlot(self.pcolors, self)      # create plot
 
     
     
@@ -572,7 +588,7 @@ class fluBox(connectBox):
     
     def startRecording(self) -> None:
         '''Start keeping track of pressure readings in a table to be saved to file'''
-        if self.savePressure:
+        if self.savePressure or self.sbWin.sbBox.savePos:
             self.saveTable = []
             self.save = True
             self.getFileName() # determine the current file name
@@ -584,11 +600,19 @@ class fluBox(connectBox):
             time.sleep(self.dt/1000)  
             self.fluPlot.update()
             dummy+=1
-        if self.savePressure and self.save:
+        if (self.savePressure or self.sbWin.sbBox.savePos) and self.save:
             self.save = False
             with open(self.fileName, mode='w', newline='', encoding='utf-8') as c:
                 writer = csv.writer(c, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                writer.writerow(['time(s)']+[f'Channel_{i}_pressure(mbar)' for i in range(self.numChans)]+['x(mm)', 'y(mm)', 'z(mm)']) # header
+                if self.sbWin.sbBox.savePos:
+                    xyzhead = ['x(mm)', 'y(mm)', 'z(mm)']
+                else:
+                    xyzhead = []
+                if self.savePresure:
+                    phead = [f'Channel_{i}_pressure(mbar)' for i in range(self.numChans)]
+                else:
+                    phead = []
+                writer.writerow(['time(s)']+phead+xyzhead) # header
                 for row in self.saveTable:
                     writer.writerow(row)
             self.updateStatus(f'Saved {self.fileName}', True)
