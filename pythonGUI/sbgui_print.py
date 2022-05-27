@@ -18,8 +18,11 @@ import win32gui, win32api, win32con
 import Fluigent.SDK as fgt
 from config import cfg
 from sbgui_general import *
-sys.path.append("..\\")
-sys.path.append("..\\SBP files")
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(currentdir)
+sys.path.append(parentdir)
+sys.path.append(os.path.join(parentdir, 'SBP_files'))  # add python folder
 from sbpRead import *
 
 

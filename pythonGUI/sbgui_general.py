@@ -359,3 +359,52 @@ class QHLine(qtw.QFrame):
         super(QHLine, self).__init__()
         self.setFrameShape(qtw.QFrame.HLine)
         self.setFrameShadow(qtw.QFrame.Sunken)
+        
+        
+        
+        
+
+class TabBar(qtw.QTabBar):
+    '''for vertical tabs. https://stackoverflow.com/questions/51404102/pyqt5-tabwidget-vertical-tab-horizontal-text-alignment-left'''
+    
+    def tabSizeHint(self, index):
+        s = qtw.QTabBar.tabSizeHint(self, index)
+        s.transpose()
+        return s
+
+    def paintEvent(self, event):
+        painter = qtw.QStylePainter(self)
+        opt = qtw.QStyleOptionTab()
+
+        for i in range(self.count()):
+            self.initStyleOption(opt, i)
+            painter.drawControl(qtw.QStyle.CE_TabBarTabShape, opt)
+            painter.save()
+
+            s = opt.rect.size()
+            s.transpose()
+            s.setHeight(s.height()+20)
+            r = QtCore.QRect(QtCore.QPoint(), s)
+            r.moveCenter(opt.rect.center())
+            opt.rect = r
+
+            c = self.tabRect(i).center()
+            painter.translate(c)
+            painter.rotate(90)
+            painter.translate(-c)
+            painter.drawControl(qtw.QStyle.CE_TabBarTabLabel, opt);
+            painter.restore()
+            
+        
+class ProxyStyle(qtw.QProxyStyle):
+    '''for vertical tabs. https://stackoverflow.com/questions/51404102/pyqt5-tabwidget-vertical-tab-horizontal-text-alignment-left'''
+    
+    def drawControl(self, element, opt, painter, widget):
+        if element == qtw.QStyle.CE_TabBarTabLabel:
+            ic = self.pixelMetric(qtw.QStyle.PM_TabBarIconSize)
+            r = QtCore.QRect(opt.rect)
+            w =  0 if opt.icon.isNull() else opt.rect.width() + self.pixelMetric(qtw.QStyle.PM_TabBarIconSize)
+            r.setHeight(opt.fontMetrics.width(opt.text) + w + 50) # needed to add 50 to not cut off words
+            r.moveBottom(opt.rect.bottom())
+            opt.rect = r
+        qtw.QProxyStyle.drawControl(self, element, opt, painter, widget)

@@ -710,19 +710,16 @@ class pCalibration(QDialog):
         super().__init__(parent)
         self.sbWin = parent
         self.setWindowTitle('Pressure calibration tool')
-        self.setStyle(ProxyStyle())
         self.layout = qtw.QVBoxLayout()
         
         self.tabs = qtw.QTabWidget()       
-        self.tabs.setTabBar(TabBar(self))
+        self.tabs.setTabBar(qtw.QTabBar(self))
         self.tabs.setTabPosition(qtw.QTabWidget.North)
         
         channels = self.sbWin.fluBox.numChans
         self.calibWidgets = [pCalibrationTab(self.sbWin, i) for i in range(channels)]
         for w in self.calibWidgets:
             self.tabs.addTab(w, w.bTitle)    
-            except:
-                pass
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
 
@@ -732,6 +729,20 @@ class pCalibration(QDialog):
         self.done(0)
         
         
+    def saveConfig(self, cfg1):
+        '''save the current settings to a config Box object'''
+        for tab in self.calibWidgets:
+            cfg1 = tab.saveConfig(cfg1)
+        return cfg1
+    
+    def loadConfig(self, cfg1):
+        '''load settings from a config Box object'''
+        for tab in self.calibWidgets:
+            tab.loadConfig(cfg1)
+        
+    def addRowToCalib(self, runPressure:float, runTime:float, chanNum:int) -> None:
+        '''add the row to the calibration table'''
+        self.calibWidgets[chanNum].addRowToCalib(runPressure, runTime)
         
         
         
