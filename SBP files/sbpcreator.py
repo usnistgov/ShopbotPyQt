@@ -19,87 +19,15 @@ matplotlib.rcParams['svg.fonttype'] = 'none'
 matplotlib.rc('font', family='Arial')
 matplotlib.rc('font', size='8')
 
-# metadata
-__author__ = "Leanne Friedrich"
-__copyright__ = "This data is publicly available according to the NIST statements of copyright, fair use and licensing; see https://www.nist.gov/director/copyright-fair-use-and-licensing-statements-srd-data-and-software"
-__credits__ = ["Leanne Friedrich"]
-__license__ = "MIT"
-__version__ = "1.0.0"
-__maintainer__ = "Leanne Friedrich"
-__email__ = "Leanne.Friedrich@nist.gov"
-__status__ = "Development"
+
+# local files
+from sbpRead import *
+
 
 #------------------------------------------
 
       
-def oddNeg(n:int)->int:
-    '''Returns negative 1 if the input is odd'''
-    return 2*((n%2)-1/2)
 
-def fs(i) -> str:
-    '''Converts a float into a string w/ 2 decimal places'''
-    if type(i) is str:
-        return i
-    else:
-        return '%3.2f'%i
-    
-def pf(a:float, b:float)->float:
-    '''literally just adds two numbers'''
-    return a+b
-
-
-def mf(a:float, b:float)->float:
-    '''literally just multiplies two numbers'''
-    return a*b 
-    
-# plus or times for combos of strings and floats
-def pt(*dims, **kwargs) -> Union[str, float]:
-    '''Takes in a list of strings and floats and adds or multiplies them. dims is a list of elements to operate on, and mode should be defined as a keyword, e.g. mode='add' or mode='mult' '''
-    
-    s = ''
-    if kwargs['mode']=='add':
-        toti = 0
-        op = ' + '
-        opf = pf
-
-    elif kwargs['mode']=='mult':
-        toti = 1
-        op = ' * '
-        opf = mf
-    else:
-        raise ValueError('mode must be add or mult')
-      
-    tot = toti
-    for d in dims:
-        try:
-            d1 = float(d)
-        except:
-            if not d[0]=='(' and ('-' in d or '+' in d):
-                dparen = '('+d+')'
-            else:
-                dparen = d
-            s = s + dparen + op
-        else:
-            tot = opf(tot, d1)
-    if len(s)==0:
-        return tot
-    elif tot==toti:
-        return s[:-3]
-    else:
-        return s + fs(tot)
-
-
-def p(*dims) -> Union[str, float]:
-    '''add combos of strings and floats'''
-    return pt(*dims, mode='add')
-
-
-def t(*dims) -> Union[str, float]:
-    '''(times) multiply combos of strings and floats'''
-    return pt(*dims, mode='mult')
-
-def mean(*dims) -> Union[str, float]:
-    return t(fs(1/len(dims)), '('+p(*dims)+')')
 
 #############-----------------------------------
 
@@ -212,64 +140,80 @@ class sbpCreator:
         '''Just the sbp file string'''
         return self.file
     
-    def floatSC(self, vi) -> float:
-        '''Evaluate the expression with the values of any variables'''
-        try:
-            vout = float(vi)
-        except:
-            if type(vi) is str:
-                for key, val in self.vardefs.items():
-                    vi = vi.replace('&'+key, str(val))
-                try:
-                    vout = eval(vi)
-                except:
-                    print(vi)
-                    raise TypeError('Cannot convert to float')
-                else:
-                    return vout
-            else:
-                raise TypeError('Cannot convert to float')
-        else:
-            return vout
-        
-    def strSimplify(self, vi, *args) -> str:
+    
+    def floatSC(self, vi:str) -> float:
+        '''Evaluate the expression vi with the values of all variables'''
+        return floatSC(vi, self.vardefs)
+    
+    def strSimplify(self, vi:str, *args) ->str:
         '''Simplify the expression, and evaluate it with any variables requested in *args. If you don't want to evaluate any variables, vi=[0] or any list w/ values that are not in the defined variables. If you want to evaluate all variables, vi=[]. If you want to use a specific list of variables, e.g. use ['&margin', '&spacing'] '''
-        if not type(vi) is str:
-            return vi
         if len(args)==0:
             defdict = self.vardefs
         else:
             defdict = {key: value for key, value in self.vardefs.items() if key in args[0]} 
-        for key, val in defdict.items():
-            vi = vi.replace('&'+key, fs(val))
+        strSimplify(vi, defdict)
+    
         
-        vin = vi.replace('&', 'UND')
+        
+    
+#     def floatSC(self, vi) -> float:
+#         '''Evaluate the expression with the values of any variables'''
+#         try:
+#             vout = float(vi)
+#         except:
+#             if type(vi) is str:
+#                 for key, val in self.vardefs.items():
+#                     vi = vi.replace('&'+key, str(val))
+#                 try:
+#                     vout = eval(vi)
+#                 except:
+#                     print(vi)
+#                     raise TypeError('Cannot convert to float')
+#                 else:
+#                     return vout
+#             else:
+#                 raise TypeError('Cannot convert to float')
+#         else:
+#             return vout
+        
+#     def strSimplify(self, vi, *args) -> str:
+#         '''Simplify the expression, and evaluate it with any variables requested in *args. If you don't want to evaluate any variables, vi=[0] or any list w/ values that are not in the defined variables. If you want to evaluate all variables, vi=[]. If you want to use a specific list of variables, e.g. use ['&margin', '&spacing'] '''
+#         if not type(vi) is str:
+#             return vi
+#         if len(args)==0:
+#             defdict = self.vardefs
+#         else:
+#             defdict = {key: value for key, value in self.vardefs.items() if key in args[0]} 
+#         for key, val in defdict.items():
+#             vi = vi.replace('&'+key, fs(val))
+        
+#         vin = vi.replace('&', 'UND')
 
-        try:
-            vout = sy.simplify(vin)
-        except:
-            vout = vi
-        else:
-            try:
-                vout = fs(vout)
-            except:
-                vout = str(vout)
-            vout = vout.replace('UND', '&')
-        vout = vout.replace(' 1.0*', '')
-        vout = vout.replace('-1.0*', '-')
-        vout = vout.replace('+1.0*', '+')
-        vout = vout.replace('*1.0*', '*')
-        vout = vout.replace(' + 0.0', '')
-        vout = vout.replace('.00000000000001', '.0')
-        return vout
+#         try:
+#             vout = sy.simplify(vin)
+#         except:
+#             vout = vi
+#         else:
+#             try:
+#                 vout = fs(vout)
+#             except:
+#                 vout = str(vout)
+#             vout = vout.replace('UND', '&')
+#         vout = vout.replace(' 1.0*', '')
+#         vout = vout.replace('-1.0*', '-')
+#         vout = vout.replace('+1.0*', '+')
+#         vout = vout.replace('*1.0*', '*')
+#         vout = vout.replace(' + 0.0', '')
+#         vout = vout.replace('.00000000000001', '.0')
+#         return vout
     
     
-    def fsss(self, vi) -> str:
-        '''this if for simplifying and formatting as string without any variable replacements'''
-        if type(vi) is str:
-            return self.strSimplify(vi, [0])
-        else:
-            return fs(vi)
+#     def fsss(self, vi) -> str:
+#         '''this if for simplifying and formatting as string without any variable replacements'''
+#         if type(vi) is str:
+#             return self.strSimplify(vi, [0])
+#         else:
+#             return fs(vi)
         
     
     #------------
@@ -342,7 +286,7 @@ class sbpCreator:
     #-----
     def mj3(self, x:Union[float, str], y:Union[float, str], z:Union[float, str], ms:str, pOn:bool=False) -> str:
         '''Move or jump in 3D. ms='M' or 'J' '''
-        s = ms.upper() + '3, ' + self.fsss(x) + ', ' + self.fsss(y) + ', ' + self.fsss(z) + '\n'
+        s = ms.upper() + '3, ' + fsss(x) + ', ' + fsss(y) + ', ' + fsss(z) + '\n'
         self.updatePts(x=x, y=y, z=z, pOn=pOn, ms=ms.lower())
         self.file+=s
         return s
@@ -358,7 +302,7 @@ class sbpCreator:
     #-----
     def mj2(self, x:Union[float, str], y:Union[float, str], ms:str, pOn:bool=False) -> str:
         '''Move or jump in 2D'''
-        s = ms.upper() + '2, ' + self.fsss(x) + ', ' + self.fsss(y) + '\n'
+        s = ms.upper() + '2, ' + fsss(x) + ', ' + fsss(y) + '\n'
         self.updatePts(x=x, y=y, pOn=pOn, ms=ms.lower())
         self.file+=s
         return s
@@ -378,7 +322,7 @@ class sbpCreator:
             dire = direc[-1]
         else:
             dire = direc
-        s = ms.upper() + dire.upper() + ', ' + self.fsss(position) + '\n'
+        s = ms.upper() + dire.upper() + ', ' + fsss(position) + '\n'
         if dire.lower()=='x':
             self.updatePts(x=position, pOn=pOn, ms=ms.lower())
         elif dire.lower()=='y':
@@ -435,15 +379,21 @@ class sbpCreator:
         self.file+=s
         return s
     
+    def setInkSpeed(self, channel:int, speed:float) -> str:
+        '''set the ink extrusion speed'''
+        s = f'\'ink_speed_{channel}={speed}\n'
+        self.file+=s
+        return s
+    
     def turnOn(self, channel:int) -> str:
         '''Turn on an output flag'''
-        s = 'SO, ' + str(channel+1) + ', 1\n'
+        s = f'SO, {channel+1}, 1\n'
         self.file+=s
         return s
     
     def turnOff(self, channel:int) -> str:
         '''Turn off an output flag'''
-        s = 'SO, ' + str(channel+1) + ', 0\n'
+        s = f'SO, {channel+1}, 0\n'
         self.file+=s
         return s
     
@@ -588,6 +538,8 @@ class sbpCreator:
         File_object.write(fout)
         File_object.close()
         print("Exported file %s" % filename)
+        sp = SBPPoints(filename)
+        sp.export()
         
     def addVar(self, key:str, val:float) -> None:
         '''add the variable to the file and store the definition'''
@@ -602,7 +554,11 @@ class sbpCreator:
             
     def setRamps(self, mr:float=10.060, jr:float=10.060, rate:float=5.080, thresh:float=100, dist:float=3.810, corner:int=65):
         '''Set move and jump ramp speeds. Inputs could be m=5, j=20'''
-        self.file+=f'VR,{mr}, {mr}, {mr}, {mr}, {jr}, {jr}, {jr}, {jr}, {rate}, {rate}, {thresh}, {dist}, {corner}, , , {rate}\n'
+        self.file+=f'VR,{mr}, {mr}, , , {jr}, {jr}, , , {rate}, {rate}, {thresh}, {dist}, {corner}, , , {rate}\n'
+        
+    def setUnits(self, **kwargs):
+        '''Set the units to mm'''
+        self.file+='VD , , 1\nVU, 157.480315, 157.480315, -157.480315\n'
     
     
 ############---------------------------------
@@ -616,9 +572,7 @@ class defVars(sbpCreator):
             self.addVar(key, val)
     
             
-    def setUnits(self, **kwargs):
-        '''Set the units to mm'''
-        self.file+='VD , , 1\nVU, 157.480315, 157.480315, -157.480315\n'
+    
 
 ############---------------------------------
 

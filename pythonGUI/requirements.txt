@@ -4,7 +4,7 @@ distlib==0.3.1
 filelock==3.0.12
 numpy==1.22.0
 opencv-python==4.5.5.62
-pypylon @ file:///C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/pythonGUI/pypylon-1.7.4rc1-cp38-cp38-win_amd64.whl
+pypylon @ file:pypylon-1.7.4rc1-cp38-cp38-win_amd64.whl
 PyQt5==5.15.6
 PyQt5-Qt5==5.15.2
 PyQt5-sip==12.9.0

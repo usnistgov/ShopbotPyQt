@@ -17,15 +17,6 @@ import logging
 from sbgui_general import *
 from config import cfg
 
-# info
-__author__ = "Leanne Friedrich"
-__copyright__ = "This data is publicly available according to the NIST statements of copyright, fair use and licensing; see https://www.nist.gov/director/copyright-fair-use-and-licensing-statements-srd-data-and-software"
-__credits__ = ["Leanne Friedrich"]
-__license__ = "MIT"
-__version__ = "1.0.4"
-__maintainer__ = "Leanne Friedrich"
-__email__ = "Leanne.Friedrich@nist.gov"
-__status__ = "Development"
 
 try:
     os.environ["PYLON_CAMEMU"] = "3"
@@ -522,9 +513,9 @@ class camera:
         s+=self.vFilename
         s+= ' : %2.2f s' % self.timeRec + ', '
         if self.writing and not self.recording:
-            s+= str(self.fleft) + '/' + str(self.totalFrames) + ' frames left'
+            s+= f'{self.fleft}/{self.totalFrames} frames left'
         else:
-            s+= str(self.framesDropped) + '/' + str(self.totalFrames) +' frames dropped'
+            s+= f'{self.framesDropped}/{self.totalFrames} frames dropped'
         self.updateStatus(s, log)
         
     

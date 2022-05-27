@@ -16,17 +16,6 @@ import traceback
 from sbgui_general import *
 from config import *
 
-# info
-__author__ = "Leanne Friedrich"
-__copyright__ = "This data is publicly available according to the NIST statements of copyright, fair use and licensing; see https://www.nist.gov/director/copyright-fair-use-and-licensing-statements-srd-data-and-software"
-__credits__ = ["Leanne Friedrich"]
-__license__ = "MIT"
-__version__ = "1.0.4"
-__maintainer__ = "Leanne Friedrich"
-__email__ = "Leanne.Friedrich@nist.gov"
-__status__ = "Development"
-
-
 
 ################################################
 
@@ -245,21 +234,21 @@ class calibTable(qtw.QTableWidget):
 #------------------------------------------------------------
         
 
-class pCalibration(qtw.QDialog):
+class pCalibrationTab(qtw.QWidget):
     '''creates a window with pressure calibration tools'''
     
-    def __init__(self, parent):
-        '''This is called by the parent, which is the main SBwindow'''
+    def __init__(self, sbWin, channel:int):
+        '''This is called by the parent, which is the popup called by SBwindow'''
         
-        super().__init__(parent)
-        self.bTitle='Speed calibration'
-        self.parent = parent
+        super().__init__(sbWin)
+        self.bTitle=f'Channel {channel}'
+        self.sbWin = sbWin
         self.flowRateFolder = checkPath(cfg.calibration.flowRateFolder)
-        self.setWindowTitle('Pressure calibration tool')
         self.saved=True
         self.initTable()
         self.plot = calibPlot(self)
         self.grid = calibTable(self)
+        self.channel = channel
         self.successLayout()
         
     def saveConfig(self, cfg1):
@@ -497,7 +486,7 @@ class pCalibration(qtw.QDialog):
             folder = folder[0]
             self.flowRateFolder = folder
         
-        time = self.parent.fileBox.settingsBox.time()
+        time = self.sbWin.fileBox.settingsBox.time()
         fileName = os.path.join(self.flowRateFolder, consts['sample'][0]+'_'+time+'.csv')
         with open(fileName, mode='w', newline='', encoding='utf-8') as c:
             writer = csv.writer(c, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -691,7 +680,7 @@ class pCalibration(qtw.QDialog):
      #------------
         
     def copyPressure(self) -> None:
-        self.parent.fluBox.updateRunPressure(self.pressure())
+        self.sbWin.fluBox.updateRunPressure(self.pressure(), self.channel)
         
     #-------------
     
@@ -705,6 +694,39 @@ class pCalibration(qtw.QDialog):
             if log:
                 logging.info(f'{self.bTitle}:{st}')
     
+    def close(self):
+        '''Close the window'''
+        self.done(0)
+        
+        
+        
+        
+class pCalibration(QDialog):
+    '''Creates a calibration window with tabs for each pressure channel'''
+    
+    def __init__(self, parent):
+        '''This is called by the parent, which is the main SBwindow'''
+        
+        super().__init__(parent)
+        self.sbWin = parent
+        self.setWindowTitle('Pressure calibration tool')
+        self.setStyle(ProxyStyle())
+        self.layout = qtw.QVBoxLayout()
+        
+        self.tabs = qtw.QTabWidget()       
+        self.tabs.setTabBar(TabBar(self))
+        self.tabs.setTabPosition(qtw.QTabWidget.North)
+        
+        channels = self.sbWin.fluBox.numChans
+        self.calibWidgets = [pCalibrationTab(self.sbWin, i) for i in range(channels)]
+        for w in self.calibWidgets:
+            self.tabs.addTab(w, w.bTitle)    
+            except:
+                pass
+        self.layout.addWidget(self.tabs)
+        self.setLayout(self.layout)
+
+        
     def close(self):
         '''Close the window'''
         self.done(0)

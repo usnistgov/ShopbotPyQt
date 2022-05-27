@@ -15,26 +15,21 @@ import time
 import win32gui, win32api, win32con
 
 # local packages
-import Fluigent.SDK as fgt
+# import Fluigent.SDK as fgt
 from config import cfg
 from sbgui_general import *
+from sbgui_print import *
+# sys.path.append("..\\")
+# sys.path.append("..\\SBP files")
+# from sbpRead import *
 
-# info
-__author__ = "Leanne Friedrich"
-__copyright__ = "This data is publicly available according to the NIST statements of copyright, fair use and licensing; see https://www.nist.gov/director/copyright-fair-use-and-licensing-statements-srd-data-and-software"
-__credits__ = ["Leanne Friedrich"]
-__license__ = "MIT"
-__version__ = "1.0.4"
-__maintainer__ = "Leanne Friedrich"
-__email__ = "Leanne.Friedrich@nist.gov"
-__status__ = "Development"
+
 
 ##################################################  
 
 
 
-
-      
+#--------------------------------      
 class sbSettingsBox(qtw.QWidget):
     '''This opens a window that holds settings about logging for the shopbot.'''
     
@@ -592,35 +587,42 @@ class sbBox(connectBox):
     
     ### set up the run
     
+#     def getCritFlag(self) -> int:
+#         '''Identify which channels are triggered during the run. critFlag is a shopbot flag value that indicates that the run is done. We always set this to 0. If you want the video to shut off after the first flow is done, set this to 8. We run this function at the beginning of the run to determine what flag will trigger the start of videos, etc.'''
+#         self.channelsTriggered = []
+#         with open(self.sbpName, 'r') as f:
+#             for line in f:
+#                 if line.startswith('SO') and (line.endswith('1') or line.endswith('1\n')):
+#                     '''the shopbot flags are 1-indexed, while our channels list is 0-indexed, 
+#                     so when it says to change flag 1, we want to change channels[0]'''
+#                     li = int(line.split(',')[1])-1
+#                     if li not in self.channelsTriggered and not li==3:
+#                         self.channelsTriggered.append(li) 
+#         return 0
+
     def getCritFlag(self) -> int:
         '''Identify which channels are triggered during the run. critFlag is a shopbot flag value that indicates that the run is done. We always set this to 0. If you want the video to shut off after the first flow is done, set this to 8. We run this function at the beginning of the run to determine what flag will trigger the start of videos, etc.'''
-        self.channelsTriggered = []
-        with open(self.sbpName, 'r') as f:
-            for line in f:
-                if line.startswith('SO') and (line.endswith('1') or line.endswith('1\n')):
-                    '''the shopbot flags are 1-indexed, while our channels list is 0-indexed, 
-                    so when it says to change flag 1, we want to change channels[0]'''
-                    li = int(line.split(',')[1])-1
-                    if li not in self.channelsTriggered and not li==3:
-                        self.channelsTriggered.append(li) 
+        self.channelsTriggered = channelsTriggered(self.sbpName)
         return 0
     
     
     ### start/stop
     
-    def findStageSpeed(self) -> float:
-        '''find the stage speed from the current shopbot file'''
-        with open(self.sbpName, mode='r') as f:
-            cont = True
-            l = 'a'
-            while cont and len(l)>0:
-                l = f.readline()
-                if l.startswith('MS'):
-                    cont = False
-        if len(l)==0:
-            return -1
-        else:
-            return float(re.split(',|\n',l)[1])
+#     def findStageSpeed(self) -> float:
+#         '''find the stage speed from the current shopbot file'''
+#         with open(self.sbpName, mode='r') as f:
+#             cont = True
+#             l = 'a'
+#             while cont and len(l)>0:
+#                 l = f.readline()
+#                 if l.startswith('MS'):
+#                     cont = False
+#         if len(l)==0:
+#             return -1
+#         else:
+#             return float(re.split(',|\n',l)[1])
+        
+    
     
                 
     def saveSpeeds(self) -> None:
@@ -637,18 +639,24 @@ class sbBox(connectBox):
                 channel = self.sbWin.fluBox.pchannels[i]
                 press = int(channel.constBox.text())
                 writer.writerow([f'ink pressure channel {i}','mbar', press])
-            inkspeed = self.sbWin.calibDialog.speedBox.text()
-            writer.writerow(['ink speed', 'mm/s', inkspeed])
-            supspeed = self.findStageSpeed()
-            writer.writerow(['support speed', 'mm/s', supspeed])
-            caliba = self.sbWin.calibDialog.plot.a
-            writer.writerow(['caliba', 'mm/s/mbar^2', caliba])
-            calibb = self.sbWin.calibDialog.plot.b
-            writer.writerow(['calibb', 'mm/s/mbar', calibb])
-            calibc = self.sbWin.calibDialog.plot.c
-            writer.writerow(['calibc', 'mm/s', calibc])
+                widget = self.sbWin.calibDialog.calibWidgets[i]
+                inkspeed = widget.speedBox.text()
+                writer.writerow([f'ink speed channel {i}', 'mm/s', inkspeed])
+                caliba = widget.plot.a
+                writer.writerow([f'caliba channel {i}', 'mm/s/mbar^2', caliba])
+                calibb = widget.plot.b
+                writer.writerow([f'calibb channel {i}', 'mm/s/mbar', calibb])
+                calibc = widget.plot.c
+                writer.writerow([f'calibc channel {i}', 'mm/s', calibc])
+                
+            # read values from the sbp file
+            sh = readSBPHeader(self) 
+            t1 = sh.table()
+            for row in t1:
+                writer.writerow(row)
+            
+            # ad hoc metadata in settings
             for key in self.meta:
-                # ad hoc metadata
                 writer.writerow([key, self.meta[key][1], self.meta[key][0]])
             self.updateStatus(f'Saved {fullfn}', True)
             
@@ -700,6 +708,8 @@ class sbBox(connectBox):
             self.allowEnd = False
             
         self.updateStatus(f'Running SBP file {self.sbpName}, critFlag = {self.critFlag}', True)
+        
+        self.sbpTiming = SBPtimings(self.sbpName, self.sbWin)   # this object updates changes in state
 
         # send the file to the shopbot via command line
         appl = self.sb3File
@@ -738,12 +748,13 @@ class sbBox(connectBox):
             hwndChild = win32gui.GetWindow(hwndMain, win32con.GW_CHILD)
             win32gui.SetForegroundWindow(hwndChild)
             win32api.PostMessage( hwndChild, win32con.WM_KEYDOWN, win32con.VK_RETURN, 0)
-        
+            
         sbFlag = self.getSBFlag()
         cf = 8 + 2**(self.channelsTriggered[0]) # the critical flag at which flow starts
         self.updateStatus(f'Waiting to start file, Shopbot output flag = {sbFlag}, start at {cf}', False)
         if sbFlag==cf:
             self.triggerWatch()
+
             
             
     ### start videos and fluigent
@@ -766,7 +777,7 @@ class sbBox(connectBox):
                     if camBox.camInclude.isChecked() and not camBox.camObj.recording:
                         camBox.cameraRec()
         if len(self.channelsTriggered)>0 and not self.channelsTriggered==[2]:
-            # only record if there is extrusion
+            # only save speeds and pressures if there is extrusion
             self.saveSpeeds() 
             self.sbWin.fluBox.startRecording()
     
@@ -793,39 +804,42 @@ class sbBox(connectBox):
             self.triggerEndOfPrint()
             return
         
+        
+        self.allowEnd = self.sbpTiming.check(sbFlag, self.x, self.y, self.z)  # update status
+        
         # for each channel, check if the flag is up if flag 0 is up for channel 0, the output will be odd, so  flag mod 2 (2=2^(0+1)) will be 1, which is 2^0. If flag 1 is up for channel 1, it adds 2 to the output, e.g. if we want channel 1 on, the value will be 10, so 10%2=2, which is 2^1
-        for i in self.channelsTriggered:
-            if sbFlag%2**(i+1)==2**i:
-                # this channel is on
+#         for i in self.channelsTriggered:
+#             if sbFlag%2**(i+1)==2**i:
+#                 # this channel is on
                 
-                # now that we've started extrusion, we know that the run has really started, so we can allow it to end
-                self.allowEnd = True
+#                 # now that we've started extrusion, we know that the run has really started, so we can allow it to end
+#                 self.allowEnd = True
                 
-                # set this channel to the value in the constant box (run pressure)
-                if i<len(self.sbWin.fluBox.pchannels):
-                    channel = self.sbWin.fluBox.pchannels[i]
-                    press = int(channel.constBox.text())
-                    fgt.fgt_set_pressure(i, press)
-#                     QtCore.QTimer.singleShot(500, lambda:fgt.fgt_set_pressure(i,press))
+#                 # set this channel to the value in the constant box (run pressure)
+#                 if i<len(self.sbWin.fluBox.pchannels):
+#                     channel = self.sbWin.fluBox.pchannels[i]
+#                     press = int(channel.constBox.text())
 #                     fgt.fgt_set_pressure(i, press)
+# #                     QtCore.QTimer.singleShot(500, lambda:fgt.fgt_set_pressure(i,press))
+# #                     fgt.fgt_set_pressure(i, press)
 
-                     # set the other channels to 0
-                    self.sbWin.fluBox.resetAllChannels(i)   
-                else:
-                    if not sbFlag==self.prevFlag:
-                        # if we triggered a flag that doesn't correspond to a pressure channel, take a snapshot with all checked cameras. Only do this once, right after the flag is flipped.
-                        for camBox in self.sbWin.camBoxes:
-                            if camBox.camObj.connected:
-                                if camBox.camInclude.isChecked() and not camBox.camObj.recording:
-                                    if camBox.camObj.recording:
-                                        camBox.cameraRec()
-                                    camBox.cameraPic()
+#                      # set the other channels to 0
+#                     self.sbWin.fluBox.resetAllChannels(i)   
+#                 else:
+#                     if not sbFlag==self.prevFlag:
+#                         # if we triggered a flag that doesn't correspond to a pressure channel, take a snapshot with all checked cameras. Only do this once, right after the flag is flipped.
+#                         for camBox in self.sbWin.camBoxes:
+#                             if camBox.camObj.connected:
+#                                 if camBox.camInclude.isChecked() and not camBox.camObj.recording:
+# #                                     if camBox.camObj.recording:
+# #                                         camBox.cameraRec()
+#                                     camBox.cameraPic()
                                 
-                        # originally, I had this set to turn the flag back off, but I can't get around the permissions, so instead you'll just have to program a wait into the .sbp file, using "PAUSE 5" for 5 seconds, etc.
-#                         newkey = sbFlag-4
-#                         sbFlag, _ = winreg.SetValueEx(self.aKey, 'OutPutSwitches',0, winreg.REG_DWORD, newkey)
+#                         # originally, I had this set to turn the flag back off, but I can't get around the permissions, so instead you'll just have to program a wait into the .sbp file, using "PAUSE 5" for 5 seconds, etc.
+# #                         newkey = sbFlag-4
+# #                         sbFlag, _ = winreg.SetValueEx(self.aKey, 'OutPutSwitches',0, winreg.REG_DWORD, newkey)
 
-                return 
+#                 return 
         
         # if no channels are turned on, turn off all of the channels       
         self.sbWin.fluBox.resetAllChannels(-1)
@@ -848,7 +862,7 @@ class sbBox(connectBox):
                 pass
         
     def triggerKill(self) -> None:
-        '''the stop buttonw was hit, so stop'''
+        '''the stop button was hit, so stop'''
         self.stopRunning()
         self.activateNext() # activate the next sbp file in the list
         self.runningSBP = False # we're no longer running a sbp file

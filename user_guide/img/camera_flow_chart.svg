@@ -1,0 +1,547 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="5.096467in"
+   height="4.4296279in"
+   viewBox="0 0 129.45026 112.51255"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2 (dc2aedaf03, 2022-05-15)"
+   sodipodi:docname="camera_flow_chart.svg"
+   inkscape:export-filename="camera_flow_chart.png"
+   inkscape:export-xdpi="300"
+   inkscape:export-ydpi="300"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="3.7522727"
+     inkscape:cx="227.8619"
+     inkscape:cy="215.86917"
+     inkscape:window-width="3840"
+     inkscape:window-height="2066"
+     inkscape:window-x="-11"
+     inkscape:window-y="-11"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1" />
+  <defs
+     id="defs2">
+    <marker
+       style="overflow:visible"
+       id="marker5769"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="TriangleStart"
+       markerWidth="5.3244081"
+       markerHeight="6.155385"
+       viewBox="0 0 5.3244081 6.1553851"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="M 5.77,0 -2.88,5 V -5 Z"
+         id="path5767" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="marker4587"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="TriangleStart"
+       markerWidth="5.3244081"
+       markerHeight="6.155385"
+       viewBox="0 0 5.3244081 6.1553851"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="M 5.77,0 -2.88,5 V -5 Z"
+         id="path4585" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="TriangleStart"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="TriangleStart"
+       markerWidth="5.3244081"
+       markerHeight="6.155385"
+       viewBox="0 0 5.3244081 6.1553851"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="M 5.77,0 -2.88,5 V -5 Z"
+         id="path135" />
+    </marker>
+    <marker
+       style="overflow:visible"
+       id="TriangleStart-6"
+       refX="0"
+       refY="0"
+       orient="auto-start-reverse"
+       inkscape:stockid="TriangleStart"
+       markerWidth="5.3244081"
+       markerHeight="6.155385"
+       viewBox="0 0 5.3244081 6.1553851"
+       inkscape:isstock="true"
+       inkscape:collect="always"
+       preserveAspectRatio="xMidYMid">
+      <path
+         transform="scale(0.5)"
+         style="fill:context-stroke;fill-rule:evenodd;stroke:context-stroke;stroke-width:1pt"
+         d="M 5.77,0 -2.88,5 V -5 Z"
+         id="path135-2" />
+    </marker>
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(6.2276421,-4.8133773)">
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke-width:0.264583"
+       x="30.320515"
+       y="7.8974242"
+       id="text186"><tspan
+         sodipodi:role="line"
+         id="tspan184"
+         x="30.320515"
+         y="7.8974242"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke-width:0.264583">cameraBox (QGroupBox)</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="10.435897"
+       y="25.102564"
+       id="text400"><tspan
+         sodipodi:role="line"
+         id="tspan398"
+         style="stroke-width:0.264583"
+         x="10.435897"
+         y="25.102564">camObj (object)</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="90.890549"
+       y="92.171341"
+       id="text404"><tspan
+         sodipodi:role="line"
+         id="tspan402"
+         style="stroke-width:0.264583"
+         x="90.890549"
+         y="92.171341">preview window (QLabel)</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="12.551282"
+       y="41.320515"
+       id="text408"><tspan
+         sodipodi:role="line"
+         id="tspan406"
+         style="stroke-width:0.264583"
+         x="12.551282"
+         y="41.320515">camSnap (QRunnable)</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="59.794868"
+       y="14.384614"
+       id="text412"><tspan
+         sodipodi:role="line"
+         id="tspan410"
+         style="stroke-width:0.264583"
+         x="59.794868"
+         y="14.384614">preview button</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="52.884613"
+       y="25.948719"
+       id="text416"><tspan
+         sodipodi:role="line"
+         id="tspan414"
+         style="stroke-width:0.264583"
+         x="52.884613"
+         y="25.948719" /></text>
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="59.512825"
+       y="20.166666"
+       id="text420"><tspan
+         sodipodi:role="line"
+         id="tspan418"
+         style="stroke-width:0.264583"
+         x="59.512825"
+         y="20.166666">record button</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="60.641022"
+       y="26.935898"
+       id="text424"><tspan
+         sodipodi:role="line"
+         id="tspan422"
+         style="stroke-width:0.264583"
+         x="60.641022"
+         y="26.935898">snap button</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#TriangleStart)"
+       d="M 57.820512,26.089743 32.717949,24.961538"
+       id="path489" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#TriangleStart)"
+       d="m 26.653847,25.807692 6.064102,11.987179"
+       id="path491" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#TriangleStart)"
+       d="M 15.653846,37.794872 11.705128,28.205129"
+       id="path493" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#TriangleStart)"
+       d="M 19.461538,21.435897 27.641026,9.4487179"
+       id="path495" />
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="33.705128"
+       y="34.551281"
+       id="text1272"><tspan
+         sodipodi:role="line"
+         id="tspan1270"
+         style="stroke-width:0.264583"
+         x="33.705128"
+         y="34.551281">1. create QRunnable, start</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="-6.3461537"
+       y="34.128204"
+       id="text1276"><tspan
+         sodipodi:role="line"
+         id="tspan1274"
+         style="stroke-width:0.264583"
+         x="-6.3461537"
+         y="34.128204">3. send signal </tspan><tspan
+         sodipodi:role="line"
+         style="stroke-width:0.264583"
+         x="-6.3461537"
+         y="37.655991"
+         id="tspan2032">back to camObj</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="4.9358969"
+       y="13.820513"
+       id="text1280"><tspan
+         sodipodi:role="line"
+         id="tspan1278"
+         style="stroke-width:0.264583"
+         x="4.9358969"
+         y="13.820513">update status</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#TriangleStart-6)"
+       d="m 55.962183,77.228243 8.108975,-7.75641"
+       id="path495-1"
+       sodipodi:nodetypes="cc" />
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="41.436543"
+       y="69.612862"
+       id="text1280-2"><tspan
+         sodipodi:role="line"
+         id="tspan1278-8"
+         style="stroke-width:0.264583"
+         x="41.436543"
+         y="69.612862">update status</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="22.141026"
+       y="45.128204"
+       id="text1284"><tspan
+         sodipodi:role="line"
+         id="tspan1282"
+         style="stroke-width:0.264583"
+         x="22.141026"
+         y="45.128204" /></text>
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="20.307693"
+       y="45.551281"
+       id="text2030"><tspan
+         sodipodi:role="line"
+         id="tspan2028"
+         style="stroke-width:0.264583"
+         x="20.307693"
+         y="45.551281">2. get frame from camObj, export frame</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 56.26923,10.01282 v 4.23077 h 2.115384"
+       id="path2772" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 56.26923,14.24359 v 5.782051 h 2.256409"
+       id="path2774" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 56.26923,20.166666 v 4.794872 l 3.298915,0.883942"
+       id="path2776" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke-width:0.264583"
+       x="65.392189"
+       y="68.16172"
+       id="text186-9"><tspan
+         sodipodi:role="line"
+         id="tspan184-3"
+         x="65.392189"
+         y="68.16172"
+         style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:4.23333px;font-family:Arial;-inkscape-font-specification:'Arial, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke-width:0.264583">cameraBox (QGroupBox)</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="45.155006"
+       y="80.783524"
+       id="text400-6"><tspan
+         sodipodi:role="line"
+         id="tspan398-7"
+         style="stroke-width:0.264583"
+         x="45.155006"
+         y="80.783524">camObj (object)</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="94.866547"
+       y="74.648911"
+       id="text412-7"><tspan
+         sodipodi:role="line"
+         id="tspan410-9"
+         style="stroke-width:0.264583"
+         x="94.866547"
+         y="74.648911">preview button</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="94.584503"
+       y="80.430962"
+       id="text420-4"><tspan
+         sodipodi:role="line"
+         id="tspan418-8"
+         style="stroke-width:0.264583"
+         x="94.584503"
+         y="80.430962">record button</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="95.7127"
+       y="87.200188"
+       id="text424-2"><tspan
+         sodipodi:role="line"
+         id="tspan422-1"
+         style="stroke-width:0.264583"
+         x="95.7127"
+         y="87.200188">snap button</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 91.340906,70.277113 v 4.23077 h 2.115384"
+       id="path2772-3" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 91.340906,74.507883 v 5.782051 h 2.256409"
+       id="path2774-8" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="m 91.340906,80.430959 v 4.794872 l 3.298915,0.883942"
+       id="path2776-5" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker4587)"
+       d="m 90.115384,74.602564 c -4.935898,1.692307 -22.141027,9.589743 -22.141027,9.589743"
+       id="path3781" />
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="57.650421"
+       y="94.876038"
+       id="text3785"><tspan
+         sodipodi:role="line"
+         id="tspan3783"
+         style="stroke-width:0.264583"
+         x="57.650421"
+         y="94.876038">QTimer</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="50.919567"
+       y="105.15674"
+       id="text3789"><tspan
+         sodipodi:role="line"
+         id="tspan3787"
+         style="stroke-width:0.264583"
+         x="50.919567"
+         y="105.15674">vidReader (QRunnable)</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="60.509308"
+       y="109.66956"
+       id="text3793"><tspan
+         sodipodi:role="line"
+         id="tspan3791"
+         style="stroke-width:0.264583"
+         x="60.509308"
+         y="109.66956">get frame from camObj</tspan><tspan
+         sodipodi:role="line"
+         style="stroke-width:0.264583"
+         x="60.509308"
+         y="113.20421"
+         id="tspan3797">add frame to <tspan
+   style="font-style:italic"
+   id="tspan4637">frame list </tspan></tspan><tspan
+         sodipodi:role="line"
+         style="stroke-width:0.264583"
+         x="60.509308"
+         y="116.73199"
+         id="tspan3801">send frame back to camObj as signal if previewing</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="3.9888074"
+       y="103.70899"
+       id="text3805"><tspan
+         sodipodi:role="line"
+         id="tspan3803"
+         style="stroke-width:0.264583"
+         x="3.9888074"
+         y="103.70899">vidWriter (QRunnable)</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="2.7921646"
+       y="109.49277"
+       id="text3809"><tspan
+         sodipodi:role="line"
+         id="tspan3807"
+         style="stroke-width:0.264583"
+         x="2.7921646"
+         y="109.49277">looping, watch <tspan
+   style="font-style:italic"
+   id="tspan4641">frame list</tspan></tspan><tspan
+         sodipodi:role="line"
+         style="stroke-width:0.264583"
+         x="2.7921646"
+         y="113.02055"
+         id="tspan3811">write frames to file</tspan><tspan
+         sodipodi:role="line"
+         style="stroke-width:0.264583"
+         x="2.7921646"
+         y="116.54834"
+         id="tspan3813">quit when we hit the kill frame</tspan><tspan
+         sodipodi:role="line"
+         style="stroke-width:0.264583"
+         x="2.7921646"
+         y="120.07613"
+         id="tspan3815" /></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker4587)"
+       d="M 44.874084,86.956002 28.719415,99.720187"
+       id="path3817" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker4587)"
+       d="M 9.9720187,99.321304 C 7.7781744,83.366074 41.284157,82.767754 41.284157,82.767754"
+       id="path3819" />
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="26.52557"
+       y="94.534737"
+       id="text3823"><tspan
+         sodipodi:role="line"
+         id="tspan3821"
+         style="stroke-width:0.264583"
+         x="26.52557"
+         y="94.534737">create</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="6.3820925"
+       y="81.371674"
+       id="text3827"><tspan
+         sodipodi:role="line"
+         id="tspan3825"
+         style="stroke-width:0.264583"
+         x="6.3820925"
+         y="81.371674">send signal back</tspan><tspan
+         sodipodi:role="line"
+         style="stroke-width:0.264583"
+         x="6.3820925"
+         y="84.89946"
+         id="tspan3829">(progress)</tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker4587)"
+       d="m 62.624276,86.756562 1.196644,5.38489"
+       id="path3831" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker4587)"
+       d="m 65.217002,96.3297 3.191044,5.18545"
+       id="path3833" />
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker4587)"
+       d="M 54.846103,101.11627 52.760784,87.831867"
+       id="path3835"
+       sodipodi:nodetypes="cc" />
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="69.405251"
+       y="99.121864"
+       id="text3839"><tspan
+         sodipodi:role="line"
+         id="tspan3837"
+         style="stroke-width:0.264583"
+         x="69.405251"
+         y="99.121864">create new QRunnable every n ms</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:2.82223px;line-height:1.25;font-family:Arial;-inkscape-font-specification:'Arial, Normal';stroke-width:0.264583"
+       x="44.070511"
+       y="84.89743"
+       id="text4633"><tspan
+         sodipodi:role="line"
+         id="tspan4631"
+         style="stroke-width:0.264583"
+         x="44.070511"
+         y="84.89743">create <tspan
+   style="font-style:italic"
+   id="tspan4635">frame list</tspan></tspan></text>
+    <path
+       style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;marker-end:url(#marker5769)"
+       d="m 65.413382,85.621069 23.833333,5.852564"
+       id="path5765" />
+  </g>
+</svg>

@@ -19,15 +19,6 @@ import Fluigent.SDK as fgt
 from config import cfg
 from sbgui_general import *
 
-# info
-__author__ = "Leanne Friedrich"
-__copyright__ = "This data is publicly available according to the NIST statements of copyright, fair use and licensing; see https://www.nist.gov/director/copyright-fair-use-and-licensing-statements-srd-data-and-software"
-__credits__ = ["Leanne Friedrich"]
-__license__ = "MIT"
-__version__ = "1.0.4"
-__maintainer__ = "Leanne Friedrich"
-__email__ = "Leanne.Friedrich@nist.gov"
-__status__ = "Development"
    
 #----------------------------------------------------------------------
 
@@ -136,7 +127,7 @@ class fluChannel:
         fgt.fgt_set_pressure(self.chanNum, runPressure)
         QtCore.QTimer.singleShot(runTime*1000, self.zeroChannel) 
             # QTimer wants time in milliseconds
-        self.fluBox.addRowToCalib(runPressure, runTime)
+        self.fluBox.addRowToCalib(runPressure, runTime, self.chanNum)
     
     
     def zeroChannel(self) -> None:
@@ -562,8 +553,8 @@ class fluBox(connectBox):
         '''Update the plot time range'''
         self.fluPlot.updateRange()
         
-    def updateRunPressure(self, p) -> None:
-        self.pchannels[0].constBox.setText(str(p))
+    def updateRunPressure(self, p:float, channel:int) -> None:
+        self.pchannels[channel].constBox.setText(str(p))
         
     def updateColors(self) -> None:
         '''Update channel colors'''
@@ -571,9 +562,9 @@ class fluBox(connectBox):
         for i in range(len(self.pchannels)):
             self.pchannels[i].updateColor(self.colors[i])
             
-    def addRowToCalib(self, runPressure:float, runTime:float) -> None:
+    def addRowToCalib(self, runPressure:float, runTime:float, chanNum:int) -> None:
         '''add pressure and time to the calibration table'''
-        self.sbWin.calibDialog.addRowToCalib(runPressure, runTime)
+        self.sbWin.calibDialog.addRowToCalib(runPressure, runTime, chanNum)
         
         
     #-----------------------------------------
