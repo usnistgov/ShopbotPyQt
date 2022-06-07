@@ -3,15 +3,16 @@
 
 To view the user guide in browser, visit https://htmlpreview.github.io/?https://github.com/usnistgov/ShopbotPyQt/blob/main/user_guide/user_guide.html
 
-Version 1.0.4
 
 ## Authors
-- Leanne Friedrich
+- Leanne M. Friedrich
     - National Institute of Standards and Technology, MML
     - Leanne.Friedrich@nist.gov
+    - https://github.com/leanfried
+    - ORCID: 0000-0002-0382-3980
 - Jonathan E. Seppala
     - National Institute of Standards and Technology, MML
-    - Jonathan.Seppala@nist.gov
+    - ORCID: 0000-0002-5937-8716
 
 ## Contact
 - Leanne Friedrich
