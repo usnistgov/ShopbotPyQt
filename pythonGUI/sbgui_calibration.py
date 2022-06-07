@@ -241,7 +241,7 @@ class pCalibrationTab(qtw.QWidget):
         '''This is called by the parent, which is the popup called by SBwindow'''
         
         super().__init__(sbWin)
-        self.bTitle=f'Channel {channel}'
+        self.bTitle=f'Channel {channel+1}'
         self.sbWin = sbWin
         self.flowRateFolder = checkPath(cfg.calibration.flowRateFolder)
         self.saved=True
@@ -387,7 +387,6 @@ class pCalibrationTab(qtw.QWidget):
 
     def addRowToCalib(self, runPressure:float, runTime:float) -> None:
         '''add pressure and time to the calibration table'''
-        print('add row to calib')
         i = 0
         while not (self.data['time'][i]=='' and self.data['pressure'][i]==''):
             i+=1

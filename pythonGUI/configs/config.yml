@@ -1,14 +1,13 @@
----
 appid: leanfried.sbgui.v1.0.4
 calibration:
   flowRateFolder: C:/Users/lmf1/OneDrive - National Institute of Standards and Technology
     (NIST)/NIST/data/material properties/flow rates
   initDensity: 1
   initDiam: '0.603'
-  initSpeed: '10.0'
+  initSpeed: '40.0'
 camera:
   bascam:
-    fps: 0
+    fps: 100.0
   diag: 1
 files:
   createSubfolders: true
@@ -39,6 +38,8 @@ layout:
 savePressure: true
 shopbot:
   autoplay: false
+  critTimeOff: 0
+  critTimeOn: 0.1
   dt: 50
   includePositionInTable: true
   meta:
@@ -70,77 +71,8 @@ shopbot:
       units: None
       value: PTFE
   sbpFiles:
-  - BREAK
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleHorizPics.sbp
-  - BREAK
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleVert_0.5_0.500.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleVert_0.5_0.625.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleVert_0.5_0.750.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleVert_0.5_0.875.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleVert_0.5_1.000.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleVert_0.5_1.250.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleVert_0_0.500.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleVert_0_0.625.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleVert_0_0.750.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleVert_0_0.875.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleVert_0_1.000.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleVert_0_1.250.sbp
-  - BREAK
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleVertPics.sbp
-  - BREAK
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesHoriz_0.500.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesHoriz_0.625.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesHoriz_0.750.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesHoriz_0.875.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesHoriz_1.000.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesHoriz_1.250.sbp
-  - BREAK
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesHorizPics.sbp
-  - BREAK
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesVert_0.500.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesVert_0.625.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesVert_0.750.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesVert_0.875.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesVert_1.000.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesVert_1.250.sbp
-  - BREAK
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesVertPics.sbp
-  - BREAK
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+y_0.500.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+y_0.625.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+y_0.750.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+y_0.875.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+y_1.000.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+y_1.250.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+z_0.500.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+z_0.625.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+z_0.750.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+z_0.875.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+z_1.000.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+z_1.250.sbp
-  - BREAK
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXSPics.sbp
-  - BREAK
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesUnder/crossUnder_0.5_0.500.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesUnder/crossUnder_0.5_0.625.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesUnder/crossUnder_0.5_0.750.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesUnder/crossUnder_0.5_0.875.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesUnder/crossUnder_0.5_1.000.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesUnder/crossUnder_0.5_1.250.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesUnder/crossUnder_0_0.500.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesUnder/crossUnder_0_0.625.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesUnder/crossUnder_0_0.750.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesUnder/crossUnder_0_0.875.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesUnder/crossUnder_0_1.000.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesUnder/crossUnder_0_1.250.sbp
-  - BREAK
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesUnder/tripleLinesUnder_0.500.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesUnder/tripleLinesUnder_0.625.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesUnder/tripleLinesUnder_0.750.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesUnder/tripleLinesUnder_0.875.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesUnder/tripleLinesUnder_1.000.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesUnder/tripleLinesUnder_1.250.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/singleLines/speed test.sbp
+  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/calibration/timing_calibration.sbp
   sbpFolder: C:\Users\lmf1\Documents\GitHub\ShopbotPyQt\SBP_files
-  sbpName: BREAK
+  sbpName: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/calibration/timing_calibration.sbp
   showFolder: false
+  zeroDist: 0.1

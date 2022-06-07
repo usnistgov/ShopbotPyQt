@@ -40,14 +40,17 @@ class sbSettingsBox(qtw.QWidget):
         super().__init__(parent)  
         self.parent = parent
         
+        labelStyle = 'font-weight:bold; color:#31698f'
+        
         layout = qtw.QVBoxLayout()
         layout.addStretch()
         
         self.showFolderCheck = fCheckBox(layout, title='Show folder name', tooltip='Show folder name in the file display box', checked=cfg.shopbot.showFolder, func=self.parent.reformatFileList)
         
         self.autoPlayRow = qtw.QVBoxLayout()
-        self.autoPlayLabel = qtw.QLabel('When the print is done:')
-        self.autoPlayRow.addWidget(self.autoPlayLabel)
+        fLabel(self.autoPlayRow, title='When the print is done:', style=labelStyle)
+#         self.autoPlayLabel = qtw.QLabel('When the print is done:')
+#         self.autoPlayRow.addWidget(self.autoPlayLabel)
         self.autoPlay1 = qtw.QRadioButton('Automatically start the next file')
         self.autoPlay2 = qtw.QRadioButton('Wait for the user to press play')
         if self.parent.autoPlay:
@@ -70,14 +73,25 @@ class sbSettingsBox(qtw.QWidget):
         self.savePosCheck = fCheckBox(layout, title='Save x,y,z in Fluigent table', checked=cfg.shopbot.includePositionInTable, func=self.updateSavePos)
         layout.addWidget(self.savePosCheck)
         
-        metaLabel = qtw.QLabel('Metadata to save for each print in *_speeds_*.csv:')
-        layout.addWidget(metaLabel)
+        fLabel(layout, title='SB3 timing error correction:', style=labelStyle)
+        fileForm = qtw.QFormLayout()
+        self.critTimeOn = fLineEdit(fileForm, title='Crit time on (s)', text=str(cfg.shopbot.critTimeOn), tooltip='Turn on the pressure this amount of time before the flag is turned on')
+        self.critTimeOff = fLineEdit(fileForm, title='Crit time off (s)', text=str(cfg.shopbot.critTimeOff), tooltip='Turn off the pressure this amount of time after the flag is turned on')
+        self.zeroDist = fLineEdit(fileForm, title='Zero distance (mm)', text=str(cfg.shopbot.zeroDist), tooltip='If we are within this distance from a point, we are considered to be at the point. In other words, margin of error or tolerance on distance measurements.')
+        for w in [self.critTimeOn, self.critTimeOff, self.zeroDist]:
+            w.setMaximumWidth(100)
+        layout.addLayout(fileForm)
+        
+#         metaLabel = qtw.QLabel('Metadata to save for each print in *_speeds_*.csv:')
+#         layout.addWidget(metaLabel)
+        fLabel(layout, title='Metadata to save for each print in *_speeds_*.csv:', style=labelStyle)
         self.metaTable = qtw.QTableWidget(30,3)
-        self.metaTable.setColumnWidth(0, 200);
-        self.metaTable.setColumnWidth(1, 100);
-        self.metaTable.setColumnWidth(2, 100);
-        self.metaTable.setMinimumHeight(600)
+        self.metaTable.setColumnWidth(0, 200)
+        self.metaTable.setColumnWidth(1, 100)
+        self.metaTable.setColumnWidth(2, 100)
+        self.metaTable.setMinimumHeight(400)
         self.metaTable.setMinimumWidth(300)
+        self.metaTable.setMaximumWidth(500)
         newitem = qtw.QTableWidgetItem('property')
         self.metaTable.setItem(0, 0, newitem)
         newitem = qtw.QTableWidgetItem('value')
@@ -103,6 +117,18 @@ class sbSettingsBox(qtw.QWidget):
         layout.addWidget(self.metaTable)
         
         self.setLayout(layout)
+        
+    def getCritTimeOn(self) -> float:
+        '''get the critTimeOn'''
+        return float(self.critTimeOn.text())
+    
+    def getCritTimeOff(self) -> float:
+        '''get the critTimeOn'''
+        return float(self.critTimeOff.text())
+    
+    def getZeroDist(self) -> float:
+        '''get the critTimeOn'''
+        return float(self.zeroDist.text())
         
         
     def changeMeta(self) -> None:
@@ -315,6 +341,9 @@ class sbBox(connectBox):
         for x in range(self.sbpNameList.count()):
             l.append(self.getFullPath(self.sbpNameList.item(x).text()))
         cfg1.shopbot.sbpFiles = l
+        cfg1.shopbot.critTimeOn = self.settingsBox.getCritTimeOn()
+        cfg1.shopbot.critTimeOff = self.settingsBox.getCritTimeOff()
+        cfg1.shopbot.zeroDist = self.settingsBox.getZeroDist()
         for key in self.meta:
             cfg1.shopbot.meta[key].value = self.meta[key][0]
             cfg1.shopbot.meta[key].units = self.meta[key][1]
@@ -608,23 +637,7 @@ class sbBox(connectBox):
     
     ### start/stop
     
-#     def findStageSpeed(self) -> float:
-#         '''find the stage speed from the current shopbot file'''
-#         with open(self.sbpName, mode='r') as f:
-#             cont = True
-#             l = 'a'
-#             while cont and len(l)>0:
-#                 l = f.readline()
-#                 if l.startswith('MS'):
-#                     cont = False
-#         if len(l)==0:
-#             return -1
-#         else:
-#             return float(re.split(',|\n',l)[1])
-        
-    
-    
-                
+
     def saveSpeeds(self) -> None:
         '''create a csv file that describes the run speeds'''
         try:
@@ -650,7 +663,7 @@ class sbBox(connectBox):
                 writer.writerow([f'calibc channel {i}', 'mm/s', calibc])
                 
             # read values from the sbp file
-            sh = readSBPHeader(self) 
+            sh = SBPHeader(self.sbpName) 
             t1 = sh.table()
             for row in t1:
                 writer.writerow(row)
@@ -709,7 +722,7 @@ class sbBox(connectBox):
             
         self.updateStatus(f'Running SBP file {self.sbpName}, critFlag = {self.critFlag}', True)
         
-        self.sbpTiming = SBPtimings(self.sbpName, self.sbWin)   # this object updates changes in state
+        self.sbpTiming = SBPtimings(self.sbpName, self.sbWin, critTimeOn=self.settingsBox.getCritTimeOn(), critTimeOff=self.settingsBox.getCritTimeOff(), zero=self.settingsBox.getZeroDist())   # this object updates changes in state
 
         # send the file to the shopbot via command line
         appl = self.sb3File
@@ -807,7 +820,7 @@ class sbBox(connectBox):
         
         self.allowEnd = self.sbpTiming.check(sbFlag, self.x, self.y, self.z)  # update status
         
-        # for each channel, check if the flag is up if flag 0 is up for channel 0, the output will be odd, so  flag mod 2 (2=2^(0+1)) will be 1, which is 2^0. If flag 1 is up for channel 1, it adds 2 to the output, e.g. if we want channel 1 on, the value will be 10, so 10%2=2, which is 2^1
+#         # for each channel, check if the flag is up if flag 0 is up for channel 0, the output will be odd, so  flag mod 2 (2=2^(0+1)) will be 1, which is 2^0. If flag 1 is up for channel 1, it adds 2 to the output, e.g. if we want channel 1 on, the value will be 10, so 10%2=2, which is 2^1
 #         for i in self.channelsTriggered:
 #             if sbFlag%2**(i+1)==2**i:
 #                 # this channel is on
@@ -819,7 +832,10 @@ class sbBox(connectBox):
 #                 if i<len(self.sbWin.fluBox.pchannels):
 #                     channel = self.sbWin.fluBox.pchannels[i]
 #                     press = int(channel.constBox.text())
-#                     fgt.fgt_set_pressure(i, press)
+# #                     fgt.fgt_set_pressure(i, press)
+#                     print(i,press)
+#                     error = fgt.fgt_set_pressure(i, press)
+#                     print(f'fluigent return code: {error}')
 # #                     QtCore.QTimer.singleShot(500, lambda:fgt.fgt_set_pressure(i,press))
 # #                     fgt.fgt_set_pressure(i, press)
 
@@ -842,7 +858,7 @@ class sbBox(connectBox):
 #                 return 
         
         # if no channels are turned on, turn off all of the channels       
-        self.sbWin.fluBox.resetAllChannels(-1)
+#         self.sbWin.fluBox.resetAllChannels(-1)
 
     
     ### end           

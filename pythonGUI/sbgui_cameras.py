@@ -674,7 +674,11 @@ class bascam(camera):
             # get camera stats
            # self.setFrameRateAuto()                             # read the default frame rate from the camera
         
-            self.setFrameRate(cfg.camera.bascam.fps)
+            fps = cfg.camera.bascam.fps
+            if fps>0:
+                self.setFrameRate(fps)
+            else:
+                self.setFrameRate(100)
 
             tryFrame = 0
             while tryFrame<10:

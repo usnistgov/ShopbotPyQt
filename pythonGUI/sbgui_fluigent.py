@@ -105,16 +105,28 @@ class fluChannel:
         '''update color of text items'''
         try:
             for o in [self.label, self.label2, self.readLabel, self.setButton, self.constTimeButton, self.setBox, self.constTimeBox, self.constBox]:
-                o.setStyleSheet('color: '+color+';')  
+                o.setStyleSheet(f'color: {color};')  
                 # this makes the label our input color
         except:
             logging.warning(f'Failed to update color of channel {self.chanNum} to {color}')
+            
+            
+    def goToPressure(self, runPressure:int, status:bool) -> None:
+        '''to to the given pressure'''
+        fgt.fgt_set_pressure(self.chanNum, runPressure)
+        if status:
+            self.fluBox.updateStatus(f'Setting channel {self.chanNum+1} to {runPressure} mbar', True)
+            
+    def goToRunPressure(self) -> None:
+        '''set the pressure for this channel to the pressure in the constBox'''
+        runPressure = int(self.constBox.text())
+        self.goToPressure(runPressure, False)
     
     def setPressure(self) -> None:
         '''set the pressure for this channel to the pressure in the setBox'''
         runPressure = int(self.setBox.text())
-        fgt.fgt_set_pressure(self.chanNum, runPressure)
-        self.fluBox.updateStatus(f'Setting channel {self.chanNum+1} to {runPressure} mbar', True)
+        self.goToPressure(runPressure, True)
+        
     
     
     def runConstTime(self) -> None:
@@ -130,9 +142,10 @@ class fluChannel:
         self.fluBox.addRowToCalib(runPressure, runTime, self.chanNum)
     
     
-    def zeroChannel(self) -> None:
+    def zeroChannel(self, status:bool=True) -> None:
         '''zero the channel pressure'''
-        self.fluBox.updateStatus(f'Setting channel {self.chanNum+1} to 0 mbar', True)
+        if status:
+            self.fluBox.updateStatus(f'Setting channel {self.chanNum+1} to 0 mbar', True)
         fgt.fgt_set_pressure(self.chanNum, 0)
 
         
@@ -537,6 +550,14 @@ class fluBox(connectBox):
         return cfg1
         
     #-----------------------------------------
+    
+    def turnOnChannel(self, channum:int) -> None:
+        '''turn the pressure channel on to the run pressure'''
+        self.pchannels[channum].goToRunPressure()
+        
+    def turnOffChannel(self, channum:int) -> None:
+        '''turn the pressure channel on to the run pressure'''
+        self.pchannels[channum].zeroChannel()
 
     def resetAllChannels(self, exclude:int) -> None:
         '''Set all of the channels to 0 except for exclude (0-indexed). exclude is a channel that we want to keep on. Input -1 to turn everything off'''
@@ -599,7 +620,7 @@ class fluBox(connectBox):
                     xyzhead = ['x(mm)', 'y(mm)', 'z(mm)']
                 else:
                     xyzhead = []
-                if self.savePresure:
+                if self.savePressure:
                     phead = [f'Channel_{i}_pressure(mbar)' for i in range(self.numChans)]
                 else:
                     phead = []

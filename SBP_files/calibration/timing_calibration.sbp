@@ -1,12 +1,12 @@
-&slideW = 25.00
-&slideH = 75.00
-&margin = 5.00
-&spacing = 5.00
-&nid = 0.60
-&nd = 0.91
-&downdisp = 0.00
-&wait1 = 1.00
-&wait2 = 0.50
+&slideW = 25.000
+&slideH = 75.000
+&margin = 5.000
+&spacing = 5.000
+&nid = 0.603
+&nd = 0.907
+&downdisp = 0.000
+&wait1 = 1.000
+&wait2 = 0.500
 VD , , 1
 VU, 157.480315, 157.480315, -157.480315
 MS, 10, 10
@@ -20,14 +20,10 @@ MS, 5, 5
 J2, &slideW/2, &spacing
 JZ, -&slideW + 0.5*&spacing
 SO, 1, 1
-MY, &spacing + 10.0
-JZ, -&slideW + 0.5*&spacing
 MY, &spacing + 12.0
 SO, 1, 0
 JZ, -&slideW + 0.75*&spacing
 SO, 1, 1
-MY, &spacing + 2.0
-JZ, -&slideW + 0.75*&spacing
 MY, &spacing
 SO, 1, 0
 JZ, -&slideW + &spacing
@@ -36,14 +32,10 @@ MS, 10, 10
 J2, &slideW/2, &spacing
 JZ, -&slideW + 1.5*&spacing
 SO, 1, 1
-MY, &spacing + 10.0
-JZ, -&slideW + 1.5*&spacing
 MY, &spacing + 12.0
 SO, 1, 0
 JZ, -&slideW + 1.75*&spacing
 SO, 1, 1
-MY, &spacing + 2.0
-JZ, -&slideW + 1.75*&spacing
 MY, &spacing
 SO, 1, 0
 JZ, -&slideW + 2*&spacing
@@ -52,14 +44,10 @@ MS, 15, 15
 J2, &slideW/2, &spacing
 JZ, -&slideW + 2.5*&spacing
 SO, 1, 1
-MY, &spacing + 10.0
-JZ, -&slideW + 2.5*&spacing
 MY, &spacing + 12.0
 SO, 1, 0
 JZ, -&slideW + 2.75*&spacing
 SO, 1, 1
-MY, &spacing + 2.0
-JZ, -&slideW + 2.75*&spacing
 MY, &spacing
 SO, 1, 0
 JZ, -&slideW + 3*&spacing
@@ -68,14 +56,10 @@ MS, 20, 20
 J2, &slideW/2, &spacing
 JZ, -&slideW + 3.5*&spacing
 SO, 1, 1
-MY, &spacing + 10.0
-JZ, -&slideW + 3.5*&spacing
 MY, &spacing + 12.0
 SO, 1, 0
 JZ, -&slideW + 3.75*&spacing
 SO, 1, 1
-MY, &spacing + 2.0
-JZ, -&slideW + 3.75*&spacing
 MY, &spacing
 SO, 1, 0
 JZ, -&slideW + 4*&spacing
@@ -84,14 +68,10 @@ MS, 40, 40
 J2, &slideW/2, &spacing
 JZ, -&slideW + 4.5*&spacing
 SO, 1, 1
-MY, &spacing + 10.0
-JZ, -&slideW + 4.5*&spacing
 MY, &spacing + 12.0
 SO, 1, 0
 JZ, -&slideW + 4.75*&spacing
 SO, 1, 1
-MY, &spacing + 2.0
-JZ, -&slideW + 4.75*&spacing
 MY, &spacing
 SO, 1, 0
 JZ, -&slideW + 5*&spacing
@@ -101,14 +81,10 @@ MS, 5, 5
 J2, &slideW/2, 2*&spacing + 12
 JZ, -&slideW + 0.5*&spacing
 SO, 1, 1
-MY, 2*&spacing + 20.0
-JZ, -&slideW + 0.5*&spacing
 MY, 2*&spacing + 22.0
 SO, 1, 0
 JZ, -&slideW + 0.75*&spacing
 SO, 1, 1
-MY, 2*&spacing + 14.0
-JZ, -&slideW + 0.75*&spacing
 MY, 2*&spacing + 12
 SO, 1, 0
 JZ, -&slideW + &spacing
@@ -117,14 +93,10 @@ MS, 10, 10
 J2, &slideW/2, 2*&spacing + 12
 JZ, -&slideW + 1.5*&spacing
 SO, 1, 1
-MY, 2*&spacing + 20.0
-JZ, -&slideW + 1.5*&spacing
 MY, 2*&spacing + 22.0
 SO, 1, 0
 JZ, -&slideW + 1.75*&spacing
 SO, 1, 1
-MY, 2*&spacing + 14.0
-JZ, -&slideW + 1.75*&spacing
 MY, 2*&spacing + 12
 SO, 1, 0
 JZ, -&slideW + 2*&spacing
@@ -133,14 +105,10 @@ MS, 15, 15
 J2, &slideW/2, 2*&spacing + 12
 JZ, -&slideW + 2.5*&spacing
 SO, 1, 1
-MY, 2*&spacing + 20.0
-JZ, -&slideW + 2.5*&spacing
 MY, 2*&spacing + 22.0
 SO, 1, 0
 JZ, -&slideW + 2.75*&spacing
 SO, 1, 1
-MY, 2*&spacing + 14.0
-JZ, -&slideW + 2.75*&spacing
 MY, 2*&spacing + 12
 SO, 1, 0
 JZ, -&slideW + 3*&spacing
@@ -149,14 +117,10 @@ MS, 20, 20
 J2, &slideW/2, 2*&spacing + 12
 JZ, -&slideW + 3.5*&spacing
 SO, 1, 1
-MY, 2*&spacing + 20.0
-JZ, -&slideW + 3.5*&spacing
 MY, 2*&spacing + 22.0
 SO, 1, 0
 JZ, -&slideW + 3.75*&spacing
 SO, 1, 1
-MY, 2*&spacing + 14.0
-JZ, -&slideW + 3.75*&spacing
 MY, 2*&spacing + 12
 SO, 1, 0
 JZ, -&slideW + 4*&spacing
@@ -165,14 +129,10 @@ MS, 40, 40
 J2, &slideW/2, 2*&spacing + 12
 JZ, -&slideW + 4.5*&spacing
 SO, 1, 1
-MY, 2*&spacing + 20.0
-JZ, -&slideW + 4.5*&spacing
 MY, 2*&spacing + 22.0
 SO, 1, 0
 JZ, -&slideW + 4.75*&spacing
 SO, 1, 1
-MY, 2*&spacing + 14.0
-JZ, -&slideW + 4.75*&spacing
 MY, 2*&spacing + 12
 SO, 1, 0
 JZ, -&slideW + 5*&spacing
@@ -182,14 +142,10 @@ MS, 5, 5
 J2, &slideW/2, 3*&spacing + 22
 JZ, -&slideW + 0.5*&spacing
 SO, 1, 1
-MY, 3*&spacing + 28.0
-JZ, -&slideW + 0.5*&spacing
 MY, 3*&spacing + 30.0
 SO, 1, 0
 JZ, -&slideW + 0.75*&spacing
 SO, 1, 1
-MY, 3*&spacing + 24.0
-JZ, -&slideW + 0.75*&spacing
 MY, 3*&spacing + 22
 SO, 1, 0
 JZ, -&slideW + &spacing
@@ -198,14 +154,10 @@ MS, 10, 10
 J2, &slideW/2, 3*&spacing + 22
 JZ, -&slideW + 1.5*&spacing
 SO, 1, 1
-MY, 3*&spacing + 28.0
-JZ, -&slideW + 1.5*&spacing
 MY, 3*&spacing + 30.0
 SO, 1, 0
 JZ, -&slideW + 1.75*&spacing
 SO, 1, 1
-MY, 3*&spacing + 24.0
-JZ, -&slideW + 1.75*&spacing
 MY, 3*&spacing + 22
 SO, 1, 0
 JZ, -&slideW + 2*&spacing
@@ -214,14 +166,10 @@ MS, 15, 15
 J2, &slideW/2, 3*&spacing + 22
 JZ, -&slideW + 2.5*&spacing
 SO, 1, 1
-MY, 3*&spacing + 28.0
-JZ, -&slideW + 2.5*&spacing
 MY, 3*&spacing + 30.0
 SO, 1, 0
 JZ, -&slideW + 2.75*&spacing
 SO, 1, 1
-MY, 3*&spacing + 24.0
-JZ, -&slideW + 2.75*&spacing
 MY, 3*&spacing + 22
 SO, 1, 0
 JZ, -&slideW + 3*&spacing
@@ -230,14 +178,10 @@ MS, 20, 20
 J2, &slideW/2, 3*&spacing + 22
 JZ, -&slideW + 3.5*&spacing
 SO, 1, 1
-MY, 3*&spacing + 28.0
-JZ, -&slideW + 3.5*&spacing
 MY, 3*&spacing + 30.0
 SO, 1, 0
 JZ, -&slideW + 3.75*&spacing
 SO, 1, 1
-MY, 3*&spacing + 24.0
-JZ, -&slideW + 3.75*&spacing
 MY, 3*&spacing + 22
 SO, 1, 0
 JZ, -&slideW + 4*&spacing
@@ -246,14 +190,10 @@ MS, 40, 40
 J2, &slideW/2, 3*&spacing + 22
 JZ, -&slideW + 4.5*&spacing
 SO, 1, 1
-MY, 3*&spacing + 28.0
-JZ, -&slideW + 4.5*&spacing
 MY, 3*&spacing + 30.0
 SO, 1, 0
 JZ, -&slideW + 4.75*&spacing
 SO, 1, 1
-MY, 3*&spacing + 24.0
-JZ, -&slideW + 4.75*&spacing
 MY, 3*&spacing + 22
 SO, 1, 0
 JZ, -&slideW + 5*&spacing
@@ -263,14 +203,10 @@ MS, 5, 5
 J2, &slideW/2, 4*&spacing + 30
 JZ, -&slideW + 0.5*&spacing
 SO, 1, 1
-MY, 4*&spacing + 34.0
-JZ, -&slideW + 0.5*&spacing
 MY, 4*&spacing + 36.0
 SO, 1, 0
 JZ, -&slideW + 0.75*&spacing
 SO, 1, 1
-MY, 4*&spacing + 32.0
-JZ, -&slideW + 0.75*&spacing
 MY, 4*&spacing + 30
 SO, 1, 0
 JZ, -&slideW + &spacing
@@ -279,14 +215,10 @@ MS, 10, 10
 J2, &slideW/2, 4*&spacing + 30
 JZ, -&slideW + 1.5*&spacing
 SO, 1, 1
-MY, 4*&spacing + 34.0
-JZ, -&slideW + 1.5*&spacing
 MY, 4*&spacing + 36.0
 SO, 1, 0
 JZ, -&slideW + 1.75*&spacing
 SO, 1, 1
-MY, 4*&spacing + 32.0
-JZ, -&slideW + 1.75*&spacing
 MY, 4*&spacing + 30
 SO, 1, 0
 JZ, -&slideW + 2*&spacing
@@ -295,14 +227,10 @@ MS, 15, 15
 J2, &slideW/2, 4*&spacing + 30
 JZ, -&slideW + 2.5*&spacing
 SO, 1, 1
-MY, 4*&spacing + 34.0
-JZ, -&slideW + 2.5*&spacing
 MY, 4*&spacing + 36.0
 SO, 1, 0
 JZ, -&slideW + 2.75*&spacing
 SO, 1, 1
-MY, 4*&spacing + 32.0
-JZ, -&slideW + 2.75*&spacing
 MY, 4*&spacing + 30
 SO, 1, 0
 JZ, -&slideW + 3*&spacing
@@ -311,14 +239,10 @@ MS, 20, 20
 J2, &slideW/2, 4*&spacing + 30
 JZ, -&slideW + 3.5*&spacing
 SO, 1, 1
-MY, 4*&spacing + 34.0
-JZ, -&slideW + 3.5*&spacing
 MY, 4*&spacing + 36.0
 SO, 1, 0
 JZ, -&slideW + 3.75*&spacing
 SO, 1, 1
-MY, 4*&spacing + 32.0
-JZ, -&slideW + 3.75*&spacing
 MY, 4*&spacing + 30
 SO, 1, 0
 JZ, -&slideW + 4*&spacing
@@ -327,14 +251,10 @@ MS, 40, 40
 J2, &slideW/2, 4*&spacing + 30
 JZ, -&slideW + 4.5*&spacing
 SO, 1, 1
-MY, 4*&spacing + 34.0
-JZ, -&slideW + 4.5*&spacing
 MY, 4*&spacing + 36.0
 SO, 1, 0
 JZ, -&slideW + 4.75*&spacing
 SO, 1, 1
-MY, 4*&spacing + 32.0
-JZ, -&slideW + 4.75*&spacing
 MY, 4*&spacing + 30
 SO, 1, 0
 JZ, -&slideW + 5*&spacing
@@ -344,14 +264,10 @@ MS, 5, 5
 J2, &slideW/2, 5*&spacing + 36
 JZ, -&slideW + 0.5*&spacing
 SO, 1, 1
-MY, 5*&spacing + 38.0
-JZ, -&slideW + 0.5*&spacing
 MY, 5*&spacing + 40.0
 SO, 1, 0
 JZ, -&slideW + 0.75*&spacing
 SO, 1, 1
-MY, 5*&spacing + 38.0
-JZ, -&slideW + 0.75*&spacing
 MY, 5*&spacing + 36
 SO, 1, 0
 JZ, -&slideW + &spacing
@@ -360,14 +276,10 @@ MS, 10, 10
 J2, &slideW/2, 5*&spacing + 36
 JZ, -&slideW + 1.5*&spacing
 SO, 1, 1
-MY, 5*&spacing + 38.0
-JZ, -&slideW + 1.5*&spacing
 MY, 5*&spacing + 40.0
 SO, 1, 0
 JZ, -&slideW + 1.75*&spacing
 SO, 1, 1
-MY, 5*&spacing + 38.0
-JZ, -&slideW + 1.75*&spacing
 MY, 5*&spacing + 36
 SO, 1, 0
 JZ, -&slideW + 2*&spacing
@@ -376,14 +288,10 @@ MS, 15, 15
 J2, &slideW/2, 5*&spacing + 36
 JZ, -&slideW + 2.5*&spacing
 SO, 1, 1
-MY, 5*&spacing + 38.0
-JZ, -&slideW + 2.5*&spacing
 MY, 5*&spacing + 40.0
 SO, 1, 0
 JZ, -&slideW + 2.75*&spacing
 SO, 1, 1
-MY, 5*&spacing + 38.0
-JZ, -&slideW + 2.75*&spacing
 MY, 5*&spacing + 36
 SO, 1, 0
 JZ, -&slideW + 3*&spacing
@@ -392,14 +300,10 @@ MS, 20, 20
 J2, &slideW/2, 5*&spacing + 36
 JZ, -&slideW + 3.5*&spacing
 SO, 1, 1
-MY, 5*&spacing + 38.0
-JZ, -&slideW + 3.5*&spacing
 MY, 5*&spacing + 40.0
 SO, 1, 0
 JZ, -&slideW + 3.75*&spacing
 SO, 1, 1
-MY, 5*&spacing + 38.0
-JZ, -&slideW + 3.75*&spacing
 MY, 5*&spacing + 36
 SO, 1, 0
 JZ, -&slideW + 4*&spacing
@@ -408,14 +312,10 @@ MS, 40, 40
 J2, &slideW/2, 5*&spacing + 36
 JZ, -&slideW + 4.5*&spacing
 SO, 1, 1
-MY, 5*&spacing + 38.0
-JZ, -&slideW + 4.5*&spacing
 MY, 5*&spacing + 40.0
 SO, 1, 0
 JZ, -&slideW + 4.75*&spacing
 SO, 1, 1
-MY, 5*&spacing + 38.0
-JZ, -&slideW + 4.75*&spacing
 MY, 5*&spacing + 36
 SO, 1, 0
 JZ, -&slideW + 5*&spacing
@@ -425,14 +325,10 @@ MS, 5, 5
 J2, &slideW/2, 6*&spacing + 40
 JZ, -&slideW + 0.5*&spacing
 SO, 1, 1
-MY, 6*&spacing + 40.0
-JZ, -&slideW + 0.5*&spacing
 MY, 6*&spacing + 42.0
 SO, 1, 0
 JZ, -&slideW + 0.75*&spacing
 SO, 1, 1
-MY, 6*&spacing + 42.0
-JZ, -&slideW + 0.75*&spacing
 MY, 6*&spacing + 40
 SO, 1, 0
 JZ, -&slideW + &spacing
@@ -441,14 +337,10 @@ MS, 10, 10
 J2, &slideW/2, 6*&spacing + 40
 JZ, -&slideW + 1.5*&spacing
 SO, 1, 1
-MY, 6*&spacing + 40.0
-JZ, -&slideW + 1.5*&spacing
 MY, 6*&spacing + 42.0
 SO, 1, 0
 JZ, -&slideW + 1.75*&spacing
 SO, 1, 1
-MY, 6*&spacing + 42.0
-JZ, -&slideW + 1.75*&spacing
 MY, 6*&spacing + 40
 SO, 1, 0
 JZ, -&slideW + 2*&spacing
@@ -457,14 +349,10 @@ MS, 15, 15
 J2, &slideW/2, 6*&spacing + 40
 JZ, -&slideW + 2.5*&spacing
 SO, 1, 1
-MY, 6*&spacing + 40.0
-JZ, -&slideW + 2.5*&spacing
 MY, 6*&spacing + 42.0
 SO, 1, 0
 JZ, -&slideW + 2.75*&spacing
 SO, 1, 1
-MY, 6*&spacing + 42.0
-JZ, -&slideW + 2.75*&spacing
 MY, 6*&spacing + 40
 SO, 1, 0
 JZ, -&slideW + 3*&spacing
@@ -473,14 +361,10 @@ MS, 20, 20
 J2, &slideW/2, 6*&spacing + 40
 JZ, -&slideW + 3.5*&spacing
 SO, 1, 1
-MY, 6*&spacing + 40.0
-JZ, -&slideW + 3.5*&spacing
 MY, 6*&spacing + 42.0
 SO, 1, 0
 JZ, -&slideW + 3.75*&spacing
 SO, 1, 1
-MY, 6*&spacing + 42.0
-JZ, -&slideW + 3.75*&spacing
 MY, 6*&spacing + 40
 SO, 1, 0
 JZ, -&slideW + 4*&spacing
@@ -489,14 +373,10 @@ MS, 40, 40
 J2, &slideW/2, 6*&spacing + 40
 JZ, -&slideW + 4.5*&spacing
 SO, 1, 1
-MY, 6*&spacing + 40.0
-JZ, -&slideW + 4.5*&spacing
 MY, 6*&spacing + 42.0
 SO, 1, 0
 JZ, -&slideW + 4.75*&spacing
 SO, 1, 1
-MY, 6*&spacing + 42.0
-JZ, -&slideW + 4.75*&spacing
 MY, 6*&spacing + 40
 SO, 1, 0
 JZ, -&slideW + 5*&spacing

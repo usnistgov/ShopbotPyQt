@@ -6,6 +6,8 @@ calibration:
   initDiam: '0.603'
   initSpeed: '5.0'
 camera:
+  bascam:
+    fps: 100.0
   diag: 1
 files:
   createSubfolders: true
@@ -13,21 +15,22 @@ files:
   duplicateFormat: '{0:0=3d}'
   includeDateRadio: 0
   includeSBInFile: true
-  includeSBRadio: 2
+  includeSBRadio: 1
   includeSampleInFile: true
   includeSampleInFolder: true
   includeTimeInFile: true
-  save: C:/myfolder/Shopbot Videos
+  save: C:myfolder\test
   separator: _
-  timeFormat: '%y%m%d_%H%M%S'
+  tag: test
+  timeFormat: '%y%m%d_%H%M%S_%f'
 fluigent:
   colors:
-  - '#3f8dd1'
+  - '#3f8d88'
   - '#b0401e'
   - '#3e8a5b'
   - '#b8a665'
-  dt: 200
-  pmax: 7000
+  dt: 50
+  pmax: 6000
   savePressure: true
   trange: 60
 layout:
@@ -35,5 +38,41 @@ layout:
 savePressure: true
 shopbot:
   autoplay: false
-  sbpFolder: C:/myfolder/GitHub/ShopbotPyQt/SBP files
+  critTimeOn: 0.1
+  critTimeOff: 0
+  zeroDist: 0.1
+  dt: 50
+  includePositionInTable: true
+  meta:
+    camera_magnification:
+      units: x
+      value: '0.5'
+    camera_position:
+      units: None
+      value: side
+    nozzle_inner_diameter:
+      units: mm
+      value: '0.603'
+    nozzle_length:
+      units: mm
+      value: '38'
+    nozzle_material:
+      units: None
+      value: stainless steel
+    nozzle_outer_diameter:
+      units: mm
+      value: '0.908'
+    tubing_inner_diameter:
+      units: mm
+      value: '0.79375'
+    tubing_length:
+      units: mm
+      value: '280'
+    tubing_material:
+      units: None
+      value: PTFE
+  sbpFiles:
+  - No file selected
+  sbpFolder: C:\Users\user\Documents\GitHub\ShopbotPyQt\SBP_files
   sbpName: No file selected
+  showFolder: false
