@@ -34,6 +34,8 @@ class SBPHeader:
     '''read header data from the current shopbot file and return an object'''
     
     def __init__(self, sbpName:str):
+        if not os.path.exists(sbpName):
+            return
         self.SBPfile=os.path.basename(sbpName)
         self.hrows = 0  # number of rows in the header
         self.vardefs = {}
@@ -302,7 +304,7 @@ class SBPPoints:
                 else:
                     self.pressures[channel] = 0
                 if len(self.points)>0:
-                    self.points[-1][f'p{int(channel)}_after'] = self.pressures[channel]
+                    self.points[-1][f'p{int(channel)}_after'] = self.pressures[channel]   # 0-indexed
         elif spl[0][0] in ['M', 'J']:
             if spl[0][1] in ['X', 'Y', 'Z']:
                 # MX, MY, MZ, JX, JY, JZ

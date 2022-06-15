@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 '''Shopbot GUI Shopbot functions'''
 
-# 
-from PyQt5 import QtCore, QtGui
-import PyQt5.QtWidgets as qtw
+# external packages
+from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtGui import QIcon, QDoubleValidator, QIntValidator
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QButtonGroup, QFormLayout, QMainWindow, QLabel, QHBoxLayout, QPushButton, QToolButton, QToolBar, QListWidget, QAbstractItemView, QRadioButton, QGridLayout, QListWidgetItem
 import os, sys
 import winreg
 import subprocess
@@ -15,22 +16,17 @@ import time
 import win32gui, win32api, win32con
 
 # local packages
-# import Fluigent.SDK as fgt
 from config import cfg
 from sbgui_general import *
 from sbgui_print import *
-# sys.path.append("..\\")
-# sys.path.append("..\\SBP files")
-# from sbpRead import *
+from sbgui_flags import *
+from sbgui_sbList import *
 
 
 
 ##################################################  
-
-
-
-#--------------------------------      
-class sbSettingsBox(qtw.QWidget):
+  
+class sbSettingsBox(QWidget):
     '''This opens a window that holds settings about logging for the shopbot.'''
     
     
@@ -39,84 +35,91 @@ class sbSettingsBox(qtw.QWidget):
         
         super().__init__(parent)  
         self.parent = parent
+        layout = QVBoxLayout()
         
-        labelStyle = 'font-weight:bold; color:#31698f'
+        # SBP folder
+        fLabel(layout, title='.SBP file folder', style=labelStyle())
+        self.folderRow = fileSetOpenRow(width=600, title='Set SBP folder',
+                                   initFolder=self.parent.sbpFolder, 
+                                   tooltip='Open SBP folder',
+                                  setFunc = self.setSBPFolder,
+                                  openFunc = self.openSBPFolder)
+        layout.addLayout(self.folderRow)
+
+        # display settings
+        fLabel(layout, title='File queue', style=labelStyle())
+        self.showFolderCheck = fCheckBox(layout, title='Show full path in file queue', 
+                                         tooltip='Show folder name in the list of Shopbot files',
+                                         checked=cfg.shopbot.showFolder, 
+                                         func=self.parent.reformatFileList)
         
-        layout = qtw.QVBoxLayout()
-        layout.addStretch()
-        
-        self.showFolderCheck = fCheckBox(layout, title='Show folder name', tooltip='Show folder name in the file display box', checked=cfg.shopbot.showFolder, func=self.parent.reformatFileList)
-        
-        self.autoPlayRow = qtw.QVBoxLayout()
-        fLabel(self.autoPlayRow, title='When the print is done:', style=labelStyle)
-#         self.autoPlayLabel = qtw.QLabel('When the print is done:')
-#         self.autoPlayRow.addWidget(self.autoPlayLabel)
-        self.autoPlay1 = qtw.QRadioButton('Automatically start the next file')
-        self.autoPlay2 = qtw.QRadioButton('Wait for the user to press play')
-        if self.parent.autoPlay:
-            self.autoPlay1.setChecked(True)
-        else:
-            self.autoPlay2.setChecked(True)
-        self.autoPlayGroup = qtw.QButtonGroup()
-        for i,b in enumerate([self.autoPlay1, self.autoPlay2]):
-            self.autoPlayGroup.addButton(b, i)
-            self.autoPlayRow.addWidget(b)
-        self.autoPlayGroup.buttonClicked.connect(self.changeautoPlay)
-        layout.addLayout(self.autoPlayRow)
-        self.fsor = fileSetOpenRow(self, width=400, title='Set SBP folder', initFolder=self.parent.sbpFolder, tooltip='Open SBP folder')
-        folderRow = self.fsor.makeDisplay()
-        self.fsor.saveButt.clicked.connect(self.setSBPFolder)
-        self.fsor.saveFolderLink.clicked.connect(self.openSBPFolder)
-        
-        layout.addLayout(folderRow)
-        
-        self.savePosCheck = fCheckBox(layout, title='Save x,y,z in Fluigent table', checked=cfg.shopbot.includePositionInTable, func=self.updateSavePos)
-        layout.addWidget(self.savePosCheck)
-        
-        fLabel(layout, title='SB3 timing error correction:', style=labelStyle)
-        fileForm = qtw.QFormLayout()
-        self.critTimeOn = fLineEdit(fileForm, title='Crit time on (s)', text=str(cfg.shopbot.critTimeOn), tooltip='Turn on the pressure this amount of time before the flag is turned on')
-        self.critTimeOff = fLineEdit(fileForm, title='Crit time off (s)', text=str(cfg.shopbot.critTimeOff), tooltip='Turn off the pressure this amount of time after the flag is turned on')
-        self.zeroDist = fLineEdit(fileForm, title='Zero distance (mm)', text=str(cfg.shopbot.zeroDist), tooltip='If we are within this distance from a point, we are considered to be at the point. In other words, margin of error or tolerance on distance measurements.')
-        for w in [self.critTimeOn, self.critTimeOff, self.zeroDist]:
+        # save settings
+        fLabel(layout, title='Saving time series', style=labelStyle())
+        self.savePosCheck = fCheckBox(layout, title='Save x,y,z in time series table during print', 
+                                      checked=cfg.shopbot.includePositionInTable, 
+                                      func=self.updateSavePos)
+        self.saveFlagCheck = fCheckBox(layout, title='Save output flag in time series table during print', 
+                                      checked=cfg.shopbot.includeFlagInTable, 
+                                      func=self.updateSaveFlag)
+
+        # autoplay checkboxes
+        self.autoPlayChecks = fRadioGroup(layout, 'When the print is done:', 
+                                          {0:'Automatically start the next file', 
+                                           1:'Wait for the user to press play'}, 
+                                          {0:True, 1:False},
+                                         self.parent.autoPlay, col=True, headerRow=True,
+                                          func=self.changeAutoPlay)
+
+        # timing error
+        fLabel(layout, title='SB3 timing error correction:', style=labelStyle())
+        fileForm = QFormLayout()
+        objValidator = QDoubleValidator(0, 10, 2)
+        self.critTimeOn = fLineEdit(fileForm, title='Crit time on (s)',
+                                    text=str(cfg.shopbot.critTimeOn), 
+                                    tooltip='Turn on the pressure this amount of time before the flag is turned on')
+        self.critTimeOff = fLineEdit(fileForm, title='Crit time off (s)', 
+                                     text=str(cfg.shopbot.critTimeOff), 
+                                     tooltip='Turn off the pressure this amount of time after the flag is turned on')
+        self.zeroDist = fLineEdit(fileForm, title=f'Zero distance ({self.parent.units})', 
+                                  text=str(cfg.shopbot.zeroDist), 
+                                  tooltip='If we are within this distance from a point, we are considered to be at the point. In other words, margin of error or tolerance on distance measurements.')
+        objValidator2 = QIntValidator(0, 10000)
+        self.checkFreq = fLineEdit(fileForm, title=f'Check flag frequency (ms)', 
+                                  text=str(cfg.shopbot.dt), 
+                                  tooltip='Check the status of the shopbot every _ ms',
+                                  validator=objValidator2)
+        for w in [self.critTimeOn, self.critTimeOff, self.zeroDist, self.checkFreq]:
             w.setMaximumWidth(100)
         layout.addLayout(fileForm)
-        
-#         metaLabel = qtw.QLabel('Metadata to save for each print in *_speeds_*.csv:')
-#         layout.addWidget(metaLabel)
-        fLabel(layout, title='Metadata to save for each print in *_speeds_*.csv:', style=labelStyle)
-        self.metaTable = qtw.QTableWidget(30,3)
-        self.metaTable.setColumnWidth(0, 200)
-        self.metaTable.setColumnWidth(1, 100)
-        self.metaTable.setColumnWidth(2, 100)
-        self.metaTable.setMinimumHeight(400)
-        self.metaTable.setMinimumWidth(300)
-        self.metaTable.setMaximumWidth(500)
-        newitem = qtw.QTableWidgetItem('property')
-        self.metaTable.setItem(0, 0, newitem)
-        newitem = qtw.QTableWidgetItem('value')
-        self.metaTable.setItem(0, 1, newitem)
-        newitem = qtw.QTableWidgetItem('units')
-        self.metaTable.setItem(0, 2, newitem)
-        self.parent.meta = {}
-        for ii,row in enumerate(cfg.shopbot.meta):
-            try:
-                value = str(cfg.shopbot.meta[row].value)
-                units = str(cfg.shopbot.meta[row].units)
-            except:
-                logging.error(f'Missing data in {cfg.shopbot.meta[row]}')
-            else:
-                self.parent.meta[row] = [value, units]
-                newitem = qtw.QTableWidgetItem(str(row))
-                self.metaTable.setItem(ii+1, 0, newitem)
-                newitem = qtw.QTableWidgetItem(value)
-                self.metaTable.setItem(ii+1, 1, newitem)
-                newitem = qtw.QTableWidgetItem(units)
-                self.metaTable.setItem(ii+1, 2, newitem)
-        self.metaTable.itemChanged.connect(self.changeMeta)
-        layout.addWidget(self.metaTable)
-        
+        layout.addStretch()
+
         self.setLayout(layout)
+        
+    def loadConfig(self, cfg1) -> None:
+        '''load values from a config file'''
+        self.critTimeOn.setText(cfg1.shopbot.critTimeOn)
+        self.critTimeOff.setText(cfg1.shopbot.critTimeOff)
+        self.zeroDist.setText(cfg1.shopbot.zeroDist)
+        self.checkFreq.setText(cfg1.shopbot.dt)
+        
+    def saveConfig(self, cfg1):
+        '''save values to the config file'''
+        cfg1.shopbot.critTimeOn = self.getCritTimeOn()
+        cfg1.shopbot.critTimeOff = self.getCritTimeOff()
+        cfg1.shopbot.zeroDist = self.getZeroDist()
+        cfg1.shopbot.dt = self.getDt()
+        return cfg1
+        
+    def getDt(self) -> float:
+        dt = float(self.checkFreq.text())
+        if dt<=0:
+            dt = 100
+            logging.error('Bad value in shopbot check flag frequency')
+            if cfg.shopbot.dt>0:
+                self.checkFreq.setText(str(cfg.shopbot.dt))
+            else:
+                self.checkFreq.setText(str(dt))
+        return dt
         
     def getCritTimeOn(self) -> float:
         '''get the critTimeOn'''
@@ -130,21 +133,9 @@ class sbSettingsBox(qtw.QWidget):
         '''get the critTimeOn'''
         return float(self.zeroDist.text())
         
-        
-    def changeMeta(self) -> None:
-        '''update meta table'''
-        for ii in range(self.metaTable.rowCount()):
-            row = self.metaTable.item(ii,0).text()
-            if len(row)>0:
-                value = self.metaTable.item(ii,1).text()
-                units = self.metaTable.item(ii,2).text()
-                self.parent.meta[row] = [value, units]
-        
-        
-    def changeautoPlay(self, autoPlayButton) -> None:
+    def changeAutoPlay(self) -> None:
         '''Change autoPlay settings'''
-        bid = self.autoPlayGroup.id(autoPlayButton) 
-        if bid==0:
+        if self.autoPlayChecks.value():
             self.parent.autoPlay = True
             self.parent.updateStatus('Turned on autoplay', True)
         else:
@@ -158,8 +149,12 @@ class sbSettingsBox(qtw.QWidget):
         else:
             self.parent.savePos=False
             
-#     def updateFolder(self, folder:str) -> None:
-#         self.parent.sbpFolder = folder
+    def updateSaveFlag(self) -> None:
+        '''update whether to save flag in table'''
+        if self.saveFlagCheck.isChecked():
+            self.parent.saveFlag=True
+        else:
+            self.parent.saveFlag=False
 
     def setSBPFolder(self) -> None:
         '''set the folder to save all the files we generate from the whole gui'''
@@ -184,531 +179,278 @@ class sbBox(connectBox):
     ############## initialization functions
     
     
-    def __init__(self, sbWin:qtw.QMainWindow):
+    def __init__(self, sbWin:QMainWindow, connect:bool=True):
         '''sbWin is the parent window that all of the widgets are in'''
         super(sbBox, self).__init__()
         self.bTitle = 'Shopbot'
         self.sbWin = sbWin
         self.runningSBP = False
         self.setTitle('Shopbot')
-        self.prevFlag = 0
-        self.currentFlag = 0
-        self.sbpName = cfg.shopbot.sbpName
-        self.sbpRealList = [self.sbpName]
-        self.autoPlay = cfg.shopbot.autoplay 
-        self.sbpFolder = cfg.shopbot.sbpFolder
-        self.msg = ''
-        self.meta = {}
-        self.connect()
-        self.savePos = cfg.shopbot.includePositionInTable
-        
-
-            
+        self.loadConfigMain(cfg)
+        if connect:
+            self.connect()
+   
     def connect(self):
         '''connect to the SB3 software'''
-        try:
-            self.connectKeys()
-            self.findSb3()
-        except Exception as e:
-            print(e)
-            self.failLayout()
+        self.keys = SBKeys(self)
+        if not self.keys.connected:
+             self.failLayout()
         else:
             self.successLayout()
             self.updateLoc()
             
-     ########
+    def timeRow(self) -> List:
+        '''get a list of values to collect for the time table'''
+        if self.savePos:
+            if hasattr(self, 'x') and hasattr(self, 'y') and hasattr(self, 'z'):
+                out = [self.x, self.y, self.z]
+            else:
+                out = ['','','']
+        else:
+            out = []
+        if self.saveFlag:
+            if hasattr(self, 'keys'):
+                out = out + [self.keys.currentFlag]
+            else:
+                out = out + ['']
+        return out
+    
+    def timeHeader(self) -> List:
+        '''get a list of header values for the time table'''
+        if self.savePos:
+            out = ['x(mm)', 'y(mm)', 'z(mm)']
+        else:
+            out = []
+        if self.saveFlag:
+            out = out + ['flag']
+        return out
+ 
+    #-------------
     # communicating with the shopbot
     
-    def connectKeys(self) -> None:
-        '''connects to the windows registry keys for the Shopbot flags'''
-        try:
-            aKey = r'Software\VB and VBA Program Settings\Shopbot\UserData'
-            aReg = winreg.ConnectRegistry(None, winreg.HKEY_CURRENT_USER)
-            self.aKey = winreg.OpenKey(aReg, aKey)
-            self.keyConnected = True
-        except:
-            self.keyConnected = False
-            self.updateStatus('Failed to connect to Shopbot', True)
-        self.findSb3()
-        subprocess.Popen([self.sb3File])
-            
-    def sbStatus(self) -> int:
-        '''find the status of the shopbot'''
-        try:
-            status, _ = winreg.QueryValueEx(self.aKey, 'Status')
-        except:  
-            # if we fail to get the registry key, we have no way of knowing 
-            # if the print is over, so just stop it now
-            self.triggerEndOfPrint()
-            self.updateStatus('Failed to connect to Shopbot keys', True)
-            self.keyConnected = False
-        return int(status)
-    
-    def findSb3(self) -> None:
-        '''find the sb3.exe file'''
-        try:
-            path, _ = winreg.QueryValueEx(self.aKey, 'uAppPath')
-        except:  
-            # if we fail to get the registry key, we have no way of knowing 
-            # if the print is over, so just stop it now
-            self.triggerEndOfPrint()
-            self.updateStatus('Failed to connect to Shopbot keys', True)
-            self.keyConnected = False
-        self.sb3File = os.path.join(path, 'Sb3.exe')
-        
-    
-    def getSBFlag(self) -> int:
-        '''run this function continuously during print to watch the shopbot status'''
-        self.prevFlag = self.currentFlag
-        try:
-            sbFlag, _ = winreg.QueryValueEx(self.aKey, 'OutPutSwitches')
-        except:  
-            # if we fail to get the registry key, we have no way of knowing 
-            # if the print is over, so just stop it now
-            self.triggerEndOfPrint()
-            self.updateStatus('Failed to connect to Shopbot keys', True)
-            self.keyConnected = False
-            
-        # if the flag has reached a critical value that signals the 
-        # shopbot is done printing, stop tracking pressures and recording vids
-        sbFlag = int(sbFlag)
-        self.currentFlag = sbFlag
-        return sbFlag
-    
-#     def getCommand(self) -> int:
-#         '''run this function continuously during print to watch the shopbot status'''
-#         self.prevFlag = self.currentFlag
-#         try:
-#             c, _ = winreg.QueryValueEx(self.aKey, 'uCommand')
-#             c1, _ = winreg.QueryValueEx(self.aKey, 'uCommandQ1')
-#         except:  
-#             # if we fail to get the registry key, we have no way of knowing 
-#             # if the print is over, so just stop it now
-#             self.triggerEndOfPrint()
-#             self.updateStatus('Failed to connect to Shopbot keys', True)
-#             self.keyConnected = False
-    
-    def getLoc(self) -> Tuple[int,int,int]:
-        '''get the x,y,z location of the shopbot'''
-        try:
-            x, _ = winreg.QueryValueEx(self.aKey, 'Loc_1')
-            y, _ = winreg.QueryValueEx(self.aKey, 'Loc_2')
-            z, _ = winreg.QueryValueEx(self.aKey, 'Loc_3')
-        except:  
-            # if we fail to get the registry key, we have no way of knowing 
-            # if the print is over, so just stop it now
-            self.triggerEndOfPrint()
-            self.updateStatus('Failed to connect to Shopbot keys', True)
-            self.keyConnected = False
-            self.x = ''
-            self.y = ''
-            self.z = ''
-        self.x = float(x)
-        self.y = float(y)
-        self.z = float(z)   
+    def getLoc(self) -> None:
+        '''get the location'''
+        x = self.keys.getLoc()
+        if len(x)>0:
+            self.x = x[0]
+            self.y = x[1]
+            self.z = x[2]
         
     def updateLoc(self) -> None:
         '''update the location in the status bar'''
         self.getLoc()
-        self.pos.setText(f'x={self.x}, y={self.y}, z={self.z}')
-        
-    def readMsg(self) -> None:
-        '''read messages from the shopbot'''
-        try:
-            msg, _ = winreg.QueryValueEx(self.aKey, 'uMsgBoxMessage')
-        except:  
-            # if we fail to get the registry key, we have no way of knowing 
-            # if the print is over, so just stop it now
-            self.triggerEndOfPrint()
-            self.updateStatus('Failed to connect to Shopbot keys', True)
-            self.keyConnected = False
-        if len(msg)>0:
-            if not msg==self.msg:
-                self.msg = msg
-                self.updateStatus(f'Shopbot message: {msg}', True)
-        else:
-            self.msg = ''
-            
+                    
     #-------------
-            
-            
+    # handling configs
     def saveConfig(self, cfg1):
         '''save the current settings to a config Box object'''
-        cfg1.shopbot.sbpName = self.getFullPath(self.sbpName)
         cfg1.shopbot.autoplay = self.autoPlay   
         cfg1.shopbot.sbpFolder = self.sbpFolder
-        l = []
-        for x in range(self.sbpNameList.count()):
-            l.append(self.getFullPath(self.sbpNameList.item(x).text()))
-        cfg1.shopbot.sbpFiles = l
-        cfg1.shopbot.critTimeOn = self.settingsBox.getCritTimeOn()
-        cfg1.shopbot.critTimeOff = self.settingsBox.getCritTimeOff()
-        cfg1.shopbot.zeroDist = self.settingsBox.getZeroDist()
-        for key in self.meta:
-            cfg1.shopbot.meta[key].value = self.meta[key][0]
-            cfg1.shopbot.meta[key].units = self.meta[key][1]
+        cfg1 = self.settingsBox.saveConfig(cfg1)
+        cfg1 = self.sbList.saveConfig(cfg1)
         return cfg1
+    
+    def loadConfigMain(self, cfg1):
+        '''load settings to the main box'''
+        self.runFlag1 = cfg1.shopbot.flag1   # 1-indexed
+        self.autoPlay = cfg1.shopbot.autoplay 
+        self.savePos = cfg1.shopbot.includePositionInTable
+        self.saveFlag = cfg1.shopbot.includeFlagInTable
+        self.units = cfg1.shopbot.units
+        self.sbpFolder = checkPath(cfg1.shopbot.sbpFolder)
     
     def loadConfig(self, cfg1):
         '''load settings from a config Box object'''
-        self.sbpName = cfg1.shopbot.sbpName
-        self.autoPlay = cfg1.shopbot.autoplay  
-        self.sbpFolder = checkPath(cfg1.shopbot.sbpFolder)
-            
+        self.loadConfigMain(cfg1)
+        self.sbList.loadConfig(cfg1)
+        self.settingsBox.loadConfig(cfg1)
+        
+    def getRunFlag1(self) -> int:
+        if hasattr(self, 'runFlag1'):
+            return self.runFlag1
+        else:
+            return -1
+        
+    def updateFlag(self, sbFlag:int) -> None:
+        '''update the flag display in the flagBox'''
+        if hasattr(self, 'flagBox'):
+            self.flagBox.update(sbFlag)
+        else:
+            logging.debug('flagBox not initialized')
+       
+        
+      
+    #------------------------------
+    
+    # testing mode
+    
+    def testLayout(self, fluigent:bool=False) -> None:
+        '''layout if we are testing some other component'''
+        self.resetLayout()
+        self.layout = QVBoxLayout()
+        self.testMetaButt = fButton(self.layout, title='Test meta save', tooltip='Test saving metadata about the print', func=self.saveMeta)
+        self.testTimeButt = fButton(self.layout, title='Test time series save', tooltip='Test saving time series', func=self.testTime)
+        if fluigent:
+            self.addFluBox(self.layout)
+        self.setLayout(self.layout)
+        
+    
+    def saveMeta(self) -> None:
+        '''create a csv file that describes the run speeds'''
+        self.sbWin.saveMetaData()
+       
+    def writeToTable(self, writer) -> None:
+        '''write metadata values to the table'''
+        sh = SBPHeader(self.sbpName()) 
+        t1 = sh.table()
+        for row in t1:
+            writer.writerow(row)
 
+    def testTime(self) -> None:
+        '''create metadata file'''
+        if hasattr(self.sbWin, 'fluBox'):
+            logging.info('Testing time series save')
+            self.sbWin.fluBox.startRecording()
+            QTimer.singleShot(2000, self.sbWin.fluBox.stopRecording)
+        
+    
+    #----------------------------   
 
     def successLayout(self) -> None:
         '''layout if we found the sb3 files and windows registry keys'''
         
+        swidth = 600
+        
         self.settingsBox = sbSettingsBox(self)
+        
         
         self.resetLayout()
             
-        self.layout = qtw.QVBoxLayout()
+        self.layout0 = QHBoxLayout()
+        self.layout = QVBoxLayout()
         
-        self.runButt = qtw.QPushButton()
-        self.runButt.setFixedSize(50, 50)
-        self.runButt.setEnabled(False)
-#         self.runButt.setStyleSheet('border-radius:10px; padding:5px; border-style: outset; border: 2px solid #555;')
-        self.updateRunButt()
-    
-        self.pos = qtw.QLabel(f'x= , y= , z= ')
-        self.pos.setFixedSize(725,25)
+        self.runButt = runButt(self, size=50)
+        self.createStatus(swidth, height=70, status='Waiting for file ...')
         
-        self.createStatus(725, height=50, status='Waiting for file ...')
-#         self.status = qtw.QLabel('Waiting for file ...')
-#         self.status.setFixedSize(725, 50)
-#         self.status.setWordWrap(True)
-        
-        self.topBar = qtw.QHBoxLayout()
+        self.topBar = QHBoxLayout()
         self.topBar.addWidget(self.runButt)
-        self.topStatus = qtw.QVBoxLayout()
-        self.topStatus.addWidget(self.pos)
-        self.topStatus.addWidget(self.status)
-        self.topBar.addLayout(self.topStatus)
+        self.topBar.addWidget(self.status)
         self.topBar.setSpacing(10)
         
-        self.loadButt = qtw.QToolButton()
-        self.loadButt.setToolTip('Load shopbot file(s)')
-        self.loadButt.setIcon(icon('open.png'))
-        self.loadButt.clicked.connect(self.loadFile)
-        
-        self.deleteButt = qtw.QToolButton()
-        self.deleteButt.setToolTip('Remove selected file(s)')
-        self.deleteButt.setIcon(icon('delete.png'))
-        self.deleteButt.clicked.connect(self.removeFiles)
-        
-        self.breakButt = qtw.QToolButton()
-        self.breakButt.setToolTip('Add a breakpoint to the list')
-        self.breakButt.setIcon(icon('breakpoint.png'))
-        self.breakButt.clicked.connect(self.addBreakPoint)
-        
-        self.sbButts = qtw.QToolBar()
-        self.sbButts.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
-        for b in [self.loadButt, self.deleteButt, self.breakButt]:
-            self.sbButts.addWidget(b)
-        self.sbButts.setStyleSheet("QToolBar{spacing:5px;}");
-        self.sbButts.setOrientation(QtCore.Qt.Vertical)
-        self.sbButts.setFixedHeight(180)
-
-        self.sbpNameList = qtw.QListWidget()
-        self.sbpNameList.setFixedHeight(180)
-        for file in cfg.shopbot.sbpFiles:
-            self.addFile(file)
-#         self.addFile(self.sbpName)
-        if os.path.exists(self.sbpName):
-            self.activate(0)
-            self.runButt.setEnabled(True)
-            self.updateRunButt()
-            self.updateStatus('Ready ... ', False)
-        self.sbpNameList.itemDoubleClicked.connect(self.activate)
-        self.sbpNameList.setAcceptDrops(True)
-        self.sbpNameList.setSelectionMode(qtw.QAbstractItemView.MultiSelection)
-        self.sbpNameList.setDragDropMode(qtw.QAbstractItemView.InternalMove)
-        self.sbpNameList.setDragEnabled(True)
-        self.sbpNameList.setToolTip('Double click to select the next file to run.\nSingle click to select files to delete.\nClick and drag to reorder.')
-       
-        self.fileButts = qtw.QHBoxLayout()
-        self.fileButts.addWidget(self.sbButts)
-        self.fileButts.addWidget(self.sbpNameList)
-        self.fileButts.setSpacing(10)
+        self.sbList = sbpNameList(self)
         
         self.layout.addItem(self.topBar)
-        self.layout.addItem(self.fileButts)
-        try:
-            self.layout.addItem(self.sbWin.fluBox.printButts)
-        except:
-            pass
+        self.layout.addLayout(self.sbList)
+        self.addFluBox(self.layout)
  
-        self.setLayout(self.layout)
+        self.layout0.addLayout(self.layout)
+        if hasattr(self.sbWin, 'flagBox'):
+            self.flagBox = self.sbWin.flagBox    # adopt the parent's flagBox for shorter function cals
+#         self.layout0.addLayout(self.flagBox)
+        self.setLayout(self.layout0)
+    
+    def addFluBox(self, layout:QLayout) -> None:
+        '''add the fluigent boxes to the shopbot box'''
+        if hasattr(self.sbWin, 'fluBox'):
+            layout.addItem(self.sbWin.fluBox.printButtRow())
     
     def reformatFileList(self) -> None:
-        '''change the display of the file list'''
-        showfolders = self.settingsBox.showFolderCheck.isChecked()
+        if hasattr(self, 'sbList'):
+            self.sbList.reformat()
         
-        for i,item in enumerate(self.sbpNameList.items()):
-            if showfolders:
-                item.setText(self.getFullPath(item.text()))
-            else:
-                item.setText(os.path.basename(item.text()))
-        
-    
     def updateRunButt(self) -> None:
-        '''Update the appearance of the run button'''
-        if self.runningSBP:
-            try:
-                self.runButt.clicked.disconnect()
-            except:
-                pass
-            self.runButt.clicked.connect(self.triggerKill)
-            self.runButt.setStyleSheet("background-color: #de8383; border-radius:10px")
-            self.runButt.setToolTip('Stop print')
-            self.runButt.setIcon(icon('stop.png'))
+        if hasattr(self, 'runButt'):
+            self.runButt.update(self.runningSBP)
+        
+    def enableRunButt(self) -> None:
+        if hasattr(self, 'runButt'):
+            self.runButt.setEnabled(True)
+            self.updateRunButt()
+        
+    def disableRunButt(self) -> None:
+        if hasattr(self, 'runButt'):
+            self.runButt.setEnabled(False)
+            self.updateRunButt()
+            
+    #-------------
+    # flagBox operations
+        
+    def flagTaken(self, flag0:int) -> bool:
+        '''check if the flag is already occupied'''
+        if hasattr(self, 'flagBox'):
+            return self.flagBox.flagTaken(flag0)
         else:
-            try:
-                self.runButt.clicked.disconnect()
-            except:
-                pass
-            self.runButt.clicked.connect(self.runFile)
-            self.runButt.setStyleSheet("background-color: #a3d9ba; border-radius:10px")
-            self.runButt.setToolTip('Start print')
-            self.runButt.setIcon(icon('play.png'))
-        return
+            return False
+        
+    def updateXYZ(self, x:float, y:float, z:float) -> None:
+        '''update the xyz display'''
+        if hasattr(self, 'flagBox'):
+            self.flagBox.updateXYZ(x,y,z)
 
-
-    def sbpNumber(self) -> int:
-        '''Determine the index of the current file. Return -1 if it's not in the list.'''
-        for i in range(self.sbpNameList.count()):
-            if self.sbpNameList.item(i).data(QtCore.Qt.UserRole):
-                return i
-        return -1
-    
-    def updateItem(self, item:qtw.QListWidgetItem, active:bool) -> None:
-        '''Update the item status to active or inactive'''
-        if active:
-            item.setIcon(icon('play.png')) # show that this item is next
-            item.setData(QtCore.Qt.UserRole, True)
-        else:
-            item.setIcon(QtGui.QIcon()) # show that this item is not next
-            item.setData(QtCore.Qt.UserRole, False)
-        return
-    
-    
-    def activate(self, item:Union[int, qtw.QListWidgetItem]) -> None:
-        '''set the sbp file that the GUI will run next. Input can be item number or the actual item object.'''
-        
-        # get the actual item if given a number
-        if type(item) is int:
-            if item>=self.sbpNameList.count(): # this item is out of range
-                logging.warning(f'Item out of range: requested {item} out of {self.sbpNameList.count()}')
-            else:
-                item = self.sbpNameList.item(item)
-          
-        # make sure this is a real file
-
-        
-        if not os.path.exists(self.getFullPath(item.text())) and not item.text()=='BREAK':
-            logging.warning(f'Cannot activate {item.text()}: file not found')
-            return
-        
-        # remove other play icons
-        for i in range(self.sbpNameList.count()):
-            self.updateItem(self.sbpNameList.item(i), False)
-            
-        self.sbpName = self.getFullPath(item.text()) # find the full path name of the item
-#         self.sbpName = item.text() # new run file name
-        self.updateItem(item, True)
-        self.sbpNameList.scrollToItem(item, qtw.QAbstractItemView.PositionAtTop) # scroll to the current item
-        
-            
-    def activateNext(self) -> None:
-        '''Activate the next file in the list'''
-        if self.sbpNameList.count()==1:
-            # there is only one file in the list, so we're done.
-            return
-        newNum = self.sbpNumber() + 1
-        if newNum>=self.sbpNameList.count(): 
-            # if we're at the end of the list, restart from the beginning
-            newNum = 0
-        self.activate(newNum)
-    
-    def addFile(self, fn) -> None:
-        '''Add this file to the list of files, and remove the original placeholder if it's still there.'''
-        
-        self.sbpRealList.append(fn)
-        
-        if fn=='BREAK':
-            short=fn
-        else:
-            short = os.path.basename(fn)
-        
-        if self.settingsBox.showFolderCheck.isChecked():
-            # show the full path name
-            item = qtw.QListWidgetItem(fn) # create an item
-        else:
-            item = qtw.QListWidgetItem(short) # create an item with basename
-        item.setData(QtCore.Qt.UserRole, False)
-        self.sbpNameList.addItem(item) # add it to the list
-        if self.sbpNameList.count()>1: # if there was already an item in the list
-            item0 = self.sbpNameList.item(0) # take the first item
-            if not os.path.exists(self.getFullPath(item0.text())) and not item0.text()=='BREAK': # if the original item isn't a real file
-                self.activate(1) # activate the next item in the list
-                self.sbpNameList.takeItem(0) # remove bad name from the list
-                self.sbpRealList.pop(0) # remove bad name from full path list
-        return
-    
-    def getFullPath(self, file:str) -> str:
-        '''get the full path name of the file'''
-        if file=='BREAK':
-            return file
-        for fullpath in self.sbpRealList:
-            if file in fullpath:
-                return fullpath
-    
-    def removeFiles(self) -> None:
-        '''Remove the selected file from the list'''
-        for item in self.sbpNameList.selectedItems():
-            logging.info(f'Removing file from queue: {item.text()}')
-#             if item.text()==self.sbpName:
-            if item.data(QtCore.Qt.UserRole):
-                # we're removing the current file. go to the next file.
-                self.activateNext()
-
-            self.sbpRealList.remove(self.getFullPath(item.text())) # remove the file from the list of full paths
-            row = self.sbpNameList.row(item)
-            self.sbpNameList.takeItem(row)
-            
-        if len(self.sbpNameList)==0:
-            # if we've deleted all the files, go back to placeholder text
-            self.sbpName = 'No file selected'
-            self.addFile(self.sbpName)
-        
-        
-    def loadFile(self) -> None:
-        '''load a shopbot run file using a standard file selection dialog'''
-        if os.path.exists(self.sbpName):
-            openFolder = os.path.dirname(self.sbpName)
-        else:
-            openFolder = self.sbpFolder
-            if not os.path.exists(openFolder):
-                openFolder = r'C:\\'
-        sbpnList = fileDialog(openFolder, 'Gcode files (*.gcode *.sbp)', False)
-        for sbpn in sbpnList:
-            if not os.path.exists(sbpn):
-                logging.error(f'{sbpn} does not exist')
-            else:
-                self.runButt.setEnabled(True)
-                self.updateRunButt()
-                self.addFile(sbpn)
-                logging.debug(f'Added file to queue: {sbpn}')
-                self.updateStatus('Ready ... ', False)
-                
-    def addBreakPoint(self) -> None:
-        '''add a stop point to the list of files, where autoplay will stop'''
-        self.addFile('BREAK')
-        self.updateStatus('Added break point', False)
-            
-   
-            
-            
     ####################            
     #### functions to start on run
     
     ### set up the run
     
-#     def getCritFlag(self) -> int:
-#         '''Identify which channels are triggered during the run. critFlag is a shopbot flag value that indicates that the run is done. We always set this to 0. If you want the video to shut off after the first flow is done, set this to 8. We run this function at the beginning of the run to determine what flag will trigger the start of videos, etc.'''
-#         self.channelsTriggered = []
-#         with open(self.sbpName, 'r') as f:
-#             for line in f:
-#                 if line.startswith('SO') and (line.endswith('1') or line.endswith('1\n')):
-#                     '''the shopbot flags are 1-indexed, while our channels list is 0-indexed, 
-#                     so when it says to change flag 1, we want to change channels[0]'''
-#                     li = int(line.split(',')[1])-1
-#                     if li not in self.channelsTriggered and not li==3:
-#                         self.channelsTriggered.append(li) 
-#         return 0
+    def sbpName(self) -> str:
+        if hasattr(self, 'sbList'):
+            return self.sbList.currentFile
+        else:
+            if self.connected:
+                logging.error('Shopbot box does not have attribute sbList')
+            return ''
 
     def getCritFlag(self) -> int:
-        '''Identify which channels are triggered during the run. critFlag is a shopbot flag value that indicates that the run is done. We always set this to 0. If you want the video to shut off after the first flow is done, set this to 8. We run this function at the beginning of the run to determine what flag will trigger the start of videos, etc.'''
-        self.channelsTriggered = channelsTriggered(self.sbpName)
+        '''Identify which channels are triggered during the run. critFlag is a shopbot flag value that indicates that the run is done. We always set this to 0. If you want the video to shut off after the first flow is done, set this to 2^(cfg.shopbot.flag-1). We run this function at the beginning of the run to determine what flag will trigger the start of videos, etc.'''
+        self.channelsTriggered = channelsTriggered(self.sbpName())
         return 0
     
     
     ### start/stop
-    
 
-    def saveSpeeds(self) -> None:
-        '''create a csv file that describes the run speeds'''
-        try:
-            fullfn = self.sbWin.newFile('speeds', '.csv')
-        except NameError:
-            self.updateStatus('Failed to save speed file', True)
-            return
-
-        with open(fullfn, mode='w', newline='', encoding='utf-8') as c:
-            writer = csv.writer(c, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            for i in range(len(self.sbWin.fluBox.pchannels)):
-                channel = self.sbWin.fluBox.pchannels[i]
-                press = int(channel.constBox.text())
-                writer.writerow([f'ink pressure channel {i}','mbar', press])
-                widget = self.sbWin.calibDialog.calibWidgets[i]
-                inkspeed = widget.speedBox.text()
-                writer.writerow([f'ink speed channel {i}', 'mm/s', inkspeed])
-                caliba = widget.plot.a
-                writer.writerow([f'caliba channel {i}', 'mm/s/mbar^2', caliba])
-                calibb = widget.plot.b
-                writer.writerow([f'calibb channel {i}', 'mm/s/mbar', calibb])
-                calibc = widget.plot.c
-                writer.writerow([f'calibc channel {i}', 'mm/s', calibc])
-                
-            # read values from the sbp file
-            sh = SBPHeader(self.sbpName) 
-            t1 = sh.table()
-            for row in t1:
-                writer.writerow(row)
-            
-            # ad hoc metadata in settings
-            for key in self.meta:
-                writer.writerow([key, self.meta[key][1], self.meta[key][0]])
-            self.updateStatus(f'Saved {fullfn}', True)
-            
-    def waitForSBReady(self) -> None:
-        '''wait for the shopbot to be ready before starting the file'''
-        status = self.sbStatus()
-        if status>0:
-            inames = []
-            for i in range(6):
-                if status%2**(i+1)==2**i:
-                    inames.append({0:'FileRunning', 1:'PreviewMode', 2:'KeyPadOpen', 3:'PauseinFile', 4:'StopHit', 5:'StackRunning'}[i])
-            self.updateStatus(f'{inames}: waiting for SB to be ready', False)
-        else:
-            self.updateStatus('Shopbot is ready', True)
-        self.SBstatus = status
         
+    #---------------------------
+    # first, wait for the shopbot to be ready
 
-    
     def runFile(self) -> None:
         '''runFile sends a file to the shopbot and tells the GUI to wait for next steps. first, check if the shopbot is ready'''
+        self.runningSBP = True
+        self.updateRunButt()
+        self.triggerWaitForReady()
+        
+    def triggerWaitForReady(self) -> None:
+        '''start the timer that watches for the start of print'''
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.waitForReadyTimerFunc)
+        self.timer.start(self.settingsBox.getDt()) # update every 1000 ms
+        
     
-        self.waitForSBReady() # wait until the shopbot is ready for another file
-        while self.SBstatus>0:
-            time.sleep(1)
-            self.waitForSBReady()
+    def waitForReadyTimerFunc(self) -> None:
+        '''Loop this when we're waiting for the extrude command. If the run has been aborted, trigger the end.'''
+        if not hasattr(self, 'keys'):
+            logging.info('No keys connected. Aborting print.')
+            self.triggerEndOfPrint()
+        # check if ready
+        
+        self.keys.waitForSBReady()
+        if self.keys.ready:
+            self.runFileContinue()
+            
+    #---------------------------------------------------------
 
-        self.runFileContinue()
     
     def runFileContinue(self) -> None:
         '''runFile sends a file to the shopbot and tells the GUI to wait for next steps. second, send the file over'''
         # check if the file exists
-        if not os.path.exists(self.sbpName):
-            if self.sbpName=='BREAK':
+        self.timer.stop()
+        if not os.path.exists(self.sbpName()):
+            if self.sbpName()=='BREAK':
                 self.updateStatus('Break point hit.', True)
             else:
-                self.updateStatus('SBP file does not exist: ' + self.sbpName, True)
+                self.updateStatus(f'SBP file does not exist: {self.sbpName()}', True)
             self.runningSBP=False
             self.updateRunButt()
-            self.activateNext()
+            self.sbList.activateNext()
             return
         
 #         self.abortButt.setEnabled(True)
@@ -720,18 +462,16 @@ class sbBox(connectBox):
         else:
             self.allowEnd = False
             
-        self.updateStatus(f'Running SBP file {self.sbpName}, critFlag = {self.critFlag}', True)
+        self.updateStatus(f'Running SBP file {self.sbpName()}, critFlag = {self.critFlag}', True)
         
-        self.sbpTiming = SBPtimings(self.sbpName, self.sbWin, critTimeOn=self.settingsBox.getCritTimeOn(), critTimeOff=self.settingsBox.getCritTimeOff(), zero=self.settingsBox.getZeroDist())   # this object updates changes in state
+        self.sbpTiming = SBPtimings(self.sbpName(), self.sbWin, critTimeOn=self.settingsBox.getCritTimeOn(), critTimeOff=self.settingsBox.getCritTimeOff(), zero=self.settingsBox.getZeroDist())   # this object updates changes in state
 
         # send the file to the shopbot via command line
-        appl = self.sb3File
-        arg = self.sbpName + ', ,4, ,0,0,0"'
+        appl = self.keys.sb3File
+        arg = self.sbpName() + ', ,4, ,0,0,0"'
         subprocess.Popen([appl, arg])
         
         # wait to start videos and fluigent
-        self.runningSBP = True
-        self.updateRunButt()
         self.triggerWait()
         
     
@@ -739,22 +479,20 @@ class sbBox(connectBox):
     
     def triggerWait(self) -> None:
         '''start the timer that watches for the start of print'''
-        self.timer = QtCore.QTimer()
+        self.timer = QTimer()
         self.timer.timeout.connect(self.waitForStartTimerFunc)
-        self.timer.start(cfg.shopbot.dt) # update every 100 ms
+        self.timer.start(self.settingsBox.getDt()) # update every _ ms
         
     
     def waitForStartTimerFunc(self) -> None:
         '''Loop this when we're waiting for the extrude command. If the run has been aborted, trigger the end.'''
-        if self.runningSBP and self.keyConnected:
+        if self.runningSBP and hasattr(self, 'keys') and self.keys.connected:
             self.waitForStart()
         else:
             self.triggerEndOfPrint()
             
-    
-    def waitForStart(self) -> None:
-        '''Loop this while we're waiting for the extrude command. Checks the shopbot flags and triggers the watch for pressure triggers if the test has started'''
-        
+    def killSpindlePopup(self) -> None:
+        '''if we use output flag 1 (1-indexed), the shopbot thinks we are starting the router/spindle and triggers a popup. Because we do not have a router/spindle on this instrument, this popup is irrelevant. This function automatically checks if the window is open and closes the window'''
         hwndMain = win32gui.FindWindow(None, 'NOW STARTING ROUTER/SPINDLE !')
         if hwndMain>0:
             # disable the spindle warning
@@ -762,8 +500,28 @@ class sbBox(connectBox):
             win32gui.SetForegroundWindow(hwndChild)
             win32api.PostMessage( hwndChild, win32con.WM_KEYDOWN, win32con.VK_RETURN, 0)
             
-        sbFlag = self.getSBFlag()
-        cf = 8 + 2**(self.channelsTriggered[0]) # the critical flag at which flow starts
+            
+    def checkStopHit(self) -> None:
+        '''this checks for a window that indicates that the stop has been hit, either on the SB3 software, or through an emergency stop. this function tells sb3 to quit printing and tells sbgui to kill this print '''
+        hwndMain = win32gui.FindWindow(None, 'PAUSED in Movement or File Action')
+        if hwndMain>0:
+            # trigger the end of print
+            hwndChild = win32gui.GetWindow(hwndMain, win32con.GW_CHILD)
+            win32gui.SetForegroundWindow(hwndChild)
+            win32api.PostMessage( hwndChild, win32con.WM_KEYDOWN, 0x51, 0)
+            self.allowEnd=True
+            self.triggerKill()
+            
+    
+    def waitForStart(self) -> None:
+        '''Loop this while we're waiting for the extrude command. Checks the shopbot flags and triggers the watch for pressure triggers if the test has started'''
+        
+        self.killSpindlePopup()
+        # check if we hit a stop on the sb3 software or the emergency stop
+        self.checkStopHit()
+        
+        sbFlag = self.keys.getSBFlag()
+        cf = 2**(self.runFlag1-1) + 2**(self.channelsTriggered[0]) # the critical flag at which flow starts
         self.updateStatus(f'Waiting to start file, Shopbot output flag = {sbFlag}, start at {cf}', False)
         if sbFlag==cf:
             self.triggerWatch()
@@ -779,19 +537,16 @@ class sbBox(connectBox):
         self.timer.stop()
         
         # start the timer to watch for pressure triggers
-        self.timer = QtCore.QTimer()
+        self.timer = QTimer()
         self.timer.timeout.connect(self.timerFunc)
-        self.timer.start(cfg.shopbot.dt) # update every 100 ms
+        self.timer.start(self.settingsBox.getDt()) # update every _ ms
         
         # start the cameras if any flow is triggered in the run
         if min(self.channelsTriggered)<len(self.sbWin.fluBox.pchannels):
-            for camBox in self.sbWin.camBoxes:
-                if camBox.camObj.connected:
-                    if camBox.camInclude.isChecked() and not camBox.camObj.recording:
-                        camBox.cameraRec()
+            self.sbWin.camBoxes.startRecording()
         if len(self.channelsTriggered)>0 and not self.channelsTriggered==[2]:
             # only save speeds and pressures if there is extrusion
-            self.saveSpeeds() 
+            self.sbWin.saveMetaData()
             self.sbWin.fluBox.startRecording()
     
     ### wait for end
@@ -799,7 +554,7 @@ class sbBox(connectBox):
     def timerFunc(self) -> None:
         '''timerFunc runs continuously while we are printing to determine if we're done.'''
 
-        if self.runningSBP and self.keyConnected:
+        if self.runningSBP and hasattr(self, 'keys') and self.keys.connected:
             self.watchSBFlags()
         else:
             # we turn off runningSBP when the file is done
@@ -808,7 +563,7 @@ class sbBox(connectBox):
 
     def watchSBFlags(self) -> None:
         '''Runs continuously while we're printing. Checks the Shopbot flags and changes the pressure if the flags have changed. Triggers the end if we hit the critical flag.'''
-        sbFlag = self.getSBFlag()
+        sbFlag = self.keys.getSBFlag()
         self.updateLoc() # update x,y,z display
 #         self.getCommand() # read message
         self.updateStatus(f'Running file, Shopbot output flag = {sbFlag}, end at {self.critFlag}', False)
@@ -816,62 +571,20 @@ class sbBox(connectBox):
         if self.allowEnd and (sbFlag==self.critFlag or sbFlag==0):
             self.triggerEndOfPrint()
             return
+  
+        # update state of pressure channels and camera
+        self.allowEnd = self.sbpTiming.check(sbFlag, self.x, self.y, self.z) 
         
-        
-        self.allowEnd = self.sbpTiming.check(sbFlag, self.x, self.y, self.z)  # update status
-        
-#         # for each channel, check if the flag is up if flag 0 is up for channel 0, the output will be odd, so  flag mod 2 (2=2^(0+1)) will be 1, which is 2^0. If flag 1 is up for channel 1, it adds 2 to the output, e.g. if we want channel 1 on, the value will be 10, so 10%2=2, which is 2^1
-#         for i in self.channelsTriggered:
-#             if sbFlag%2**(i+1)==2**i:
-#                 # this channel is on
-                
-#                 # now that we've started extrusion, we know that the run has really started, so we can allow it to end
-#                 self.allowEnd = True
-                
-#                 # set this channel to the value in the constant box (run pressure)
-#                 if i<len(self.sbWin.fluBox.pchannels):
-#                     channel = self.sbWin.fluBox.pchannels[i]
-#                     press = int(channel.constBox.text())
-# #                     fgt.fgt_set_pressure(i, press)
-#                     print(i,press)
-#                     error = fgt.fgt_set_pressure(i, press)
-#                     print(f'fluigent return code: {error}')
-# #                     QtCore.QTimer.singleShot(500, lambda:fgt.fgt_set_pressure(i,press))
-# #                     fgt.fgt_set_pressure(i, press)
-
-#                      # set the other channels to 0
-#                     self.sbWin.fluBox.resetAllChannels(i)   
-#                 else:
-#                     if not sbFlag==self.prevFlag:
-#                         # if we triggered a flag that doesn't correspond to a pressure channel, take a snapshot with all checked cameras. Only do this once, right after the flag is flipped.
-#                         for camBox in self.sbWin.camBoxes:
-#                             if camBox.camObj.connected:
-#                                 if camBox.camInclude.isChecked() and not camBox.camObj.recording:
-# #                                     if camBox.camObj.recording:
-# #                                         camBox.cameraRec()
-#                                     camBox.cameraPic()
-                                
-#                         # originally, I had this set to turn the flag back off, but I can't get around the permissions, so instead you'll just have to program a wait into the .sbp file, using "PAUSE 5" for 5 seconds, etc.
-# #                         newkey = sbFlag-4
-# #                         sbFlag, _ = winreg.SetValueEx(self.aKey, 'OutPutSwitches',0, winreg.REG_DWORD, newkey)
-
-#                 return 
-        
-        # if no channels are turned on, turn off all of the channels       
-#         self.sbWin.fluBox.resetAllChannels(-1)
-
-    
-    ### end           
+        # check if we hit a stop on the sb3 software or the emergency stop
+        self.checkStopHit()
       
     def stopRunning(self) -> None:
         '''stop watching for changes in pressure, stop recording  '''
+        self.keys.getSBFlag()  # update the flag readout
         if self.runningSBP:
             self.sbWin.fluBox.resetAllChannels(-1) # turn off all channels
-            self.sbWin.fluBox.stopRecording()  # save fluigent
-            for camBox in self.sbWin.camBoxes:
-                if camBox.camObj.connected:
-                    if camBox.camInclude.isChecked() and camBox.camObj.recording: 
-                        camBox.cameraRec() # stop recording
+            self.sbWin.fluBox.stopRecording()      # save fluigent
+            self.sbWin.camBoxes.stopRecording()    # turn off cameras
             try:
                 self.timer.stop()
             except:
@@ -880,19 +593,18 @@ class sbBox(connectBox):
     def triggerKill(self) -> None:
         '''the stop button was hit, so stop'''
         self.stopRunning()
-        self.activateNext() # activate the next sbp file in the list
-        self.runningSBP = False # we're no longer running a sbp file
-        self.updateRunButt()
-        self.updateStatus('Stop button was clicked', False)
-        
+#         self.sbList.activateNext()     # activate the next sbp file in the list
+        self.runningSBP = False   # we're no longer running a sbp file
+        self.updateRunButt()    
+        self.updateStatus('Stop button was clicked', True)
+
     def triggerEndOfPrint(self) -> None:
         '''we finished the file, so stop and move onto the next one'''
         self.stopRunning()
-        self.activateNext() # activate the next sbp file in the list
-        if self.autoPlay and self.sbpNumber()>0: # if we're in autoplay and we're not at the beginning of the list, play the next file
+        self.sbList.activateNext() # activate the next sbp file in the list
+        if self.autoPlay and self.sbList.sbpNumber()>0: # if we're in autoplay and we're not at the beginning of the list, play the next file
             self.updateStatus('Autoplay is on: Running next file.', True)
-            QtCore.QTimer.singleShot(2000, self.runFile) # wait 2 seconds, then call runFile
-#             self.runFile()
+            QTimer.singleShot(2000, self.runFile) # wait 2 seconds, then call runFile
         else:
             self.runningSBP = False # we're no longer running a sbp file
             self.updateRunButt()
@@ -904,10 +616,6 @@ class sbBox(connectBox):
     
     def close(self):
         '''this gets triggered when the whole window is closed'''
-        try:
+        if hasattr(self, 'timer'):
             self.timer.stop()
-        except:
-            pass
-        else:
             logging.info('Shopbot timer stopped')
-

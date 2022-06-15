@@ -1,14 +1,23 @@
 appid: leanfried.sbgui.v1.0.4
-calibration:
-  flowRateFolder: C:/Users/lmf1/OneDrive - National Institute of Standards and Technology
-    (NIST)/NIST/data/material properties/flow rates
-  initDensity: 1
-  initDiam: '0.603'
-  initSpeed: '40.0'
 camera:
-  bascam:
-    fps: 100.0
-  diag: 1
+  cam0:
+    diag: 1
+    flag1: 3
+    fps: 100
+    name: Basler camera
+    type: bascam
+  cam1:
+    diag: 1
+    flag1: 5
+    fps: 15
+    name: Nozzle camera
+    type: webcam
+  cam2:
+    diag: 1
+    flag1: 6
+    fps: 15
+    name: Webcam 2
+    type: webcam
 files:
   createSubfolders: true
   dateFormat: '%y%m%d'
@@ -24,55 +33,72 @@ files:
   tag: test
   timeFormat: '%y%m%d_%H%M%S_%f'
 fluigent:
-  colors:
-  - '#3f8d88'
-  - '#b0401e'
-  - '#3e8a5b'
-  - '#b8a665'
+  channel0:
+    calibration:
+      flowRateFolder: C:/Users/lmf1/OneDrive - National Institute of Standards and
+        Technology (NIST)/NIST/data/material properties/flow rates
+      initDensity: 1
+      initDiam: 0.603
+      initSpeed: 40.0
+    color: '#3f8d88'
+    flag1: 1
+  channel1:
+    calibration:
+      flowRateFolder: C:/Users/lmf1/OneDrive - National Institute of Standards and
+        Technology (NIST)/NIST/data/material properties/flow rates
+      initDensity: 1
+      initDiam: 0.603
+      initSpeed: 5.0
+    color: '#b0401e'
+    flag1: 2
   dt: 50
   pmax: 6000
   savePressure: true
   trange: 60
 layout:
   save: true
+meta:
+  camera_magnification:
+    units: x
+    value: '0.5'
+  camera_position:
+    units: None
+    value: side
+  nozzle_inner_diameter:
+    units: mm
+    value: '0.603'
+  nozzle_length:
+    units: mm
+    value: '38'
+  nozzle_material:
+    units: None
+    value: stainless steel
+  nozzle_outer_diameter:
+    units: mm
+    value: '0.908'
+  tubing_inner_diameter:
+    units: mm
+    value: '0.79375'
+  tubing_length:
+    units: mm
+    value: '280'
+  tubing_material:
+    units: None
+    value: PTFE
 savePressure: true
 shopbot:
   autoplay: false
-  critTimeOff: 0
+  critTimeOff: 0.0
   critTimeOn: 0.1
-  dt: 50
+  currentFile: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleVertPics.sbp
+  dt: 50.0
+  flag1: 12
+  includeFlagInTable: true
   includePositionInTable: true
-  meta:
-    camera_magnification:
-      units: x
-      value: '0.5'
-    camera_position:
-      units: None
-      value: side
-    nozzle_inner_diameter:
-      units: mm
-      value: '0.603'
-    nozzle_length:
-      units: mm
-      value: '38'
-    nozzle_material:
-      units: None
-      value: stainless steel
-    nozzle_outer_diameter:
-      units: mm
-      value: '0.908'
-    tubing_inner_diameter:
-      units: mm
-      value: '0.79375'
-    tubing_length:
-      units: mm
-      value: '280'
-    tubing_material:
-      units: None
-      value: PTFE
   sbpFiles:
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/calibration/timing_calibration.sbp
+  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleVertPics.sbp
+  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleHorizPics.sbp
   sbpFolder: C:\Users\lmf1\Documents\GitHub\ShopbotPyQt\SBP_files
-  sbpName: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/calibration/timing_calibration.sbp
   showFolder: false
+  units: mm
   zeroDist: 0.1

@@ -1,7 +1,7 @@
 # ShopbotPyQt
 ## A GUI for controlling a Shopbot, Basler camera, webcam, and Fluigent mass flow controller.
 
-To view the user guide in browser, visit https://htmlpreview.github.io/?https://github.com/usnistgov/ShopbotPyQt/blob/main/user_guide/user_guide.html
+To view the user guide in browser, visit https://htmlpreview.github.io/?https://github.com/usnistgov/ShopbotPyQt/blob/main/user_guide/index.html
 
 
 ## Authors
@@ -23,11 +23,11 @@ To view the user guide in browser, visit https://htmlpreview.github.io/?https://
 Files for controlling custom Shopbot/Fluigent 3D printer. GUI is built using PyQt.
 
 Run this using 
-	` run sbgui.py `
-	in the Jupyter command line 
+    ` run sbgui.py `
+    in the Jupyter command line 
 or 
-	` python3 sbgui.py `
-	in the anaconda command line
+    ` python3 sbgui.py `
+    in the anaconda command line
 
 The GUI contains boxes for the following functions: 
 
@@ -68,59 +68,101 @@ You may cite the use of this code as follows:
 - *LICENSE*
 
 - **pythonGUI**
-	- Python files for the GUI
+    Python files for the GUI
+    
+    - **configs**
+        - `config.yml`
+            Define settings that are saved from session to session, like file locations, camera frame rate, etc.
+            
+        - `config_default.yml`
+            Default settings. This file is copied to `config.yml` if there is no `config.yml` file. Note: here, you can assign Shopbot output flags to each device in your GUI. These flags are 1-indexed, to match the Shopbot nomenclature. 
+            
+        - `densities.yml`
+            List of saved densities for saved fluids. 
 
-	- **Fluigent**
-		- This is the Fluigent SDK for Python, available at https://github.com/Fluigent/fgt-SDK
+    - **Fluigent**
+        This is the Fluigent SDK for Python, available at https://github.com/Fluigent/fgt-SDK
 
-	- **icons**
-		- Images used in the GUI
+    - **icons**
+        Images used in the GUI
+        
+    - `\__init\__.py`
+        Metadata about this repo
 
-	- *config.py*
-		- Import environmental variables
+    - `config.py`
+        Import saved settings
+        
+    - `pypylon-1.7.4rc1-cp38-cp38-win_amd64.whl`
+        Wheel for pypylon version that this GUI was developed on.
 
-	- *config.yaml*
-		- Define environmental variables including sbp (path to sbp files) and vid (path to video folder)
+    - `sbgui.py`
+        The main module for the GUI. Run this to launch the GUI.
+        
+    - `sbgui_calibration.py`
+        Functions for calibrating flow rates
 
-	- *sbgui.py*
-		- The main module for the GUI. Run this to launch the GUI.
+    - `sbgui_cameras.py`
+        Functions for controlling the cameras
 
-	- *sbgui_cameras.py*
-		- Functions for controlling the cameras
+    - `sbgui_files.py`
+        Functions for file handling
 
-	- *sbgui_files.py*
-		- Functions for file handling
+    - `sbgui_fluigent.py`
+        Functions for controlling the Fluigent
 
-	- *sbgui_fluigent.py*
-		- Functions for controlling the Fluigent
+    - `sbgui_general.py`
+        Functions for setting up common layout elements
 
-	- *sbgui_general.py*
-		- Functions for setting up common layout elements
+    - `sbgui_layout.py`
+        Functions for establishing the overall layout of the GUI
+        
+    - `sbgui_print.py`
+        Functions for controlling cameras and Fluigent during the print. This corrects for the timing errors in SB3.exe
 
-	- *sbgui_layout.py*
-		- Functions for establishing the overall layout of the GUI
-
-	- *sbgui_shopbot.py*
-		- Functions for controlling the shopbot.
+    - `sbgui_shopbot.py`
+        Functions for controlling the shopbot.
 
 
 - **SBP files**
-	- The Shopbot control software is Sb3, which can take .gcode or .sbp files as inputs. We have chosen to use .sbp files for their ease of use and compatibility with Shopbot accessories. More info about .sbp files can be found here: https://www.shopbottools.com/ShopBotDocs/files/ComRef.pdf and here: https://www.shopbottools.com/ShopBotDocs/files/SBG00314150707ProgHandWin.pdf
+    The Shopbot control software is Sb3, which can take .gcode or .sbp files as inputs. We have chosen to use .sbp files for their ease of use and compatibility with Shopbot accessories. More info about .sbp files can be found here: https://www.shopbottools.com/ShopBotDocs/files/ComRef.pdf and here: https://www.shopbottools.com/ShopBotDocs/files/SBG00314150707ProgHandWin.pdf
 
-	- *XXXX.LOG*
-		- A log file that describes what happened the last time you ran XXXX.sbp
+    - *sbpConvert.py*
+        Tools for converting text values to numerical values in .sbp files
+        
+    - *sbpcreator_programmatic.ipynb*
+        (Under development) Jupyter notebook for generating sbp files composed of loops
+        
+    - *sbpcreator_programmatic.py*
+        (Under development) Functions for generating sbp files composed of loops
 
-	- *XXXX.sbp* 
-		- A shopbot input file.
+    - *sbpcreator.ipynb*
+        Jupyter notebook for generating sbp files
 
-	- *XXXX.csv* 
-		- A table of points and pressure indicators that ShopbotPyQt uses to time changes in state.
+    - *sbpcreator.py*
+        Functions for generating sbp files containing simple shapes: zigzags, vertical lines, etc. It also programs in output flag handling, which lets the Shopbot tell the GUI when to change the Fluigent pressure, start/stop videos, and capture images. 
+        
+    - *sbpRead.py*
+        Functions for reading .sbp files and converting them to tables of values
+        
+    - **Folders**
+    
+        - *XXXX.LOG*
+            A log file that describes what happened the last time you ran XXXX.sbp
 
-	- *sbpcreator.ipynb*
-		- Jupyter notebook for generating sbp files
+        - *XXXX.sbp* 
+            A shopbot input file.
 
-	- *sbpcreator.py*
-		- Functions for generating sbp files containing simple shapes: zigzags, vertical lines, etc. It also programs in output flag handling, which lets the Shopbot tell the GUI when to change the Fluigent pressure, start/stop videos, and capture images. 
+        - *XXXX.csv* 
+            A table of points and pressure indicators that ShopbotPyQt uses to time changes in state.
+            
+        - *XXXXList.txt*
+            A list of files in this folder and breakpoints to load into the GUI all at once.
+            
+            
+            
+- **user_guide**
+    Guide to use and assembly of the NIST Shopbot hardware and this software. Open `index.html` in browser to go to the homepage, or visit https://htmlpreview.github.io/?https://github.com/usnistgov/ShopbotPyQt/blob/main/user_guide/index.html to see the current version on GitHub.
+    
 
 
 

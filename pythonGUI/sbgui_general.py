@@ -2,9 +2,9 @@
 '''Shopbot GUI general functions. Contains classes and functions that are shared among fluigent, cameras, shopbot.'''
 
 # external packages
-from PyQt5 import QtCore, QtGui
-from PyQt5.QtWidgets import QDialog
-import PyQt5.QtWidgets as qtw
+from PyQt5.QtCore import QDir, Qt, QPoint, QRect
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QButtonGroup, QCheckBox, QDialog, QFileDialog, QFormLayout, QFrame,  QGroupBox, QHBoxLayout, QLabel,  QLayout, QLineEdit, QProxyStyle, QPushButton, QRadioButton, QSpacerItem, QStyle, QStyleOptionTab,  QStylePainter, QTabBar, QToolBar, QToolButton, QVBoxLayout, QWidget
 import sip
 import os, sys
 import subprocess
@@ -21,7 +21,7 @@ def checkPath(path:str) -> str:
         path = r'C:\\'
     return path
 
-def icon(name:str) -> QtGui.QIcon:
+def icon(name:str) -> QIcon:
     '''Get a QtGui icon given an icon name'''
     currentdir = os.path.dirname(os.path.realpath(__file__))
     iconfolder = os.path.join(currentdir, 'icons')
@@ -32,7 +32,7 @@ def icon(name:str) -> QtGui.QIcon:
     iconpath = os.path.join(iconfolder, name)
     if not os.path.exists(iconpath):
         raise NameError('No icon with that name')
-    return QtGui.QIcon(iconpath)
+    return QIcon(iconpath)
 
 
 def fileDialog(startDir:str, fmt:str, isFolder:bool, opening:bool=True) -> str:
@@ -41,20 +41,20 @@ def fileDialog(startDir:str, fmt:str, isFolder:bool, opening:bool=True) -> str:
     fmt is a string file format, e.g. 'Gcode files (*.gcode *.sbp)'
     isFolder is bool true to only open folders
     opening is true if we are opening a file, false if we are saving'''
-    dialog = qtw.QFileDialog()
-    dialog.setFilter(dialog.filter() | QtCore.QDir.Hidden)
+    dialog = QFileDialog()
+    dialog.setFilter(dialog.filter() | QDir.Hidden)
 
     # ARE WE TALKING ABOUT FILES OR FOLDERS
     if isFolder:
-        dialog.setFileMode(qtw.QFileDialog.DirectoryOnly)
+        dialog.setFileMode(QFileDialog.DirectoryOnly)
     else:
-        dialog.setFileMode(qtw.QFileDialog.ExistingFiles)
+        dialog.setFileMode(QFileDialog.ExistingFiles)
         
     # OPENING OR SAVING
     if opening:
-        dialog.setAcceptMode(qtw.QFileDialog.AcceptOpen)
+        dialog.setAcceptMode(QFileDialog.AcceptOpen)
     else:
-        dialog.setAcceptMode(qtw.QFileDialog.AcceptSave)
+        dialog.setAcceptMode(QFileDialog.AcceptSave)
 
     # SET FORMAT, IF SPECIFIED
     if fmt != '' and isFolder is False:
@@ -67,7 +67,7 @@ def fileDialog(startDir:str, fmt:str, isFolder:bool, opening:bool=True) -> str:
     else:
         dialog.setDirectory(str(ROOT_DIR))
 
-    if dialog.exec_() == qtw.QDialog.Accepted:
+    if dialog.exec_() == QDialog.Accepted:
         paths = dialog.selectedFiles()  # returns a list
         return paths
     else:
@@ -102,47 +102,46 @@ def openFolder(folder:str) -> None:
     subprocess.Popen(cmd, shell=True)
         
     
-class fileSetOpenRow:
+class fileSetOpenRow(QHBoxLayout):
     '''A row of icons and displays that lets the user set a file name using a dialog and open the folder location'''
     
-    def __init__(self, parent, width:int=500, title:str='Set folder', tooltip:str='Open folder', initFolder='No folder selected') -> None:
-        '''Make the display row. Return a layout'''
+    def __init__(self, width:int=500, title:str='Set folder', tooltip:str='Open folder', initFolder='No folder selected', **kwargs):
+        super(fileSetOpenRow, self).__init__()
         self.width = width
         self.title = title
         self.saveFolder = initFolder
         self.tooltip = tooltip
-        self.parent = parent
-        
-    def makeDisplay(self) -> qtw.QHBoxLayout:
-        '''Make the display row. Return a layout'''
-        saveButtBar = qtw.QToolBar()
+ 
+        saveButtBar = QToolBar()
         iconw = float(saveButtBar.iconSize().width())
         saveButtBar.setFixedWidth(iconw+4)
             
-        saveButt = qtw.QToolButton()
+        saveButt = QToolButton()
         saveButt.setToolTip(self.title)
         saveButt.setIcon(icon('open.png'))
-#         saveButt.clicked.connect(self.setSaveFolder)
         self.saveButt = saveButt
         saveButtBar.addWidget(saveButt)
         
         self.saveFolderLabel = createStatus(self.width, height=2*iconw, status=self.saveFolder)
         
-        saveFolderLink = qtw.QToolButton()
+        saveFolderLink = QToolButton()
         saveFolderLink.setToolTip(self.tooltip)
         saveFolderLink.setIcon(icon('link.png'))
-#         saveFolderLink.clicked.connect(self.openSaveFolder)
         self.saveFolderLink = saveFolderLink
-        saveLinkBar = qtw.QToolBar()
+        saveLinkBar = QToolBar()
         saveLinkBar.setFixedWidth(iconw+4)
         saveLinkBar.addWidget(saveFolderLink)
         
-        folderRow = qtw.QHBoxLayout()
-        folderRow.addWidget(saveButtBar)
-        folderRow.addWidget(self.saveFolderLabel)
-        folderRow.addWidget(saveLinkBar)
+        self.addWidget(saveButtBar)
+        self.addWidget(self.saveFolderLabel)
+        self.addWidget(saveLinkBar)
         
-        return folderRow
+        self.addStretch()
+        
+        if 'setFunc' in kwargs:
+            self.saveButt.clicked.connect(kwargs['setFunc'])
+        if 'openFunc' in kwargs:
+            self.saveFolderLink.clicked.connect(kwargs['openFunc'])
         
     def updateText(self, sf:str) -> None:
         '''set the folder name display'''
@@ -150,116 +149,216 @@ class fileSetOpenRow:
 
 #############################################
 
+def labelStyle():
+    return 'font-weight:bold; color:#31698f'
 
-class fCheckBox(qtw.QCheckBox):
-    '''This is a checkbox style for quick initialization'''
-    
-    def __init__(self, layout:qtw.QLayout, title:str='', tooltip:str='', checked:bool=False, **kwargs):
-        super().__init__()
-        self.setText(title)
-        if len(tooltip)>0:
-            self.setToolTip(tooltip)
-        self.setChecked(checked)
-        layout.addWidget(self)
-        if 'func' in kwargs:
-            self.stateChanged.connect(kwargs['func'])
         
-class fLabel(qtw.QLabel):
-    '''This is a label style for quick initialization'''
-    
-    def __init__(self, layout:qtw.QLayout, title:str='', style:str=''):
-        super().__init__()
-        self.setText(title)
-        if len(style)>0:
-            self.setStyleSheet(style)
-        layout.addWidget(self)
-        
-class fRadio(qtw.QRadioButton):
-    '''This is a radio button style for quick initialization'''
-    
-    def __init__(self, layout:qtw.QLayout, group:qtw.QButtonGroup, title:str='', tooltip:str='', i:int=0, **kwargs):
-        super().__init__()
-        self.setText(title)
-        if len(tooltip)>0:
-            self.setToolTip(tooltip)
-        group.addButton(self, i)
-        layout.addWidget(self)
-        if 'func' in kwargs:
-            self.clicked.connect(kwargs['func'])
-            
-class fLineEdit(qtw.QLineEdit):
-    '''This is a line edit style for quick initialization'''
-    
-    def __init__(self, form:qtw.QFormLayout, title:str='', text:str='', tooltip:str='', **kwargs):
-        super().__init__()
-        self.setText(text)
-        if len(tooltip)>0:
-            self.setToolTip(tooltip)
-        if 'func' in kwargs:
-            self.editingFinished.connect(kwargs['func'])
-        form.addRow(title, self)
-        
-class fButton(qtw.QPushButton):
+def fAdopt(obj:QWidget, **kwargs):
+    if 'text' in kwargs:
+        obj.setText(kwargs['text'])
+    if 'tooltip' in kwargs:
+        obj.setToolTip(kwargs['tooltip'])
+    if 'icon' in kwargs:
+        obj.setIcon(icon(kwargs['icon']))
+    if 'width' in kwargs:
+        try:
+            obj.setFixedWidth(kwargs['width'])
+        except AttributeError:
+            obj.setMinimumWidth(kwargs['width'])
+            obj.setMaximumWidth(kwargs['width'])
+    if 'height' in kwargs:
+        try:
+            obj.setFixedHeight(kwargs['height'])
+        except AttributeError:
+            obj.setMinimumHeight(kwargs['height'])
+            obj.setMaximumHeight(kwargs['height'])
+    if 'validator' in kwargs:
+        obj.setValidator(kwargs['validator'])
+    if 'layout' in kwargs and hasattr(kwargs['layout'], 'addWidget'):
+        kwargs['layout'].addWidget(obj)
+    if 'checkable' in kwargs:
+        obj.setCheckable(kwargs['checkable'])
+
+#----           
+
+class fButton(QPushButton):
     '''This is a pushbutton style for quick initialization'''
     
-    def __init__(self, layout:qtw.QLayout, title:str='', tooltip:str='', **kwargs):
-        super().__init__()
-        self.setText(title)
-        if len(tooltip)>0:
-            self.setToolTip(tooltip)
+    def __init__(self, layout:QLayout, title:str='', **kwargs):
+        super(fButton, self).__init__()
+        fAdopt(self, layout=layout, text=title, **kwargs)
         if 'func' in kwargs:
             self.clicked.connect(kwargs['func'])
         self.setAutoDefault(False)
         self.clearFocus()
-        layout.addWidget(self)
+
+#----   
+        
+class fCheckBox(QCheckBox):
+    '''This is a checkbox style for quick initialization'''
     
+    def __init__(self, layout:QLayout, title:str='', checked:bool=False, **kwargs):
+        super(fCheckBox, self).__init__()
+        self.setChecked(checked)
+        fAdopt(self, layout=layout, text=title, **kwargs)
+        if 'func' in kwargs:
+            self.stateChanged.connect(kwargs['func'])
+        
+#----
 
-#####################################################
+class fLabel(QLabel):
+    '''This is a label style for quick initialization'''
+    
+    def __init__(self, layout:QLayout=None, title:str='', style:str='', **kwargs):
+        super(fLabel, self).__init__()
+        fAdopt(self, layout=layout, text=title, **kwargs)
+        if len(style)>0:
+            self.setStyleSheet(style)
+        
+#----
 
-# def findFileInFolder(file:str, folder:str) -> str:
-#     '''findFileInFolder finds the full path name for a file in a folder
-#     file is the basename string
-#     folder is the folder to search in
-#     this searches recursively and returns an exception if it doesn't find the file'''
-#     f1 = os.path.join(folder, file)
-#     if os.path.exists(f1):
-#         return f1
-#     for subfold in os.listdir(folder):
-#         subfoldfull = os.path.join(folder, subfold)
-#         if os.path.isdir(subfoldfull):
-#             try:
-#                 file = findFileInFolder(file, subfoldfull)
-#             except:
-#                 pass
-#             else:
-#                 return file
-#     raise Exception(file+' not found')
+class fLineEdit(QLineEdit):
+    '''This is a line edit style that is in a form and triggers the function on editing finished'''
+    
+    def __init__(self, form:QFormLayout, title:str='', text:str='', **kwargs):
+        super(fLineEdit, self).__init__()
+        if 'func' in kwargs:
+            self.editingFinished.connect(kwargs['func'])
+        fAdopt(self, text=text, **kwargs)
+        if hasattr(form, 'addRow'):
+            form.addRow(title, self)
+
+            
+class fLineCommand(QLineEdit):
+    '''this is a line edit style that is not in a form and triggers the function on return pressed'''
+    
+    def __init__(self, title:str='', text:str='', **kwargs):
+        super(fLineCommand, self).__init__()
+        if 'func' in kwargs:
+            self.returnPressed.connect(kwargs['func'])
+        fAdopt(self, text=text, **kwargs)
+        
+#----
+        
+class fRadio(QRadioButton):
+    '''This is a radio button style for quick initialization'''
+    
+    def __init__(self, layout:QLayout, group:QButtonGroup, title:str='', i:int=0, **kwargs):
+        super(fRadio, self).__init__()
+        fAdopt(self, layout=layout, text=title, **kwargs)
+        group.addButton(self, i)
+        if 'func' in kwargs:
+            self.clicked.connect(kwargs['func'])
+            
+class fRadioGroup:
+    '''this class holds a group of radio buttons. 
+    layout is the layout we're adding this group to
+    title is the title of the group
+    
+    '''
+    
+    def __init__(self, layout:QLayout, title:str, nameDict:dict, valueDict:dict, initValue, tooltip:str='', col:bool=True, headerRow:bool=True, **kwargs):
+        
+        if headerRow:
+            self.layout = QVBoxLayout()
+        else:
+            self.layout = QHBoxLayout()
+        label = fLabel(self.layout, title=title, style=labelStyle())
+        if len(tooltip)>0:
+            label.setToolTip(tooltip)
+        
+        if col:
+            # put buttons in a column
+            self.buttonLayout = QVBoxLayout()
+        else:
+            # put buttons in a row
+            self.buttonLayout = QHBoxLayout()
+        
+        self.buttons = []
+        self.buttonGroup = QButtonGroup()
+        self.valueDict = valueDict
+        for index, name in nameDict.items():
+            button = QRadioButton(name)
+            if valueDict[index]==initValue:
+                button.setChecked(True)
+            else:
+                button.setChecked(False)
+            self.buttons.append(button)
+            self.buttonGroup.addButton(button, index)
+            self.buttonLayout.addWidget(button)
+        
+        if 'func' in kwargs:
+            self.buttonGroup.buttonClicked.connect(kwargs['func'])
+        if len(tooltip)>0:
+            self.buttonGroup.setToolTip(tooltip)
+        self.layout.addLayout(self.buttonLayout)
+        if hasattr(layout, 'addLayout'):
+            layout.addLayout(self.layout)   
+        
+    def value(self) -> Any:
+        '''returns the value of the button that the clicked button corresponds to'''
+        bid = self.buttonGroup.checkedId()
+        return self.valueDict[bid] 
+        
+#----
+        
+class fToolBar(QToolBar):
+    '''this is a toolbar style for quick initialization'''
+    
+    def __init__(self, vertical:bool=True, **kwargs):
+        super(fToolBar, self).__init__()
+        self.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.setStyleSheet("QToolBar{spacing:5px;}");
+        if vertical:
+            self.setOrientation(Qt.Vertical)
+        else:
+            self.setOrientation(Qt.Horizontal)
+        fAdopt(self, **kwargs)
+        self.buttons = 0
+        
+    def addWidget(self, widget):
+        '''track number of buttons'''
+        super(fToolBar, self).addWidget(widget)
+        self.buttons+=1
+
+#----
+        
+class fToolButton(QToolButton):
+    '''This is a toolbutton style for quick initialization'''
+    
+    def __init__(self, toolbar, title:str='', **kwargs):
+        super(fToolButton, self).__init__()
+        fAdopt(self, layout=toolbar, text=title, **kwargs)
+        if 'func' in kwargs:
+            self.clicked.connect(kwargs['func'])
+            
+            
+            
+            
+class fHBoxLayout(QHBoxLayout):
+    '''quick way to initialize a row of layout elements'''
+    
+    def __init__(self, *args):
+        super(fHBoxLayout, self).__init__()
+        for arg in args:
+            if arg.isWidgetType():
+                self.addWidget(arg)
+            else:
+                self.addLayout(arg)
+                
+class fVBoxLayout(QVBoxLayout):
+    '''quick way to initialize a column of layout elements'''
+    
+    def __init__(self, *args):
+        super(fHBoxLayout, self).__init__()
+        for arg in args:
+            if arg.isWidgetType():
+                self.addWidget(arg)
+            else:
+                self.addLayout(arg)
 
 
-# def findSb3Folder() -> str:
-#     '''find the folder that the Sb3 program files are in'''
-#     for fold in [r'C:\\Program files', r'C:\\Program files (x86)']:
-#         for f in os.listdir(fold):
-#             if 'ShopBot'.lower() in f.lower():
-#                 return os.path.join(fold, f)
-#     raise Exception('Shopbot folder not found')
 
-
-# def findSb3() -> str:
-#     '''find the full path name for the Sb3.exe program
-#     raises an exception if it doesn't find the file'''
-#     try:
-#         fold = findSb3Folder()
-#     except:
-#         logging.warning('Sb3.exe not found')
-#         return ''
-#     try:
-#         sb3File = findFileInFolder('Sb3.exe', fold)
-#         subprocess.Popen([sb3File])
-#     except:
-#         raise Exception('Sb3.exe not found')
-#     else:
-#         return sb3File
 
 ##############################################################
 
@@ -278,15 +377,16 @@ def deleteLayoutItems(layout) -> None:
             return
     sip.delete(layout)
     
-def createStatus(width:int, height:int=70, status:str='Ready') -> qtw.QLabel:
+def createStatus(width:int, height:int=70, status:str='Ready') -> QLabel:
     '''creates a section for displaying the device status'''
-    status = qtw.QLabel(status)
-    status.setFixedSize(width, height)
+    status = QLabel(status)
+    status.setMinimumWidth(width)
+    status.setMinimumHeight(height)
     status.setWordWrap(True)
     return status
     
 
-class connectBox(qtw.QGroupBox):
+class connectBox(QGroupBox):
     '''connectBox is a type of QGroupBox that can be used for cameras and fluigent, which need to be initialized. This gives us the option of showing an error message and reset button if the program doesn't connect'''
     
     def __init__(self):
@@ -295,26 +395,27 @@ class connectBox(qtw.QGroupBox):
         self.connected = False
         self.diag=1
         self.bTitle = ''
+        self.flag1 = -1
 
     
     def connectingLayout(self) -> None:
         '''if the computer is still trying to connect, show this waiting screen'''
         if self.connectAttempts>0:
             self.resetLayout()
-        self.layout = qtw.QVBoxLayout()
-        logging.info('Connecting to %s' % self.bTitle)
-        self.layout.addWidget(qtw.QLabel('Connecting to '+self.bTitle))
+        self.layout = QVBoxLayout()
+        logging.info(f'Connecting to {self.bTitle}')
+        self.layout.addWidget(QLabel(f'Connecting to {self.bTitle}'))
         self.setLayout(self.layout)  
 
     
     def failLayout(self) -> None:
         '''if the computer fails to connect, show an error message and a button to try again'''
         self.resetLayout()
-        self.layout = qtw.QVBoxLayout()
-        lstr = self.bTitle+' not connected. Connect attempts: '+str(self.connectAttempts)
+        self.layout = QVBoxLayout()
+        lstr = f'{self.bTitle} not connected. Connect attempts: {self.connectAttempts}'
         logging.warning(lstr)
-        self.label = qtw.QLabel(lstr)            
-        self.resetButt = qtw.QPushButton('Connect to ' + self.bTitle)
+        self.label = QLabel(lstr)            
+        self.resetButt = QPushButton(f'Connect to {self.bTitle}')
         self.resetButt.clicked.connect(self.connect) 
             # when the reset button is pressed, try to connect to the fluigent again
         self.layout.addWidget(self.label)
@@ -324,9 +425,6 @@ class connectBox(qtw.QGroupBox):
     
     def createStatus(self, width:int, height:int=70, status:str='Ready') -> None:
         '''creates a section for displaying the device status'''
-#         self.status = qtw.QLabel('Ready')
-#         self.status.setFixedSize(width, height)
-#         self.status.setWordWrap(True)
         self.status = createStatus(width, height=height, status=status)
     
     
@@ -346,45 +444,48 @@ class connectBox(qtw.QGroupBox):
             if log and self.diag>0:
                 logging.info(f'{self.bTitle}:{st}')
                 
-        
-#     def openSettings(self) -> None:
-#         '''Open the camera settings dialog window'''
-#         self.settingsDialog.show()
-#         self.settingsDialog.raise_()
+    def startRecording(self) -> None:
+        '''empty function, defined in camBox, fluBox'''
+        return
+    
+    def stopRecording(self) -> None:
+        '''empty function, defined in camBox, fluBox'''
+        return
+            
+    def close(self) -> None:
+        '''close the box'''
+        return
 
                 
-                
-class QHLine(qtw.QFrame):
+class QHLine(QFrame):
     def __init__(self):
         super(QHLine, self).__init__()
-        self.setFrameShape(qtw.QFrame.HLine)
-        self.setFrameShadow(qtw.QFrame.Sunken)
-        
-        
-        
-        
+        self.setFrameShape(QFrame.HLine)
+        self.setFrameShadow(QFrame.Sunken)
+     
 
-class TabBar(qtw.QTabBar):
+    
+class TabBar(QTabBar):
     '''for vertical tabs. https://stackoverflow.com/questions/51404102/pyqt5-tabwidget-vertical-tab-horizontal-text-alignment-left'''
     
     def tabSizeHint(self, index):
-        s = qtw.QTabBar.tabSizeHint(self, index)
+        s = QTabBar.tabSizeHint(self, index)
         s.transpose()
         return s
 
     def paintEvent(self, event):
-        painter = qtw.QStylePainter(self)
-        opt = qtw.QStyleOptionTab()
+        painter = QStylePainter(self)
+        opt = QStyleOptionTab()
 
         for i in range(self.count()):
             self.initStyleOption(opt, i)
-            painter.drawControl(qtw.QStyle.CE_TabBarTabShape, opt)
+            painter.drawControl(QStyle.CE_TabBarTabShape, opt)
             painter.save()
 
             s = opt.rect.size()
             s.transpose()
             s.setHeight(s.height()+20)
-            r = QtCore.QRect(QtCore.QPoint(), s)
+            r = QRect(QPoint(), s)
             r.moveCenter(opt.rect.center())
             opt.rect = r
 
@@ -392,19 +493,19 @@ class TabBar(qtw.QTabBar):
             painter.translate(c)
             painter.rotate(90)
             painter.translate(-c)
-            painter.drawControl(qtw.QStyle.CE_TabBarTabLabel, opt);
+            painter.drawControl(QStyle.CE_TabBarTabLabel, opt);
             painter.restore()
             
         
-class ProxyStyle(qtw.QProxyStyle):
+class ProxyStyle(QProxyStyle):
     '''for vertical tabs. https://stackoverflow.com/questions/51404102/pyqt5-tabwidget-vertical-tab-horizontal-text-alignment-left'''
     
     def drawControl(self, element, opt, painter, widget):
-        if element == qtw.QStyle.CE_TabBarTabLabel:
-            ic = self.pixelMetric(qtw.QStyle.PM_TabBarIconSize)
-            r = QtCore.QRect(opt.rect)
-            w =  0 if opt.icon.isNull() else opt.rect.width() + self.pixelMetric(qtw.QStyle.PM_TabBarIconSize)
+        if element == QStyle.CE_TabBarTabLabel:
+            ic = self.pixelMetric(QStyle.PM_TabBarIconSize)
+            r = QRect(opt.rect)
+            w =  0 if opt.icon.isNull() else opt.rect.width() + self.pixelMetric(QStyle.PM_TabBarIconSize)
             r.setHeight(opt.fontMetrics.width(opt.text) + w + 50) # needed to add 50 to not cut off words
             r.moveBottom(opt.rect.bottom())
             opt.rect = r
-        qtw.QProxyStyle.drawControl(self, element, opt, painter, widget)
+        QProxyStyle.drawControl(self, element, opt, painter, widget)

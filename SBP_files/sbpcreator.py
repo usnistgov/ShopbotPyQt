@@ -14,6 +14,14 @@ from mpl_toolkits.mplot3d import Axes3D
 import sympy as sy
 import copy
 
+# local packages
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(currentdir)
+sys.path.append(parentdir)
+sys.path.append(os.path.join(parentdir, 'pythonGUI'))  # add GUI folder
+from config import cfg
+
 # plotting
 matplotlib.rcParams['svg.fonttype'] = 'none'
 matplotlib.rc('font', family='Arial')
@@ -152,68 +160,7 @@ class sbpCreator:
         else:
             defdict = {key: value for key, value in self.vardefs.items() if key in args[0]} 
         strSimplify(vi, defdict)
-    
-        
-        
-    
-#     def floatSC(self, vi) -> float:
-#         '''Evaluate the expression with the values of any variables'''
-#         try:
-#             vout = float(vi)
-#         except:
-#             if type(vi) is str:
-#                 for key, val in self.vardefs.items():
-#                     vi = vi.replace('&'+key, str(val))
-#                 try:
-#                     vout = eval(vi)
-#                 except:
-#                     print(vi)
-#                     raise TypeError('Cannot convert to float')
-#                 else:
-#                     return vout
-#             else:
-#                 raise TypeError('Cannot convert to float')
-#         else:
-#             return vout
-        
-#     def strSimplify(self, vi, *args) -> str:
-#         '''Simplify the expression, and evaluate it with any variables requested in *args. If you don't want to evaluate any variables, vi=[0] or any list w/ values that are not in the defined variables. If you want to evaluate all variables, vi=[]. If you want to use a specific list of variables, e.g. use ['&margin', '&spacing'] '''
-#         if not type(vi) is str:
-#             return vi
-#         if len(args)==0:
-#             defdict = self.vardefs
-#         else:
-#             defdict = {key: value for key, value in self.vardefs.items() if key in args[0]} 
-#         for key, val in defdict.items():
-#             vi = vi.replace('&'+key, fs(val))
-        
-#         vin = vi.replace('&', 'UND')
-
-#         try:
-#             vout = sy.simplify(vin)
-#         except:
-#             vout = vi
-#         else:
-#             try:
-#                 vout = fs(vout)
-#             except:
-#                 vout = str(vout)
-#             vout = vout.replace('UND', '&')
-#         vout = vout.replace(' 1.0*', '')
-#         vout = vout.replace('-1.0*', '-')
-#         vout = vout.replace('+1.0*', '+')
-#         vout = vout.replace('*1.0*', '*')
-#         vout = vout.replace(' + 0.0', '')
-#         vout = vout.replace('.00000000000001', '.0')
-#         return vout
-    
-    
-#     def fsss(self, vi) -> str:
-#         '''this if for simplifying and formatting as string without any variable replacements'''
-#         if type(vi) is str:
-#             return self.strSimplify(vi, [0])
-#         else:
-#             return fs(vi)
+   
         
     
     #------------
@@ -263,8 +210,7 @@ class sbpCreator:
                 self.unwritten.append([self.cp, [x,y,z]])
             else:
                 self.jogs.append([self.cp, [x,y,z]])  
-                
-#         print([self.floatSC(i) for i in self.cp], '\t',[self.floatSC(i) for i in [x,y,z]], '\t', ms, pOn)
+
         self.cp = [x,y,z]
         self.positions.append([x,y,z])
         
@@ -385,15 +331,15 @@ class sbpCreator:
         self.file+=s
         return s
     
-    def turnOn(self, channel:int) -> str:
-        '''Turn on an output flag'''
-        s = f'SO, {channel+1}, 1\n'
+    def turnOn(self, flag0:int) -> str:
+        '''Turn on an output flag. Input is 0-indexed, but SBP is 1-indexed.'''
+        s = f'SO, {flag0+1}, 1\n'
         self.file+=s
         return s
     
-    def turnOff(self, channel:int) -> str:
-        '''Turn off an output flag'''
-        s = f'SO, {channel+1}, 0\n'
+    def turnOff(self, flag0:int) -> str:
+        '''Turn off an output flag. Input is 0-indexed, but SBP is 1-indexed.'''
+        s = f'SO, {flag0+1}, 0\n'
         self.file+=s
         return s
     
@@ -591,10 +537,11 @@ class startingPoint(sbpCreator):
 ############---------------------------------
     
 class zigzag(sbpCreator):
-    '''Creates a zigzag'''
+    '''Creates a zigzag. flag0 is 0-indexed'''
     
-    def __init__(self, **kwargs):
+    def __init__(self, flag0:int=0, **kwargs):
         super(zigzag, self).__init__(**kwargs)
+        self.flag0 = flag0
         self.x0 = 0         # x0, y0, z0 are the corner of the zigzag
         self.y0 = 0
         self.z0 = 0
@@ -637,8 +584,9 @@ class zigzag(sbpCreator):
         self.shortlist = shortlist
         return shortlist
         
-    def sbp(self) -> str:
-        '''Create the sbp file. diam is the filament diameter'''
+    def sbp(self, zeroJog:bool=False) -> str:
+        '''Create the sbp file. 
+        If zeroJog=True, we add a zero jog just before the end of the line to fix the shopbot timing error. This method has been superceded by the wrapper in sbgui_print.py'''
         
         if self.created:
             # if already created, use the existing file
@@ -651,16 +599,20 @@ class zigzag(sbpCreator):
         self.reset()  # reset the file and position lists
         self.j2(self.x0, self.y0, pOn=False) # go to first xy position
         self.jz(self.z0) # go to first z position
-        self.turnOn(0)
+        self.turnOn(self.flag0)
         llpos = 1
-        llf = [self.floatSC(longlist[0]), self.floatSC(longlist[1])]
-        linelen = p(max(llf),t(-1,min(llf)))
-        if llf[0]<llf[1]:
-            mids = [p(longlist[0],2),p(longlist[1],-2)]
-        else:
-            mids = [p(longlist[1],2),p(longlist[0],-2)]
-#         self.m1(self.longdir[1], mids[llpos], pOn=True) # write first part of first line
-#         self.j1(self.shortdir[1], shortlist[0], pOn=False) # zero move to fix turnoff
+
+        if zeroJog:
+            llf = [self.floatSC(longlist[0]), self.floatSC(longlist[1])]
+            # linelen = p(max(llf),t(-1,min(llf)))
+            if llf[0]<llf[1]:
+                mids = [p(longlist[0],2),p(longlist[1],-2)]
+            else:
+                mids = [p(longlist[1],2),p(longlist[0],-2)]
+        
+            self.m1(self.longdir[1], mids[llpos], pOn=True) # write first part of first line
+            self.j1(self.shortdir[1], shortlist[0], pOn=False) # zero move to fix turnoff
+            
         self.m1(self.longdir[1], longlist[llpos], pOn=True) # write rest of first line
         for index,i in enumerate(shortlist[1:]):
             if llpos==1:
@@ -668,16 +620,17 @@ class zigzag(sbpCreator):
             else:
                 llpos = 1
             if self.killZigs:
-                self.turnOff(0)
+                self.turnOff(self.flag0)
                 self.j1(self.shortdir[1], i, pOn=False) # zig
-                self.turnOn(0)
-#                 self.m1(self.longdir[1], mids[llpos], pOn=True) # write next line
-#                 self.j1(self.shortdir[1], i, pOn=False) # zero move to fix turnoff
+                self.turnOn(self.flag0)
+                if zeroJog:
+                    self.m1(self.longdir[1], mids[llpos], pOn=True) # write next line
+                    self.j1(self.shortdir[1], i, pOn=False) # zero move to fix turnoff
             else:
                 self.m1(self.shortdir[1], i, pOn=True) # zig  
-#                 if index==len(shortlist[1:])-1:
-#                     self.m1(self.longdir[1], mids[llpos], pOn=True) # partial line
-#                     self.j1(self.shortdir[1], i, pOn=False) # zero move to fix turnoff
+                if zeroJog and index==len(shortlist[1:])-1:
+                    self.m1(self.longdir[1], mids[llpos], pOn=True) # partial line
+                    self.j1(self.shortdir[1], i, pOn=False) # zero move to fix turnoff
             self.m1(self.longdir[1], longlist[llpos], pOn=True) # write next line
             
         if len(self.positions)>1:
@@ -689,11 +642,11 @@ class zigzag(sbpCreator):
 ########################################
     
 class verts(sbpCreator):
-    '''Creates a series of vertical lines'''
+    '''Creates a series of vertical lines. Input flag0 is 0-indexed.'''
     
-    def __init__(self, **kwargs):
+    def __init__(self, flag0:int=0, **kwargs):
         super(verts, self).__init__(**kwargs)
-
+        self.flag0= flag0
         self.downdisp = 0 # displacement between downstroke and upstroke
         self.reps = 5       # reps is the number of passes
 
@@ -854,8 +807,9 @@ class verts(sbpCreator):
         self.zmax = v.zmax
 
     
-    def sbp(self):
-        '''Create the sbp file'''
+    def sbp(self, zeroJog:bool=False):
+        '''Create the sbp file.
+        If zeroJog=True, we add a zero jog just before the end of the line to fix the shopbot timing error. This method has been superceded by the wrapper in sbgui_print.py'''
         
         if self.created:
             return self.file
@@ -881,9 +835,7 @@ class verts(sbpCreator):
         llr.reverse()
             
         self.j1('z', self.zmax) # go high
-        
-#         self.turnOn()
-        
+
         for spos in shortlist:
             self.j1(self.shortdir[1], spos) # go to short coord
             
@@ -910,16 +862,16 @@ class verts(sbpCreator):
                 if self.downdisp!=0:
                     self.j1(self.longdir[1], lpos) 
                     # go to coord if not already there
-                self.turnOn(0)
-                self.m1('z', p(self.zmax,-2), pOn=True) # draw most of z
-                self.j1(self.longdir[1], lpos0) # zero move to turn off flow at right time
+                self.turnOn(self.flag0)
+                if zeroJog:
+                    self.m1('z', p(self.zmax,-2), pOn=True) # draw most of z
+                    self.j1(self.longdir[1], lpos0) # zero move to turn off flow at right time
                 self.m1('z', self.zmax, pOn=True) # draw z
-                self.turnOff(0)
+                self.turnOff(self.flag0)
             
         if len(self.positions)>1:
             self.stepPoints = [self.positions[0]]
-            
-#         self.turnOff()
+
             
         return self.file
     
@@ -928,18 +880,20 @@ class pics(sbpCreator):
     '''Take pictures'''
     
     
-    def __init__(self, channel:int=2, wait:float=5, **kwargs):
+    def __init__(self, flag0:int=2, wait:float=5, **kwargs):
         super(pics, self).__init__(**kwargs)
-        self.channel = channel
+        self.flag0 = flag0   # 0-indexed
         self.wait = wait
         
-    def snap(self):
-        self.m3(self.cp[0], self.cp[1], self.cp[2]) # add a zero move to fix timing issue
+    def snap(self, zeroJog:bool=True):
+        '''go to the point and snap a picture'''
+        if zeroJog:
+            self.m3(self.cp[0], self.cp[1], self.cp[2]) # add a zero move to fix timing issue
         self.snapPoints.append(self.cp)
         self.pause('&wait1')
-        self.turnOn(self.channel)
+        self.turnOn(self.flag0)
         self.pause('&wait2')
-        self.turnOff(self.channel)       
+        self.turnOff(self.flag0)       
     
     def sbp(self):
         return self.file

@@ -2,255 +2,165 @@
 '''Shopbot GUI functions for setting up the GUI window'''
 
 # external packages
-from PyQt5 import QtGui
-from PyQt5.QtWidgets import QDialog
-import PyQt5.QtWidgets as qtw
+from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtGui import QIcon, QFont
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QMainWindow, QPushButton, QGridLayout, QTabWidget, QAction, QApplication, QCheckBox, QPlainTextEdit, QDesktopWidget
 import os, sys
 import ctypes
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
 import traceback
-import ctypes
+import csv
 
 
 # local packages
 from sbgui_general import *
+from sbgui_settings import *
+from sbgui_log import *
 import sbgui_fluigent
 import sbgui_files
 import sbgui_shopbot
 import sbgui_cameras
 import sbgui_calibration
-from config import *
+import sbgui_print
+import sbgui_flags
+from config import cfg
 
-
-
-       
-##################################################          
-########### logging window
-
-
-class QPlainTextEditLogger(logging.Handler):
-    '''This creates a text box that the log messages go to. Goes inside a logDialog window'''
-    
-    def __init__(self, parent):
-        super().__init__()
-        self.widget = qtw.QPlainTextEdit(parent)
-        self.widget.setReadOnly(True)    
-
-    def emit(self, record):
-        msg = self.format(record)
-        self.widget.appendPlainText(msg)    
-
-
-class logDialog(QDialog):
-    '''Creates a window that displays log messages.'''
-    
-    def __init__(self, parent):
-        super().__init__(parent)  
-
-        logTextBox = QPlainTextEditLogger(self)
-        logTextBox.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')) # format what is printed to text box
-        logging.getLogger().addHandler(logTextBox)  # display log messages in text box
-        logging.getLogger().setLevel(logging.DEBUG) # Set logging level to everything.
-
-        layout = qtw.QVBoxLayout()
-        layout.addWidget(logTextBox.widget)         # Add the new logging box widget to the layout
-        self.setLayout(layout) 
-        
-        self.setWindowTitle("Shopbot/Fluigent/Camera log")
-        self.resize(900, 400)                       # window is 900 px x 400 px
-        
-        
-    def close(self):
-        '''close the window'''
-        self.done(0)
-        
-######################## settings window
-
-        
-        
-        
-class settingsDialog(QDialog):
-    '''Creates a settings window'''
-    
-    def __init__(self, parent):
-        '''This is called by the parent, which is the main SBwindow'''
-        
-        super().__init__(parent)
-        self.parent = parent
-        
-        self.setStyle(ProxyStyle())
-        self.layout = qtw.QVBoxLayout()
-        
-        self.generalBox() # create a layout for general settings
-        self.tabs = qtw.QTabWidget()       
-        self.tabs.setTabBar(TabBar(self))
-        self.tabs.setTabPosition(qtw.QTabWidget.West)
-        for box in [self, parent.fileBox, parent.sbBox, parent.basBox, parent.nozBox, parent.web2Box, parent.fluBox]:
-            try:
-                self.tabs.addTab(box.settingsBox, box.bTitle)    
-            except:
-                pass
-        parent.fileBox.settingsBox.checkFormats() # update the initial file format
-        self.layout.addWidget(self.tabs)
-        self.setLayout(self.layout)
-        
-        self.setWindowTitle('Settings')
-        
-    def generalBox(self) -> None:
-        '''create a tab for settings of settings'''
-        self.settingsBox = qtw.QWidget()
-        self.bTitle = 'Load/save'
-        layout = qtw.QVBoxLayout()
-        loadButton = qtw.QPushButton('Load settings from file')
-        loadButton.clicked.connect(self.loadSettings)
-        loadButton.setIcon(icon('open.png'))
-        loadButton.clearFocus()
-        layout.addWidget(loadButton)
-        
-        saveButton = qtw.QPushButton('Save settings to file')
-        saveButton.clicked.connect(self.saveSettings)
-        saveButton.setIcon(icon('save.png'))
-        saveButton.clearFocus()
-        layout.addWidget(saveButton)
-        
-        self.alwaysSave = qtw.QCheckBox('Save settings for next session')
-        self.alwaysSave.setChecked(cfg.layout.save)
-        self.alwaysSave.clearFocus()
-        layout.addWidget(self.alwaysSave)
-        
-        self.settingsBox.setLayout(layout)
-        
-        
-    def loadSettings(self) -> None:
-        '''Load settings from file'''
-        sf = fileDialog(getConfigDir(), 'config files (*.yaml *.yml)', False)
-        if len(sf)>0:
-            sf = sf[0]
-        else:
-            return 
-        if not os.path.exists(sf):
-            return
-        cfg = loadConfigFile(sf)
-        parent = self.parent
-        for box in [parent.fileBox, parent.sbBox, parent.basBox, parent.nozBox, parent.web2Box, parent.fluBox]:
-            box.loadConfig(cfg)
-        logging.info(f'Loaded settings from {sf}')
-        
-    def saveCfg(self, file:str):
-        '''save the config file to file'''
-        parent = self.parent
-        from config import cfg
-        for box in [parent.fileBox, parent.sbBox, parent.basBox, parent.nozBox, parent.web2Box, parent.fluBox, parent.calibDialog]:
-            try:
-                cfg = box.saveConfig(cfg)
-            except Exception as e:
-                logging.info(e)
-                logging.info(box)
-        out = dumpConfigs(cfg, file)
-        if out==0:
-            logging.info(f'Saved settings to {file}')
-        else:
-            logging.info(f'Error saving settings to {file}')
-            
-    def saveSettings(self):
-        '''Save all settings to file'''
-        sf = fileDialog(getConfigDir(), 'config files (*.yml)', False, opening=False)
-        if len(sf)>0:
-            sf = sf[0]
-            if sf.endswith(','):
-                sf = sf[:-1]
-        else:
-            return 
-        self.saveCfg(sf)
-        
-        
-    def close(self):
-        '''Close the window'''
-        if self.alwaysSave.isChecked():
-            self.saveCfg(os.path.join(getConfigDir(), 'config.yml'))
-        self.done(0)
-        
-
-        
-
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(currentdir)
+sys.path.append(parentdir)
+from sbpRead import SBPHeader
         
 ####################### the whole window
 
-class SBwindow(qtw.QMainWindow):
+class SBwindow(QMainWindow):
     '''The whole GUI window'''
     
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, meta:bool=True, sb:bool=True, flu:bool=True, cam:bool=True, file:bool=True, test:bool=False):
         super(SBwindow, self).__init__(parent)
         
         # initialize all boxes to empty value so if we hit an error during setup and need to disconnect, we aren't trying to call empty variables
-        
-        self.fileBox = None
-        self.sbBox = None
-        self.basBox = None
-        self.nozBox = None
-        self.web2Box = None
-        self.fluBox = None
+
+        self.fileBox = sbgui_files.fileBox(self, connect=False)
+        self.sbBox = sbgui_shopbot.sbBox(self, connect=False)   
+        self.fluBox = sbgui_fluigent.fluBox(self, connect=False)
         self.logDialog = None
+        self.camBoxes = sbgui_cameras.camBoxes(self, connect=False)
+        self.metaBox = sbgui_print.metaBox(self, connect=False) 
+        self.flagBox = sbgui_flags.flagGrid(self, tall=False)
+        self.settingsDialog = QDialog()
         
+        self.meta = meta
+        self.sb = sb
+        self.flu = flu
+        self.cam = cam
+        self.test = test
+        self.file = file
+
         try:
-            self.central_widget = qtw.QWidget()               
+            self.central_widget = QWidget()               
             self.setCentralWidget(self.central_widget)      # create a central widget that everything else goes inside
 
-            self.setWindowTitle("Shopbot/Fluigent/Camera")
+            self.setWindowTitle("NIST Direct-write printer")
             self.setStyleSheet('background-color:white;')
-            self.resize(1500, 1600)                         # window size
-
-
+            
+#             self.resize(1500, 1600)                         # window size
+            self.connect()
             self.createGrid()                               # create boxes to go in main window
             self.createMenu()                               # create menu bar to go at top of window
                 # createMenu must go after createGrid, because it uses features created in createGrid
 
-            logging.info('Window created')
+            logging.info('Window created. GUI is ready.')
         except Exception as e:
             logging.error(f'Error during initialization: {e}')
             traceback.print_exc()
             self.closeEvent(0)                              # if we fail to initialize the GUI, disconnect from everything we connected
+   
+        
+    def boxes(self) -> List:
+        b = []
+        for s in ['settingsDialog', 'logDialog','fileBox', 'sbBox', 'fluBox', 'calibDialog', 'metaBox']:
+            if hasattr(self, s):
+                b.append(getattr(self, s))
+        if hasattr(self, 'camBoxes'):
+            b = b+self.camBoxes.list
+        return b
+
+            
+    def connect(self) -> None:
+        '''create the boxes. sbBox loads features from fluBox and camBoxes. fileBox loads features from sbBox and camBoxes. '''
+        
+        if self.flu and hasattr(self, 'fluBox'):
+            print('Connecting Fluigent box')
+            self.fluBox.connect()          # fluigent box
+        else:
+            print('Loading Fluigent test layout')
+            self.fluBox.testLayout()
+            
+        if self.cam and hasattr(self, 'camBoxes'):
+            print('Connecting camera boxes')
+            self.camBoxes.connect()             # object that holds camera boxes
+        
+        if self.sb and hasattr(self, 'sbBox'):
+            print('Connecting shopbot box')
+            self.sbBox.connect()            # shopbot box
+        else:
+            print('Loading shopbot test layout')
+            self.sbBox.testLayout(self.flu)
+
+        if self.file and hasattr(self, 'fileBox'):
+            print('Connecting file box')
+            self.fileBox.connect()          # general file ops
+
+        if self.meta and hasattr(self, 'metaBox'):
+            print('Connecting metadata box')
+            self.metaBox.connect()      # metadata box
+            
+        self.flagBox.labelFlags()  # relabel flags now that we've connected all the boxes
+        
 
         
     def createGrid(self):
         '''Create boxes that go inside of window'''
 
-        self.basBox = sbgui_cameras.cameraBox(0, self)     # basler camera box
-        self.nozBox = sbgui_cameras.cameraBox(1, self)     # nozzle webcam box
-        self.web2Box = sbgui_cameras.cameraBox(2, self)     # webcam 2 box
-        self.camBoxes = [self.basBox, self.nozBox, self.web2Box]
-        self.fluBox = sbgui_fluigent.fluBox(self)           # fluigent box
-        
-        self.fileBox = sbgui_files.fileBox(self)           # general file ops
-        self.sbBox = sbgui_shopbot.sbBox(self)             # shopbot box
-        
         # use different layout depending on screen resolution
-#         app = QtGui.QApplication([])
-#         screen_resolution = app.desktop().screenGeometry()
-#         width, height = screen_resolution.width(), screen_resolution.height()
         user32 = ctypes.windll.user32
         width = user32.GetSystemMetrics(0)
         height = user32.GetSystemMetrics(1)
 
-        self.fullLayout = qtw.QGridLayout()
+        self.fullLayout = QGridLayout()
         self.fullLayout.addWidget(self.sbBox, 0, 0) 
         self.fullLayout.addWidget(self.fileBox, 0, 1)  # row 0, col 1
-        self.fullLayout.addWidget(self.basBox, 2, 0)
-        self.fullLayout.addWidget(self.nozBox, 2, 1)
-#         print(width,height)
+        
         if height<2000:
-            # wide layout
             logging.info('Low screen resolution: using wide window')
-            self.fullLayout.addWidget(self.fluBox, 0, 2)
-            self.fullLayout.addWidget(self.web2Box, 2, 2)
+            # short window
+            self.fullLayout.addWidget(self.fluBox, 0,2)
+            row = 2
+            col = 0
+            for camBox in self.camBoxes.list:
+                self.fullLayout.addWidget(camBox, row, col)
+                col+=1
+                if col==3:
+                    row+=1
+                    col = 0
+            self.move(max(50, int(width-3600)),50)
         else:
-            # tall layout
-            self.fullLayout.addWidget(self.fluBox, 3, 0)
-            self.fullLayout.addWidget(self.web2Box, 3, 1)
+            # tall window
+            self.fullLayout.addWidget(self.fluBox, 2,0)
+            row = 2
+            col = 1
+            for camBox in self.camBoxes.list:
+                self.fullLayout.addWidget(camBox, row, col)
+                col+=1
+                if col==2:
+                    row+=1
+                    col=0
+            self.move(max(50, int(width-2800)),50)
 
         self.central_widget.setLayout(self.fullLayout)
-    
+
     
     #----------------
     # log
@@ -258,7 +168,7 @@ class SBwindow(qtw.QMainWindow):
     def setupLog(self, menubar) -> None:  
         '''Create the log dialog.'''
         self.logDialog = logDialog(self)
-        self.logButt = qtw.QAction('Log', self)
+        self.logButt = QAction('Log', self)
         self.logButt.setStatusTip('Open running log of status messages')
         self.logButt.triggered.connect(self.openLog)
         menubar.addAction(self.logButt)  # add button to open log window
@@ -274,7 +184,7 @@ class SBwindow(qtw.QMainWindow):
     def setupSettings(self, menubar) -> None:  
         '''Create the settings dialog.'''
         self.settingsDialog = settingsDialog(self)
-        self.settingsButt = qtw.QAction(icon('settings.png'), 'Settings', self)
+        self.settingsButt = QAction(icon('settings.png'), 'Settings', self)
         self.settingsButt.setStatusTip('Open app settings')
         self.settingsButt.triggered.connect(self.openSettings)
         menubar.addAction(self.settingsButt)  # add button to open settings window
@@ -290,7 +200,7 @@ class SBwindow(qtw.QMainWindow):
     def setupCalib(self, menubar) -> None:
         '''Create the pressure calibration tool dialog'''
         self.calibDialog = sbgui_calibration.pCalibration(self)
-        self.calibButt = qtw.QAction('Speed calibration tool', self)
+        self.calibButt = QAction('Speed calibration tool', self)
         self.calibButt.setStatusTip('Tool for calibrating speed vs pressure')
         self.calibButt.triggered.connect(self.openCalib)
         menubar.addAction(self.calibButt)  # add button to open calibration window
@@ -319,35 +229,62 @@ class SBwindow(qtw.QMainWindow):
         return self.fileBox.newFile(deviceName, ext)
     
     #----------------
+    # metadata at print
+    def saveMetaData(self) -> None:
+        '''save metadata including print speeds, calibration values, presures, metadata'''
+        try:
+            fullfn = self.newFile('meta', '.csv')
+        except NameError:
+            self.updateStatus('Failed to save speed file', True)
+            return
+
+        with open(fullfn, mode='w', newline='', encoding='utf-8') as c:
+            writer = csv.writer(c, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            
+            for box in self.boxes():
+                if hasattr(box, 'writeToTable'):
+                    box.writeToTable(writer)
+            
+            self.sbBox.updateStatus(f'Saved {fullfn}', True)
+        
+    def flagTaken(self, flag0:int) -> bool:
+        '''check if the flag is already occupied'''
+        return self.sbBox.flagTaken(flag0)   
+    
+    
+    #----------------
     # close the window
     
     def closeEvent(self, event):
         '''runs when the window is closed. Disconnects everything we connected to.'''
-        try:
-            for o in [self.sbBox, self.basBox, self.nozBox, self.web2Box, self.fluBox, self.settingsDialog, self.logDialog, self.calibDialog]:
-                try:
-                    o.close()
-                except:
-                    pass
-            for handler in logging.root.handlers[:]:
-                logging.root.removeHandler(handler)
-        except:
-            pass
+        logging.info('Closing boxes.')
+        for o in self.boxes():
+            if hasattr(o, 'close'):
+                o.close()
+            else:
+                logging.info(f'No close function in {o}')
+        for handler in logging.root.handlers[:]:
+            logging.root.removeHandler(handler)
+        logging.info('Done closing boxes.')
         self.close()
 
 
-class MainProgram(qtw.QWidget):
+class MainProgram(QWidget):
     '''The main application widget. Here, we can set fonts, icons, window info'''
     
-    def __init__(self): 
-        app = qtw.QApplication(sys.argv)
-        sansFont = QtGui.QFont("Arial", 9)
+    def __init__(self, meta:bool=True, sb:bool=True, flu:bool=True, cam:bool=True, file:bool=True, test:bool=False): 
+        
+        app = QApplication(sys.argv)
+        sansFont = QFont("Arial", 9)
         app.setFont(sansFont)
-        gallery = SBwindow()
+        gallery = SBwindow(meta=meta, sb=sb, flu=flu, cam=cam, file=file, test=test)
+
+        
         gallery.show()
         gallery.setWindowIcon(icon('sfcicon.ico'))
         app.setWindowIcon(icon('sfcicon.ico'))
         app.exec_()
+    
         
         myappid = cfg.appid # arbitrary string
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)

@@ -9,6 +9,15 @@ from typing import List, Dict, Tuple, Union, Any, TextIO
 import sympy as sy
 
 
+# local packages
+currentdir = os.path.dirname(os.path.realpath(__file__))
+parentdir = os.path.dirname(currentdir)
+sys.path.append(currentdir)
+sys.path.append(parentdir)
+sys.path.append(os.path.join(parentdir, 'pythonGUI'))  # add GUI folder
+from config import cfg
+
+
 #------------------------------------------
 
 def oddNeg(n:int)->int:
@@ -54,7 +63,7 @@ def pt(*dims, **kwargs) -> Union[str, float]:
             d1 = float(d)
         except:
             if not d[0]=='(' and ('-' in d or '+' in d):
-                dparen = '('+d+')'
+                dparen = f'({d})'
             else:
                 dparen = d
             s = s + dparen + op
@@ -78,7 +87,7 @@ def t(*dims) -> Union[str, float]:
     return pt(*dims, mode='mult')
 
 def mean(*dims) -> Union[str, float]:
-    return t(fs(1/len(dims)), '('+p(*dims)+')')
+    return t(fs(1/len(dims)), f'({p(*dims)})')
 
 
 #--------------------------
@@ -91,7 +100,7 @@ def floatSC(vi:Union[str, float], vardefs:dict) -> float:
     except:
         if type(vi) is str:
             for key, val in vardefs.items():
-                vi = vi.replace('&'+key, str(val))
+                vi = vi.replace(f'&{key}', str(val))
             try:
                 vout = eval(vi)
             except:
@@ -112,7 +121,7 @@ def strSimplify(vi:Union[str, float], defdict:dict) -> str:
         return vi
     
     for key, val in defdict.items():
-        vi = vi.replace('&'+key, fs(val))
+        vi = vi.replace(f'&{key}', fs(val))
 
     vin = vi.replace('&', 'UND')   # replace & character because sy.simplify will try to translate it if you left any variable names in there
 
@@ -153,6 +162,6 @@ def channelsTriggered(sbpName:str) -> int:
                 '''the shopbot flags are 1-indexed, while our channels list is 0-indexed, 
                 so when it says to change flag 1, we want to change channels[0]'''
                 li = int(line.split(',')[1])-1
-                if li not in channelsTriggered and not li==3:
+                if li not in channelsTriggered and not li==cfg.shopbot.flag1-1:
                     channelsTriggered.append(li) 
     return channelsTriggered

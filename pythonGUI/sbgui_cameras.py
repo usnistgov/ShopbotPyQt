@@ -2,8 +2,9 @@
 '''Shopbot GUI Shopbot functions'''
 
 # external packages
-from PyQt5 import QtCore, QtGui
-import PyQt5.QtWidgets as qtw
+from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtCore import pyqtSignal, QObject, QRunnable, QThreadPool, QTimer, Qt
+from PyQt5.QtWidgets import QButtonGroup, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QRadioButton, QMainWindow, QToolBar, QToolButton, QVBoxLayout, QWidget
 import cv2
 import time
 import datetime
@@ -43,9 +44,18 @@ def mode2title(mode:int) -> str:
     elif mode==2:
         return 'Webcam 2'
     
+def mode2short(mode:int) -> str:
+    '''convert a mode number to a short title, used in config.yml'''
+    if mode==0:
+        return 'bascam'
+    elif mode==1:
+        return 'webcam0'
+    elif mode==2:
+        return 'webcam1'
+    
 #########################################################
 
-class vrSignals(QtCore.QObject):
+class vrSignals(QObject):
     '''Defines the signals available from a running worker thread
         Supported signals are:
         finished: No data
@@ -53,16 +63,16 @@ class vrSignals(QtCore.QObject):
         result:`object` data returned from processing, anything
         progress: `int` indicating % progress '''
     
-    finished = QtCore.pyqtSignal()
-    error = QtCore.pyqtSignal(str, bool)
-    progress = QtCore.pyqtSignal(int)
-    prevFrame = QtCore.pyqtSignal(np.ndarray)
+    finished = pyqtSignal()
+    error = pyqtSignal(str, bool)
+    progress = pyqtSignal(int)
+    prevFrame = pyqtSignal(np.ndarray)
 
     
 
 #########################################################
 
-class vidWriter(QtCore.QRunnable):
+class vidWriter(QRunnable):
     '''The vidWriter creates a cv2.VideoWriter object at initialization, and it takes frames in the queue and writes them to file. This is a failsafe, so if the videowriter writes slower than the timer reads frames, then we can store those extra frames in memory until the vidWriter object can write them to the HD. 
 QRunnables run in the background. Trying to directly modify the GUI display from inside the QRunnable will make everything catastrophically slow, but you can pass messages back to the GUI using vrSignals.'''
     
@@ -105,7 +115,7 @@ QRunnables run in the background. Trying to directly modify the GUI display from
 
 
                     
-class vidReader(QtCore.QRunnable):
+class vidReader(QRunnable):
     '''vidReader puts frame collection into the background, so frames from different cameras can be collected in parallel'''
     
     def __init__(self, cam, vrid:int, frames:List[np.ndarray], lastFrame:List[np.ndarray]):
@@ -198,13 +208,13 @@ class vidReader(QtCore.QRunnable):
  ###########################
     # snapshots
     
-class snapSignals(QtCore.QObject):
+class snapSignals(QObject):
     '''signal class to send messages back to the GUI during snap collection'''
     
-    result = QtCore.pyqtSignal(str, bool)
-    error = QtCore.pyqtSignal(str, bool)
+    result = pyqtSignal(str, bool)
+    error = pyqtSignal(str, bool)
 
-class camSnap(QtCore.QRunnable):
+class camSnap(QRunnable):
     '''collects snapshots in the background'''
     
     def __init__(self, cam, readNew:bool, lastFrame:List):
@@ -250,11 +260,10 @@ class camera:
         these objects are created by cameraBox objects
         each type of camera (Basler and webcam) has its own readFrame and close functions'''
     
-    def __init__(self, sbWin:qtw.QMainWindow, guiBox:connectBox):
+    def __init__(self, sbWin:QMainWindow, guiBox:connectBox):
         self.previewing = False
         self.sbWin = sbWin                        # sbWin is the parent window
         self.guiBox = guiBox                      # guiBox is the parent box for this camera
-        self.cameraName = mode2title(guiBox.mode) # name of the camera (a string)
         self.vFilename = ''                       # name of the current video file
         self.timerRunning = False                 # is the timer that controls frame collection running?
         self.previewing = False                   # is the live preview on?
@@ -263,13 +272,36 @@ class camera:
         self.timer = None                         # the timer that controls frame collection
         self.resetVidStats()
         self.framesSincePrev = 0  # how many frames we've collected since we updated the live display
-        self.diag = cfg.camera.diag             # diag tells us which messages to log. 0 means none, 1 means some, 2 means a lot
+#         self.diag = cfg.camera.diag             
         self.fps = 0              # this will be set during subclass init (webcam.__init__, bascam.__init__)
         self.exposure = 0         # this will be set during subclass init (webcam.__init__, bascam.__init__)
         self.fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
-        self.prevWindow = qtw.QLabel()                # the window that the live preview will be displayed in
+        self.prevWindow = QLabel()                # the window that the live preview will be displayed in
         self.collisionCount = 0                       # this keeps track of frame read collisions
         self.lastCollision = datetime.datetime.now()  # this keeps track of the time between frame read collisions
+        self.loadDict(guiBox.cdict)
+        
+        
+    def loadDict(self, d:dict) -> None:
+        '''load current settings from a dictionary'''
+        self.flag1 = int(d['flag1'])        # shopbot output flag this camera is attached to, 1-indexed
+        self.setFrameRate(int(d['fps']) )        # frames per second
+        self.type = d['type']        # type of camera, either bascam or webcam
+        self.cameraName = d['name']  # full name of the camera (e.g. Basler camera)
+        self.diag = int(d['diag'])        # diag tells us which messages to log. 0 means none, 1 means some, 2 means a lot
+        
+    def loadConfig(self, cfg1):
+        '''load the current settings from the config Box object'''
+        self.loadDict(cfg1.camera[f'{self.guiBox.cname}'])
+                    
+    def saveConfig(self, cfg1):
+        '''save the current settings to a config Box object'''
+        cfg1.camera[f'{self.guiBox.cname}'].flag1 = self.flag1
+        cfg1.camera[f'{self.guiBox.cname}'].fps = self.fps
+        cfg1.camera[f'{self.guiBox.cname}'].type = self.type
+        cfg1.camera[f'{self.guiBox.cname}'].name = self.cameraName
+        cfg1.camera[f'{self.guiBox.cname}'].diag = self.diag
+        return cfg1
             
     def setFrameRate(self, fps:float) -> int:
         '''Set the frame rate of the camera. Return 0 if value changed, 1 if not'''
@@ -318,10 +350,7 @@ class camera:
         except NameError as e:
             logging.error(e)
             return
-        
-#         filename = filename + ('_' if len(filename)>0 else '')+self.cameraName
-#         filename = filename + '_'+time.strftime('%y%m%d_%H%M%S')+ext
-#         fullfn = os.path.join(folder, filename)
+
         return fullfn
     
     
@@ -348,7 +377,7 @@ class camera:
         snapthread = camSnap(self, last, self.lastFrame)       # create an object to collect and save the snapshot in background
         snapthread.signals.result.connect(self.updateStatus)   # let the camSnap object send messages to the status bar
         snapthread.signals.error.connect(self.updateStatus)
-        QtCore.QThreadPool.globalInstance().start(snapthread)  # get snapshot in background thread
+        QThreadPool.globalInstance().start(snapthread)  # get snapshot in background thread
             
             
     
@@ -387,7 +416,7 @@ class camera:
         recthread.signals.progress.connect(self.writingRecording)
         recthread.signals.error.connect(self.updateStatus)
         self.updateStatus(f'Recording {self.vFilename} ... ', True) 
-        QtCore.QThreadPool.globalInstance().start(recthread)          # start writing in a background thread
+        QThreadPool.globalInstance().start(recthread)          # start writing in a background thread
         self.startTimer()                          # this only starts the timer if we're not already previewing
         if self.diag>1:
                                                    # if we're in super debug mode, print header for the table of frames
@@ -402,18 +431,19 @@ class camera:
         self.recording = False     # this helps the frame reader and the status update know we're not reading frames
         self.stopTimer()           # only turns off the timer if we're not recording or previewing
 
+
     #---------------------------------
     # start the timer if there is not already a timer
     def startTimer(self) -> None:
-
+        '''start updating preview or recording'''
         if not self.timerRunning:
-            self.timer = QtCore.QTimer()
+            self.timer = QTimer()
             self.timer.timeout.connect(self.timerFunc)        # run the timerFunc every mspf milliseconds
-            self.timer.setTimerType(QtCore.Qt.PreciseTimer)   # may or may not improve timer accuracy, depending on computer
+            self.timer.setTimerType(Qt.PreciseTimer)   # may or may not improve timer accuracy, depending on computer
             self.timer.start(self.mspf)                       # start timer with frequency milliseconds per frame
             self.timerRunning = True
             if self.diag>1:
-                logging.debug(self.cameraName + ': Starting timer')
+                logging.debug(f'Starting {self.cameraName} timer')
         
 #     def readError(self, errnum:int, errstr:str) -> None:
 #         self.updateStatus(errstr, True)
@@ -427,7 +457,7 @@ class camera:
             self.timer.stop()
             self.timerRunning = False
             if self.diag>1:
-                logging.info(self.cameraName + ': Stopping timer')
+                logging.info(f'Stopping {self.cameraName} timer')
     
     def timerFunc(self) -> None:
         '''Run this continuously when we are recording or previewing. Generates a vidReader object for each frame, letting us collect frames in the background. 
@@ -441,7 +471,7 @@ class camera:
         runnable = vidReader(self, vrid, self.frames, self.lastFrame)  
         runnable.signals.prevFrame.connect(self.updatePrevFrame)      # let the vidReader send back frames to display
         runnable.signals.error.connect(self.updateStatus)           # let the vidReader send back error statuses to display
-        QtCore.QThreadPool.globalInstance().start(runnable)
+        QThreadPool.globalInstance().start(runnable)
     
     #---------------------------------
     
@@ -453,8 +483,8 @@ class camera:
                 frame2 = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             else:
                 frame2 = frame
-            image = QtGui.QImage(frame2, frame2.shape[1], frame2.shape[0], QtGui.QImage.Format_RGB888)
-            pixmap = QtGui.QPixmap.fromImage(image)
+            image = QImage(frame2, frame2.shape[1], frame2.shape[0], QImage.Format_RGB888)
+            pixmap = QPixmap.fromImage(image)
             self.prevWindow.setPixmap(pixmap)
         except Exception as e:
             # stop previewing if we can't preview
@@ -533,24 +563,27 @@ class camera:
 class webcam(camera):
     '''webcams are objects that hold functions for conventional webcams that openCV (cv2) can communicate with'''
     
-    def __init__(self, sbWin:qtw.QMainWindow, guiBox:connectBox):
+    def __init__(self, sbWin:QMainWindow, guiBox:connectBox):
         super(webcam, self).__init__(sbWin, guiBox)
 
         # connect to webcam through OpenCV
         try:
-            self.camDevice = cv2.VideoCapture(guiBox.mode-1)
+            self.camDevice = cv2.VideoCapture(sbWin.camBoxes.webcams, cv2.CAP_DSHOW)
+            sbWin.camBoxes.webcams+=1    # increment the number of webcams
             self.readFrame()
-        except:
+        except Exception as e:
+            print(e)
             self.connected = False
             return
         else:
             self.connected = True
         
         # get image stats
-        self.setFrameRateAuto()
+        if self.fps==0:
+            self.setFrameRateAuto()
         self.imw = int(self.camDevice.get(3))               # image width (px)
         self.imh = int(self.camDevice.get(4))               # image height (px)
-        self.prevWindow.setFixedSize(self.imw, self.imh)    # set the preview window to the image size
+#        self.prevWindow.setFixedSize(self.imw, self.imh)    # set the preview window to the image size
         self.getExposure()
         
         self.convertColors = True
@@ -618,15 +651,13 @@ class webcam(camera):
         if not self.camDevice==None:
             try:
                 self.camDevice.release()
+                cv2.destroyAllWindows()
             except:
                 pass
             else:
                 if self.diag>0:
                     logging.info(self.cameraName + ' closed')
                     
-    def saveConfig(self, cfg1):
-        '''save the current settings to a config Box object'''
-        return cfg1
     
 
 #########################################      
@@ -635,7 +666,7 @@ class webcam(camera):
 class bascam(camera):
     '''bascams are Basler cameras that require the pypylon SDK to communicate'''
     
-    def __init__(self, sbWin:qtw.QMainWindow, guiBox:connectBox):
+    def __init__(self, sbWin:QMainWindow, guiBox:connectBox):
         super(bascam, self).__init__(sbWin, guiBox)
         self.vFilename = ''
         self.connected = False
@@ -672,12 +703,7 @@ class bascam(camera):
             self.converter.OutputBitAlignment = pylon.OutputBitAlignment_MsbAligned
             
             # get camera stats
-           # self.setFrameRateAuto()                             # read the default frame rate from the camera
-        
-            fps = cfg.camera.bascam.fps
-            if fps>0:
-                self.setFrameRate(fps)
-            else:
+            if self.fps==0:
                 self.setFrameRate(100)
 
             tryFrame = 0
@@ -807,20 +833,19 @@ class bascam(camera):
         try:
             self.camDevice.StopGrabbing()
             self.camDevice.Close()
-        except:
+        except Exception as e:
+            print(e)
             pass
         else:
             if self.diag>0:
                 logging.info('Basler camera closed')
                 
-    def saveConfig(self, cfg1):
-        '''save the current settings to a config Box object'''
-        cfg1.camera.bascam.fps = self.fps
-        return cfg1
+    
+
             
 ################################################
         
-class camSettingsBox(qtw.QWidget):
+class camSettingsBox(QWidget):
     '''This opens a window that holds settings about logging for cameras.'''
     
     
@@ -831,69 +856,57 @@ class camSettingsBox(qtw.QWidget):
         
         super().__init__(parent)  
         self.camObj = camObj
+        self.camBox = parent
         
-        layout = qtw.QVBoxLayout()
-        
-        form = qtw.QFormLayout()
-        
-        self.diagRow = qtw.QHBoxLayout()
-        self.diag1 = qtw.QRadioButton('None')
-        self.diag2 = qtw.QRadioButton('Just critical')
-        self.diag2.setChecked(True)
-        self.diag3 = qtw.QRadioButton('All frames')
-        self.diagGroup = qtw.QButtonGroup()
-        for i,b in enumerate([self.diag1, self.diag2, self.diag3]):
-            self.diagGroup.addButton(b, i)
-            self.diagRow.addWidget(b)
-        self.diagGroup.buttonClicked.connect(self.changeDiag)
-        form.addRow("Log", self.diagRow)
+        layout = QVBoxLayout()
+        form = QFormLayout() 
+        form.addRow('Type', QLabel(self.camObj.type))
               
-        self.fpsBox = qtw.QLineEdit()
-        self.fpsBox.setText(str(self.camObj.fps))
-        self.fpsBox.returnPressed.connect(self.updateVars)
-        self.fpsAutoButt = qtw.QPushButton('Auto')
-        self.fpsAutoButt.clicked.connect(self.fpsAuto)
+        self.diagGroup = fRadioGroup(None, '', 
+                                          {0:'None', 1:'Just critical', 2:'All frames'}, 
+                                          {0:0, 1:1, 2:2},
+                                         self.camObj.diag, col=False, headerRow=False,
+                                          func=self.changeDiag)
+        form.addRow("Log", self.diagGroup.layout)
+        
+        self.flagBox = fLineEdit(form, title='SB output flag'
+                                 , text=str(self.camObj.flag1)
+                                 , tooltip='1-indexed Shopbot output flag that triggers snaps on this camera.'
+                                 , func=self.updateFlag)
+
+        fpsRow = QHBoxLayout()
+        self.fpsBox = fLineCommand(layout=fpsRow, text=str(self.camObj.fps), func = self.updateVars)
+        self.fpsAutoButt = fButton(fpsRow, title='Auto', func=self.fpsAuto)
         self.fpsAutoButt.setAutoDefault(False)
-        fpsRow = qtw.QHBoxLayout()
-        fpsRow.addWidget(self.fpsBox)
-        fpsRow.addWidget(self.fpsAutoButt)
         form.addRow('Frame rate (fps)', fpsRow)
         
-        self.exposureBox = qtw.QLineEdit()
-        self.exposureBox.setText(str(self.camObj.exposure))
-        self.exposureBox.returnPressed.connect(self.updateVars)
-        self.exposureAutoButt = qtw.QPushButton('Auto')
-        self.exposureAutoButt.clicked.connect(self.exposureAuto)
+        exposureRow = QHBoxLayout()
+        self.exposureBox = fLineCommand(layout=exposureRow, text=str(self.camObj.exposure), func=self.updateVars)
+        self.exposureAutoButt = fButton(exposureRow, title='Auto', func=self.exposureAuto)
         self.exposureAutoButt.setAutoDefault(False)
         self.exposureAutoButt.setEnabled(False)   # exposure auto doesn't work yet
-        if self.camObj.guiBox.mode>0:
+        if self.camObj.guiBox.type=='webcam':
             # webcam. exposure doesn't work
             self.enableExposureBox = False
             self.exposureBox.setEnabled(False)
-        else:
+        elif self.camObj.guiBox.type=='bascam':
             self.enableExposureBox = True
-        exposureRow = qtw.QHBoxLayout()
-        exposureRow.addWidget(self.exposureBox)
-        exposureRow.addWidget(self.exposureAutoButt)
+
         form.addRow('Exposure (ms)', exposureRow)
 
         layout.addLayout(form)
         
-        self.goButt = qtw.QPushButton('Save')
-        self.goButt.clicked.connect(self.updateVars)
+        self.goButt = fButton(layout, title='Save', func=self.updateVars)
         self.goButt.setFocus()
         self.goButt.setAutoDefault(True)
         layout.addWidget(self.goButt)
         self.setLayout(layout)
-        
-#         self.reset = qtw.QPushButton('Reset camera')
-#         self.reset.clicked.connect(parent.connect)
-#         self.layout.addWidget(self.reset)
 
         
     def changeDiag(self, diagbutton):
         '''Change the diagnostics status on the camera, so we print out the messages we want.'''
-        self.camObj.diag = self.diagGroup.id(diagbutton) 
+        self.camObj.diag = self.diagGroup.value()
+        logging.info(f'Changed logging mode on {self.camObj.cameraName}.')
         
             
     def updateVars(self):
@@ -901,6 +914,12 @@ class camSettingsBox(qtw.QWidget):
         self.updateFPS()
         if self.enableExposureBox:
             self.updateExposure()
+            
+    def updateFlag(self):
+        flag1 = int(self.flagBox.text())
+        self.camObj.flag1 = flag1
+        self.camBox.flag1 = flag1
+        self.camBox.sbWin.flagBox.labelFlags()
         
     #--------------------------
     # fps
@@ -952,35 +971,47 @@ class camSettingsBox(qtw.QWidget):
 class cameraBox(connectBox):
     '''widget that holds camera objects and displays buttons and preview frames'''
     
-    def __init__(self, mode:int, sbWin:qtw.QMainWindow):
-        '''Mode is the type of camera. 0 is a basler camera, 1 is the nozzle camera, and 2 is webcam 2.
+    def __init__(self, cname:str, cdict:dict, sbWin:QMainWindow):
+        '''cname is the name of the camera, e.g. cam0
+        cdict is a dictionary holding information about the camera, from config.yml
         sbWin is the parent window that this box sits inside of.'''
         super(cameraBox, self).__init__()
-        self.mode = mode # 
-        self.model = ''   # name of camera
+        self.cname = cname
+        self.mode = int(cname[3:])   # camera number
+        self.model = ''              # name of camera
+        self.cdict = cdict
         self.connected = False
         self.previewing = False
         self.recording = False
         self.imw=0
         self.imh=0
         self.img = []
-        self.bTitle = mode2title(mode)
+        self.bTitle = cdict['name']
+        self.type = cdict['type']
+        self.flag1 = cdict['flag1']
         self.sbWin = sbWin
         self.connect() # try to connect to the camera
         self.updateBoxTitle()
         if self.connected:
+            self.camObj.loadDict(cdict)
             if self.camObj.diag>0:
                 logging.info(self.bTitle, ' ', self.camObj.fps, ' fps')
         
         
     def saveConfig(self, cfg1):
         '''save the current settings to a config Box object'''
+        cfg1.camera[self.cname].name = self.bTitle
+        cfg1.camera[self.cname].type = self.type
+        cfg1.camera[self.cname].flag1 = self.flag1
         self.camObj.saveConfig(cfg1)
         return cfg1
     
     def loadConfig(self, cfg1):
         '''load settings from a config Box object'''
-        self.camObj.diag = cfg1.camera.diag
+        self.bTitle = cfg1.camera[self.cname].name
+        self.type = cfg1.camera[self.cname].type
+        self.flag1 = cfg1.camera[self.cname].flag1
+        self.camObj.loadConfig(cfg1)
 
     
     def connect(self) -> None:
@@ -997,11 +1028,18 @@ class cameraBox(connectBox):
             pass
         
         # define a new camera object
-        if self.mode==0:
+             
+        if self.type=='bascam':
             self.camObj = bascam(sbWin, self)
-        else:
+        elif self.type=='webcam':
             self.camObj = webcam(sbWin, self)
+        else:
+            logging.error(f'No functions found for camera type {self.type}')
+            self.failLayout()
+            return 
+        
         if self.camObj.connected:
+            self.connected = True
             self.successLayout()
         else:
             self.failLayout() # inherited from connectBox
@@ -1013,47 +1051,22 @@ class cameraBox(connectBox):
         self.settingsBox = camSettingsBox(self, self.bTitle, self.camObj)
         
         self.resetLayout()
-        self.layout = qtw.QVBoxLayout()
-
-        self.camInclude = qtw.QToolButton()        
-        self.camInclude.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
-        self.camInclude.setCheckable(True)
-        self.camInclude.clicked.connect(self.updateCamInclude)
+        self.layout = QVBoxLayout()
+        
+        self.camInclude = fToolButton(None, func=self.updateCamInclude, checkable=True)
+        self.camInclude.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.updateCamInclude() 
-        
-        self.camPrev = qtw.QToolButton()
-        self.camPrev.clicked.connect(self.cameraPrev)
-#         self.camPrev.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
-        self.camPrev.setCheckable(True)
-        self.setPrevButtStart()
-        
-        self.camRec = qtw.QToolButton()
-        self.camRec.clicked.connect(self.cameraRec)
-        self.camRec.setCheckable(True)
-        self.setRecButtStart()
-        
-        self.camPic = qtw.QToolButton()
-        self.camPic.setIcon(icon('camera.png'))
-        self.camPic.setStyleSheet(self.unclickedSheet())
-        self.camPic.clicked.connect(self.cameraPic)
-        self.camPic.setToolTip('Snapshot') 
+        self.camButts = fToolBar(vertical=False)
 
-        self.camButts = qtw.QToolBar()
-        self.camButts.setToolButtonStyle(QtCore.Qt.ToolButtonTextBesideIcon)
-        buttons =  [self.camPrev, self.camRec, self.camPic]
-        for b in buttons:
-            self.camButts.addWidget(b)
-        self.camButts.setStyleSheet("QToolBar{spacing:5px;}");
-        
-#         self.status = qtw.QLabel('Ready')
-#         self.status.setFixedSize(self.camObj.imw - (self.camButts.iconSize().width()+20)*len(buttons), 70)
-#         self.status.setWordWrap(True)
-        self.createStatus(self.camObj.imw - (self.camButts.iconSize().width()+20)*len(buttons), height=90)
-                
-        buttRow = qtw.QHBoxLayout()
-        buttRow.addWidget(self.camButts)
-        buttRow.addWidget(self.status)
-        self.layout.addLayout(buttRow)
+        self.camPrev = fToolButton(self.camButts, func=self.cameraPrev, checkable=True)
+        self.setPrevButtStart()
+        self.camRec = fToolButton(self.camButts, func=self.cameraRec, checkable=True)
+        self.setRecButtStart()
+        self.camPic = fToolButton(self.camButts, icon='camera.png',func=self.cameraPic, tooltip='Snapshot')
+        self.camPic.setStyleSheet(self.unclickedSheet())
+
+        self.createStatus(self.camObj.imw - (self.camButts.iconSize().width()+20)*self.camButts.buttons, height=90)
+        self.layout.addLayout(fHBoxLayout(self.camButts, self.status))
         
         self.layout.addStretch(1)
         
@@ -1107,6 +1120,26 @@ class cameraBox(connectBox):
             self.camRec.toggle()
         elif (not self.camRec.isChecked()) and self.recording:
             self.camRec.toggle()
+            
+            
+        
+    def startRecording(self) -> None:
+        '''start all checked cameras recording'''
+        if not hasattr(self, 'camObj'):
+            return
+        
+        if self.camObj.connected:
+            if self.camInclude.isChecked() and not self.camObj.recording:
+                self.cameraRec()
+                    
+    def stopRecording(self) -> None:
+        '''stop all checked cameras recording'''
+        if not hasattr(self, 'camObj'):
+            return
+        
+        if self.camObj.connected:
+            if self.camInclude.isChecked() and self.camObj.recording: 
+                self.cameraRec() # stop recording
         
     #------------------------------------------------
     #  functions to change appearance of buttons when they're pressed
@@ -1167,11 +1200,7 @@ class cameraBox(connectBox):
         self.camRec.setStyleSheet(self.clickedSheet())
         self.camRec.setIcon(icon('recordstop.png'))
         self.camRec.setToolTip('Stop recording') 
-        
-#     def openSettings(self) -> None:
-#         '''Open the camera settings dialog window'''
-#         self.settingsDialog.show()
-#         self.settingsDialog.raise_()
+
 
     #------------------------------------------------
     
@@ -1183,6 +1212,74 @@ class cameraBox(connectBox):
 
     def close(self) -> None:
         '''gets triggered when the window is closed. Disconnects GUI from camera.'''
-        self.camObj.close()
+        if hasattr(self, 'camObj'):
+            self.camObj.close()
 #         self.settingsDialog.done()
 
+
+
+class camBoxes:
+    '''holds the camera boxes'''
+    
+    def __init__(self, sbWin:QMainWindow,  connect:bool=True):
+        self.webcams = 0
+        self.sbWin = sbWin
+        if connect:
+            self.connect()
+        else:
+            self.list = [connectBox()]
+            
+    def connect(self)->None:
+        '''connect the cameras'''
+        self.webcams = 0
+        self.list = [cameraBox(d, cfg.camera[d], self.sbWin) for d in cfg.camera]   # initialize cameras
+        
+    def startRecording(self) -> None:
+        '''start all checked cameras recording'''
+        for camBox in self.list:
+            camBox.startRecording()
+                    
+    def stopRecording(self) -> None:
+        '''stop all checked cameras recording'''
+        for camBox in self.list:
+            camBox.stopRecording()
+            
+    def findFlag(self, flag0:int) -> Tuple[bool, cameraBox]:
+        '''find the camBox that matches the flag. return True, camBox if we found one, otherwise return False, empty'''
+        for camBox in self.list:
+            if camBox.flag1==flag0+1:
+                return True, camBox
+        return False, None
+    
+    def autoSaveLayout(self, vert:bool=True):
+        '''row or column of autosave camera buttons'''
+        layout = QGridLayout()
+        row = 0
+        col = 0
+        for camBox in self.list:
+            if hasattr(camBox, 'camObj'):
+                layout.addWidget(QLabel(camBox.camObj.cameraName), row, col)
+                col = col+1
+                layout.addWidget(camBox.camInclude, row, col)
+                if vert:
+                    row = row+1
+                    col = 0
+                else:
+                    col = col+1
+            else:
+                logging.debug(f'No camera object in {camBox.bTitle}')
+        layout.setSpacing(5)
+        fhb = fHBoxLayout(layout)
+        fhb.addStretch()
+        
+        return fhb
+                    
+                    
+    def close(self) -> None:
+        for camBox in self.list:
+            camBox.close()
+        
+        
+    
+        
+    
