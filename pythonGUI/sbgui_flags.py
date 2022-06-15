@@ -27,17 +27,23 @@ from sbgui_print import *
 class flagGrid(QGridLayout):
     '''panel that labels what devices the shopbot flags correspond to, and state of flags'''
     
-    def __init__(self, parent:connectBox, numFlags:int=12, tall:bool=True):
+    def __init__(self, parent:connectBox, tall:bool=True):
         super(flagGrid, self).__init__()
         
         self.sbBox = parent.sbBox
         self.sbWin = parent
-        self.numFlags = numFlags
-        self.flagLabels = dict([[flag0, ''] for flag0 in range(self.numFlags)])   
-                    # dictionary that holds labels {flag:device name}
+        self.flag1min = cfg.shopbot.flag1min
+        self.flag1max = cfg.shopbot.flag1max
+        self.numFlags = self.flag1max-self.flag1min+1
+        self.resetFlagLabels()
             
         self.successLayout(tall=tall)
         self.labelFlags()
+        
+    def resetFlagLabels(self):
+        self.flagLabels0 = dict([[flag0, ''] for flag0 in range(self.numFlags)])   
+                    # dictionary that holds labels {flag:device name}
+                    # 0=indexed
         
     def successLayout(self, tall:bool=True) -> None:
         # coords
@@ -92,7 +98,15 @@ class flagGrid(QGridLayout):
  
     def flagTaken(self, flag0:int) -> bool:
         '''check the dictionary to see if the flag is taken'''
-        return len(self.flagLabels(flag0))>0
+        if flag0<self.flag1min-1 or flag0>self.flag1max-1:
+            # flag out of range
+            return False
+        label = self.flagLabels0[flag0]
+        if len(label)>0:
+            logging.info(f'Flag taken: {flag0+1}: {label}')
+            return True
+        else:
+            return False
       
         
     def flagName(self, flag0:int) -> str:
@@ -133,6 +147,8 @@ class flagGrid(QGridLayout):
     def labelFlags(self) -> None:
         '''label the devices in the shopbot flag grid'''
         # reset all labels
+        self.resetFlagLabels()
+        
         for flag0 in range(self.numFlags):
             labelname = self.flagLabelName(flag0)
             if hasattr(self, labelname):
@@ -152,13 +168,15 @@ class flagGrid(QGridLayout):
             if hasattr(self, labelname):
                 labelObj = getattr(self, labelname)
                 labelObj.setText(obj.bTitle)   # update display
-                self.flagLabels = obj.bTitle   # keep in dictionary
+                self.flagLabels0[obj.flag1-1] = obj.bTitle   # keep in dictionary
             
         # shopbot run flag
-        labelname = self.flagLabelName(self.sbBox.getRunFlag1()-1)
+        runFlag1 = self.sbBox.getRunFlag1()
+        labelname = self.flagLabelName(runFlag1-1)
         if hasattr(self, labelname):
             labelObj = getattr(self, labelname)
             labelObj.setText('Run')
+            self.flagLabels0[runFlag1-1] = 'Run'
         
         
         

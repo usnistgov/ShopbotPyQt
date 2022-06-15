@@ -172,6 +172,14 @@ def fAdopt(obj:QWidget, **kwargs):
         except AttributeError:
             obj.setMinimumHeight(kwargs['height'])
             obj.setMaximumHeight(kwargs['height'])
+    if 'maxwidth' in kwargs:
+        obj.setMaximumWidth(kwargs['maxwidth'])
+    if 'minwidth' in kwargs:
+        obj.setMinimumWidth(kwargs['minwidth'])
+    if 'maxheight' in kwargs:
+        obj.setMaximumHeight(kwargs['maxheight'])
+    if 'minheight' in kwargs:
+        obj.setMinHeight(kwargs['minheight'])
     if 'validator' in kwargs:
         obj.setValidator(kwargs['validator'])
     if 'layout' in kwargs and hasattr(kwargs['layout'], 'addWidget'):
@@ -191,6 +199,7 @@ class fButton(QPushButton):
             self.clicked.connect(kwargs['func'])
         self.setAutoDefault(False)
         self.clearFocus()
+    
 
 #----   
         
@@ -203,6 +212,7 @@ class fCheckBox(QCheckBox):
         fAdopt(self, layout=layout, text=title, **kwargs)
         if 'func' in kwargs:
             self.stateChanged.connect(kwargs['func'])
+
         
 #----
 
@@ -224,6 +234,8 @@ class fLineEdit(QLineEdit):
         super(fLineEdit, self).__init__()
         if 'func' in kwargs:
             self.editingFinished.connect(kwargs['func'])
+        if 'func' in kwargs:
+            self.returnPressed.connect(kwargs['func'])
         fAdopt(self, text=text, **kwargs)
         if hasattr(form, 'addRow'):
             form.addRow(title, self)

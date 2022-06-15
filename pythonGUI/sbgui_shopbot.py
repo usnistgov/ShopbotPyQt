@@ -30,17 +30,17 @@ class sbSettingsBox(QWidget):
     '''This opens a window that holds settings about logging for the shopbot.'''
     
     
-    def __init__(self, parent:connectBox):
-        '''parent is the connectBox that this settings dialog belongs to. '''
+    def __init__(self, sbBox:connectBox):
+        '''sbBox is the connectBox that this settings dialog belongs to. '''
         
-        super().__init__(parent)  
-        self.parent = parent
+        super().__init__(sbBox)  
+        self.sbBox = sbBox
         layout = QVBoxLayout()
         
         # SBP folder
         fLabel(layout, title='.SBP file folder', style=labelStyle())
         self.folderRow = fileSetOpenRow(width=600, title='Set SBP folder',
-                                   initFolder=self.parent.sbpFolder, 
+                                   initFolder=self.sbBox.sbpFolder, 
                                    tooltip='Open SBP folder',
                                   setFunc = self.setSBPFolder,
                                   openFunc = self.openSBPFolder)
@@ -51,7 +51,7 @@ class sbSettingsBox(QWidget):
         self.showFolderCheck = fCheckBox(layout, title='Show full path in file queue', 
                                          tooltip='Show folder name in the list of Shopbot files',
                                          checked=cfg.shopbot.showFolder, 
-                                         func=self.parent.reformatFileList)
+                                         func=self.sbBox.reformatFileList)
         
         # save settings
         fLabel(layout, title='Saving time series', style=labelStyle())
@@ -61,13 +61,16 @@ class sbSettingsBox(QWidget):
         self.saveFlagCheck = fCheckBox(layout, title='Save output flag in time series table during print', 
                                       checked=cfg.shopbot.includeFlagInTable, 
                                       func=self.updateSaveFlag)
+        self.savePicMetaData = fCheckBox(layout, title='Save metadata and time series for prints without pressure', 
+                                      checked=cfg.shopbot.savePicMetadata, 
+                                      func=self.updateSavePicMetadata)
 
         # autoplay checkboxes
         self.autoPlayChecks = fRadioGroup(layout, 'When the print is done:', 
                                           {0:'Automatically start the next file', 
                                            1:'Wait for the user to press play'}, 
                                           {0:True, 1:False},
-                                         self.parent.autoPlay, col=True, headerRow=True,
+                                         self.sbBox.autoPlay, col=True, headerRow=True,
                                           func=self.changeAutoPlay)
 
         # timing error
@@ -76,19 +79,29 @@ class sbSettingsBox(QWidget):
         objValidator = QDoubleValidator(0, 10, 2)
         self.critTimeOn = fLineEdit(fileForm, title='Crit time on (s)',
                                     text=str(cfg.shopbot.critTimeOn), 
-                                    tooltip='Turn on the pressure this amount of time before the flag is turned on')
+                                    tooltip='Turn on the pressure this amount of time before the flag is turned on',
+                                   func=self.updateCritTimeOn)
         self.critTimeOff = fLineEdit(fileForm, title='Crit time off (s)', 
                                      text=str(cfg.shopbot.critTimeOff), 
-                                     tooltip='Turn off the pressure this amount of time after the flag is turned on')
-        self.zeroDist = fLineEdit(fileForm, title=f'Zero distance ({self.parent.units})', 
+                                     tooltip='Turn off the pressure this amount of time after the flag is turned on',
+                                    func=self.updateCritTimeOff)
+        self.zeroDist = fLineEdit(fileForm, title=f'Zero distance ({self.sbBox.units})', 
                                   text=str(cfg.shopbot.zeroDist), 
-                                  tooltip='If we are within this distance from a point, we are considered to be at the point. In other words, margin of error or tolerance on distance measurements.')
+                                  tooltip='If we are within this distance from a point, we are considered to be at the point. In other words, margin of error or tolerance on distance measurements.',
+                                 func = self.updateZeroDist)
         objValidator2 = QIntValidator(0, 10000)
         self.checkFreq = fLineEdit(fileForm, title=f'Check flag frequency (ms)', 
                                   text=str(cfg.shopbot.dt), 
                                   tooltip='Check the status of the shopbot every _ ms',
                                   validator=objValidator2)
-        for w in [self.critTimeOn, self.critTimeOff, self.zeroDist, self.checkFreq]:
+        objValidator3 = QIntValidator(cfg.shopbot.flag1min,cfg.shopbot.flag1max)
+        self.flag1Edit = fLineEdit(fileForm, title=f'Run flag ({cfg.shopbot.flag1min}-{cfg.shopbot.flag1max})',
+                              text =str(cfg.shopbot.flag1),
+                              tooltip = 'Flag that triggers the start of print',
+                              validator = objValidator3,
+                              func = self.updateFlag1)
+        
+        for w in [self.critTimeOn, self.critTimeOff, self.zeroDist, self.checkFreq, self.flag1Edit]:
             w.setMaximumWidth(100)
         layout.addLayout(fileForm)
         layout.addStretch()
@@ -97,16 +110,16 @@ class sbSettingsBox(QWidget):
         
     def loadConfig(self, cfg1) -> None:
         '''load values from a config file'''
-        self.critTimeOn.setText(cfg1.shopbot.critTimeOn)
-        self.critTimeOff.setText(cfg1.shopbot.critTimeOff)
-        self.zeroDist.setText(cfg1.shopbot.zeroDist)
-        self.checkFreq.setText(cfg1.shopbot.dt)
+        self.critTimeOn.setText(str(cfg1.shopbot.critTimeOn))
+        self.critTimeOff.setText(str(cfg1.shopbot.critTimeOff))
+        self.zeroDist.setText(str(cfg1.shopbot.zeroDist))
+        self.checkFreq.setText(str(cfg1.shopbot.dt))
         
     def saveConfig(self, cfg1):
         '''save values to the config file'''
-        cfg1.shopbot.critTimeOn = self.getCritTimeOn()
-        cfg1.shopbot.critTimeOff = self.getCritTimeOff()
-        cfg1.shopbot.zeroDist = self.getZeroDist()
+#         cfg1.shopbot.critTimeOn = self.getCritTimeOn()
+#         cfg1.shopbot.critTimeOff = self.getCritTimeOff()
+#         cfg1.shopbot.zeroDist = self.getZeroDist()
         cfg1.shopbot.dt = self.getDt()
         return cfg1
         
@@ -121,50 +134,86 @@ class sbSettingsBox(QWidget):
                 self.checkFreq.setText(str(dt))
         return dt
         
-    def getCritTimeOn(self) -> float:
-        '''get the critTimeOn'''
-        return float(self.critTimeOn.text())
+#     def getCritTimeOn(self) -> float:
+#         '''get the critTimeOn'''
+#         return float(self.critTimeOn.text())
     
-    def getCritTimeOff(self) -> float:
-        '''get the critTimeOn'''
-        return float(self.critTimeOff.text())
+#     def getCritTimeOff(self) -> float:
+#         '''get the critTimeOn'''
+#         return float(self.critTimeOff.text())
     
-    def getZeroDist(self) -> float:
-        '''get the critTimeOn'''
-        return float(self.zeroDist.text())
+#     def getZeroDist(self) -> float:
+#         '''get the critTimeOn'''
+#         return float(self.zeroDist.text())
         
     def changeAutoPlay(self) -> None:
         '''Change autoPlay settings'''
         if self.autoPlayChecks.value():
-            self.parent.autoPlay = True
-            self.parent.updateStatus('Turned on autoplay', True)
+            self.sbBox.autoPlay = True
+            self.sbBox.updateStatus('Turned on autoplay', True)
         else:
-            self.parent.autoPlay = False
-            self.parent.updateStatus('Turned off autoplay', True)
+            self.sbBox.autoPlay = False
+            self.sbBox.updateStatus('Turned off autoplay', True)
             
     def updateSavePos(self) -> None:
         '''update whether to save position in table'''
         if self.savePosCheck.isChecked():
-            self.parent.savePos=True
+            self.sbBox.savePos=True
         else:
-            self.parent.savePos=False
+            self.sbBox.savePos=False
+            
+    def updateSavePicMetadata(self) -> None:
+        '''update whether to save metadata even if pressure is never turned on'''
+        if self.savePicMetadata.isChecked():
+            self.sbBox.savePicMetadata=True
+        else:
+            self.sbBox.savePicMetadata=False
             
     def updateSaveFlag(self) -> None:
         '''update whether to save flag in table'''
         if self.saveFlagCheck.isChecked():
-            self.parent.saveFlag=True
+            self.sbBox.saveFlag=True
         else:
-            self.parent.saveFlag=False
+            self.sbBox.saveFlag=False
+            
+    def updateFlag1(self) -> None:
+        '''update sbBox run flag'''
+        newflag1 = int(self.flag1Edit.text())
+        if newflag1==self.sbBox.runFlag1:
+            # no change in flag
+            return
+        if self.sbBox.sbWin.flagTaken(newflag1-1):
+            self.sbBox.updateStatus(f'{newflag1} is taken. Resetting shopbot flag.', True)
+            self.flag1Edit.setText(str(self.sbBox.runFlag1)) # reset the flag if it's taken
+        else:
+            self.sbBox.updateStatus(f'Updated shopbot flag to {self.sbBox.runFlag1}.', True)
+            self.sbBox.runFlag1=newflag1
+            self.sbBox.sbWin.flagBox.labelFlags()
+        
+    def updateCritTimeOn(self) -> None:
+        '''update sbBox crit time on'''
+        self.sbBox.critTimeOn=float(self.critTimeOn.text())
+        self.sbBox.updateStatus(f'Updated critTimeOn to {self.sbBox.critTimeOn}', True)
+        
+    def updateCritTimeOff(self) -> None:
+        '''update sbBox crit time on'''
+        self.sbBox.critTimeOff=float(self.critTimeOff.text())
+        self.sbBox.updateStatus(f'Updated critTimeOff to {self.sbBox.critTimeOff}', True)
+        
+    def updateZeroDist(self) -> None:
+        '''update sbBox crit zero dist'''
+        self.sbBox.zeroDist=float(self.zeroDist.text())
+        self.sbBox.updateStatus(f'Updated zero distance to {self.sbBox.zeroDist}', True)
 
     def setSBPFolder(self) -> None:
         '''set the folder to save all the files we generate from the whole gui'''
-        self.parent.sbpFolder = setFolder(self.parent.sbpFolder)        
-        logging.info('Changed shopbot file folder to %s' % self.parent.sbpFolder)
-        self.fsor.updateText(self.parent.sbpFolder)
+        self.sbBox.sbpFolder = setFolder(self.sbBox.sbpFolder)        
+        self.sbBox.updateStatus('Changed shopbot file folder to %s' % self.sbBox.sbpFolder, True)
+        self.fsor.updateText(self.sbBox.sbpFolder)
             
     def openSBPFolder(self) -> None:
         '''Open the save folder in windows explorer'''
-        openFolder(self.parent.sbpFolder)
+        openFolder(self.sbBox.sbpFolder)
 
         
             
@@ -187,6 +236,7 @@ class sbBox(connectBox):
         self.runningSBP = False
         self.setTitle('Shopbot')
         self.loadConfigMain(cfg)
+        
         if connect:
             self.connect()
    
@@ -244,8 +294,13 @@ class sbBox(connectBox):
     # handling configs
     def saveConfig(self, cfg1):
         '''save the current settings to a config Box object'''
+        cfg1.shopbot.flag1 = self.runFlag1 
         cfg1.shopbot.autoplay = self.autoPlay   
         cfg1.shopbot.sbpFolder = self.sbpFolder
+        cfg1.shopbot.units = self.units
+        cfg1.shopbot.includePositionInTable = self.savePos
+        cfg1.shopbot.includeFlagInTable = self.saveFlag
+        cfg1.shopbot.savePicMetadata = self.savePicMetadata
         cfg1 = self.settingsBox.saveConfig(cfg1)
         cfg1 = self.sbList.saveConfig(cfg1)
         return cfg1
@@ -254,10 +309,16 @@ class sbBox(connectBox):
         '''load settings to the main box'''
         self.runFlag1 = cfg1.shopbot.flag1   # 1-indexed
         self.autoPlay = cfg1.shopbot.autoplay 
+        self.sbpFolder = checkPath(cfg1.shopbot.sbpFolder)
+        self.units = cfg1.shopbot.units
         self.savePos = cfg1.shopbot.includePositionInTable
         self.saveFlag = cfg1.shopbot.includeFlagInTable
-        self.units = cfg1.shopbot.units
-        self.sbpFolder = checkPath(cfg1.shopbot.sbpFolder)
+        self.savePicMetadata = cfg1.shopbot.savePicMetadata
+        self.critTimeOn=cfg1.shopbot.critTimeOn
+        self.critTimeOff=cfg1.shopbot.critTimeOff
+        self.zeroDist=cfg1.shopbot.zeroDist
+        self.checkFreq=cfg1.shopbot.dt
+        
     
     def loadConfig(self, cfg1):
         '''load settings from a config Box object'''
@@ -288,8 +349,12 @@ class sbBox(connectBox):
         '''layout if we are testing some other component'''
         self.resetLayout()
         self.layout = QVBoxLayout()
-        self.testMetaButt = fButton(self.layout, title='Test meta save', tooltip='Test saving metadata about the print', func=self.saveMeta)
-        self.testTimeButt = fButton(self.layout, title='Test time series save', tooltip='Test saving time series', func=self.testTime)
+        self.testMetaButt = fButton(self.layout, title='Test meta save'
+                                    , tooltip='Test saving metadata about the print'
+                                    , func=self.saveMeta)
+        self.testTimeButt = fButton(self.layout, title='Test time series save'
+                                    , tooltip='Test saving time series'
+                                    , func=self.testTime)
         if fluigent:
             self.addFluBox(self.layout)
         self.setLayout(self.layout)
@@ -322,8 +387,7 @@ class sbBox(connectBox):
         swidth = 600
         
         self.settingsBox = sbSettingsBox(self)
-        
-        
+
         self.resetLayout()
             
         self.layout0 = QHBoxLayout()
@@ -464,7 +528,11 @@ class sbBox(connectBox):
             
         self.updateStatus(f'Running SBP file {self.sbpName()}, critFlag = {self.critFlag}', True)
         
-        self.sbpTiming = SBPtimings(self.sbpName(), self.sbWin, critTimeOn=self.settingsBox.getCritTimeOn(), critTimeOff=self.settingsBox.getCritTimeOff(), zero=self.settingsBox.getZeroDist())   # this object updates changes in state
+        self.sbpTiming = SBPtimings(self.sbpName(), self.sbWin
+                                    , critTimeOn=self.critTimeOn
+                                    , critTimeOff=self.critTimeOff
+                                    , zero=self.zeroDist)
+                # this object updates changes in state
 
         # send the file to the shopbot via command line
         appl = self.keys.sb3File

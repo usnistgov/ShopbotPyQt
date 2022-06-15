@@ -28,17 +28,17 @@ class fluChannel:
         fgt functions come from the Fluigent SDK
         each channel gets a QLayout that can be incorporated into the fluBox widget'''
     
-    def __init__(self, chanNum:int, fluBox:connectBox):
-        '''chanNum is a 0-indexed channel number (e.g. 0)
+    def __init__(self, chanNum0:int, fluBox:connectBox):
+        '''chanNum0 is a 0-indexed channel number (e.g. 0)
         fluBox is the parent box that holds the Fluigent GUI display'''
 
         
-        self.chanNum = chanNum  # 0-indexed
+        self.chanNum0 = chanNum0  # 0-indexed
         self.fluBox = fluBox
         self.loadConfig(cfg)
         
         columnw = fluBox.columnw
-        self.bTitle = f'Channel {chanNum}'
+        self.bTitle = f'Channel {chanNum0}'
         self.label = QLabel(self.bTitle)
         self.label.setFixedWidth(1.5*columnw)
         self.label2 = QLabel(self.bTitle)
@@ -68,7 +68,7 @@ class fluChannel:
         self.updateColor(self.color)           
         
         # line up the label and input box horizontally
-        col1 = 1+2*self.chanNum
+        col1 = 1+2*self.chanNum0
         self.fluBox.fluButts.addWidget(self.label, 0, col1+0, 1, 2)
         self.fluBox.fluButts.addWidget(self.readLabel, 1,col1+ 0, 1, 2)
         self.fluBox.fluButts.addWidget(self.setBox, 3, col1+0)
@@ -81,13 +81,13 @@ class fluChannel:
         
     def loadConfig(self, cfg1) -> None:
         '''load settings from the config file'''
-        self.color = cfg.fluigent[f'channel{self.chanNum}'].color
-        self.flag1 = cfg.fluigent[f'channel{self.chanNum}'].flag1
-        self.fluBox.settingsBox.flagBoxes[self.chanNum].setText(str(self.flag1))
+        self.color = cfg.fluigent[f'channel{self.chanNum0}'].color
+        self.flag1 = cfg.fluigent[f'channel{self.chanNum0}'].flag1
+        self.fluBox.settingsBox.flagBoxes[self.chanNum0].setText(str(self.flag1))
         
     def saveConfig(self, cfg1):
-        cfg1.fluigent[f'channel{self.chanNum}'].color = self.color
-        cfg1.fluigent[f'channel{self.chanNum}'].flag1 = self.flag1
+        cfg1.fluigent[f'channel{self.chanNum0}'].color = self.color
+        cfg1.fluigent[f'channel{self.chanNum0}'].flag1 = self.flag1
         return cfg1
     
     def updateFlag(self, flag1) -> None:
@@ -102,14 +102,14 @@ class fluChannel:
                 o.setStyleSheet(f'color: {color};')  
                 # this makes the label our input color
         except:
-            logging.warning(f'Failed to update color of channel {self.chanNum} to {color}')
+            logging.warning(f'Failed to update color of channel {self.chanNum0} to {color}')
             
             
     def goToPressure(self, runPressure:int, status:bool) -> None:
         '''to to the given pressure'''
-        fgt.fgt_set_pressure(self.chanNum, runPressure)
+        fgt.fgt_set_pressure(self.chanNum0, runPressure)
         if status:
-            self.fluBox.updateStatus(f'Setting channel {self.chanNum} to {runPressure} mbar', True)
+            self.fluBox.updateStatus(f'Setting channel {self.chanNum0} to {runPressure} mbar', True)
             
     def goToRunPressure(self) -> None:
         '''set the pressure for this channel to the pressure in the constBox'''
@@ -127,24 +127,24 @@ class fluChannel:
         if runTime<0:
             return
         runPressure = int(self.setBox.text())
-        self.fluBox.updateStatus(f'Setting channel {self.chanNum} to {runPressure} mbar for {runTime} s', True)
-        fgt.fgt_set_pressure(self.chanNum, runPressure)
+        self.fluBox.updateStatus(f'Setting channel {self.chanNum0} to {runPressure} mbar for {runTime} s', True)
+        fgt.fgt_set_pressure(self.chanNum0, runPressure)
         QTimer.singleShot(runTime*1000, self.zeroChannel) 
             # QTimer wants time in milliseconds
-        self.fluBox.addRowToCalib(runPressure, runTime, self.chanNum)
+        self.fluBox.addRowToCalib(runPressure, runTime, self.chanNum0)
     
     
     def zeroChannel(self, status:bool=True) -> None:
         '''zero the channel pressure'''
         if status:
-            self.fluBox.updateStatus(f'Setting channel {self.chanNum} to 0 mbar', True)
-        fgt.fgt_set_pressure(self.chanNum, 0)
+            self.fluBox.updateStatus(f'Setting channel {self.chanNum0} to 0 mbar', True)
+        fgt.fgt_set_pressure(self.chanNum0, 0)
         
         
     def writeToTable(self, writer) -> None:
         '''write metatable values to a csv writer object'''
         press = int(self.constBox.text())
-        writer.writerow([f'ink pressure channel {self.chanNum}','mbar', press])
+        writer.writerow([f'ink pressure channel {self.chanNum0}','mbar', press])
         
 
         
@@ -405,7 +405,7 @@ class fluSettingsBox(QWidget):
         
         objValidator2 = QIntValidator(1, 12)
         self.clabs = [QLabel(f'Channel {i}') for i in range(self.fluBox.numChans)]
-        self.colorBoxes = [QPushButton() for i in range(self.fluBox.numChans)]
+        self.colorBoxes = ['' for i in range(self.fluBox.numChans)]
         self.flagBoxes = [QLineEdit() for i in range(self.fluBox.numChans)]     # 1-indexed
         for i in range(fluBox.numChans):
             col = 2*i+2
@@ -413,18 +413,23 @@ class fluSettingsBox(QWidget):
             color = self.fluBox.colors[i]
             grid.addWidget(self.clabs[i], 0, col)
             cboxsize = 50
-            self.colorBoxes[i].setMinimumWidth(cboxsize)
-            self.colorBoxes[i].setMinimumHeight(cboxsize)
-            self.colorBoxes[i].setMaximumWidth(cboxsize)
-            self.colorBoxes[i].setMaximumHeight(cboxsize)
-            self.colorBoxes[i].setToolTip(f'Channel {i} color')
-            self.colorBoxes[i].clicked.connect(self.selectColor)
-            self.colorBoxes[i].chanNum = i
+            self.colorBoxes[i] = fButton(None, width=cboxsize, height=cboxsize, tooltip=f'Channel {i} color', func=self.selectColor)
+            
+            
+#             self.colorBoxes[i].setMinimumWidth(cboxsize)
+#             self.colorBoxes[i].setMinimumHeight(cboxsize)
+#             self.colorBoxes[i].setMaximumWidth(cboxsize)
+#             self.colorBoxes[i].setMaximumHeight(cboxsize)
+#             self.colorBoxes[i].setToolTip(f'Channel {i} color')
+#             self.colorBoxes[i].clicked.connect(self.selectColor)
+            self.colorBoxes[i].chanNum0 = i
             grid.addWidget(self.colorBoxes[i], 2, col)
-            self.flagBoxes[i].returnPressed.connect(self.updateFlags)
-            self.flagBoxes[i].setValidator(objValidator2)
-            self.flagBoxes[i].chanNum = i
-            self.flagBoxes[i].setMaximumWidth(editw)
+        
+            self.flagBoxes[i] = fLineCommand(func=self.updateFlags, validator=objValidator2, maxwidth=editw)
+#             self.flagBoxes[i].returnPressed.connect(self.updateFlags)
+#             self.flagBoxes[i].setValidator(objValidator2)
+            self.flagBoxes[i].chanNum0 = i
+#             self.flagBoxes[i].setMaximumWidth(editw)
             grid.addWidget(self.flagBoxes[i], 4, col)
             self.setLabelColor(i, color)
             
@@ -440,11 +445,11 @@ class fluSettingsBox(QWidget):
         '''update the value of dt in the parent'''
         self.fluBox.dt = int(self.dtBox.text())
         
-    def setLabelColor(self, chanNum:int, color:str) -> None:
+    def setLabelColor(self, chanNum0:int, color:str) -> None:
         '''set the labels on the settings boxes'''
-        for b in [self.clabs[chanNum], self.flagBoxes[chanNum]]:
+        for b in [self.clabs[chanNum0], self.flagBoxes[chanNum0]]:
             b.setStyleSheet(f'color: {color}')
-        for b in [self.colorBoxes[chanNum]]:
+        for b in [self.colorBoxes[chanNum0]]:
             b.setStyleSheet(f'background-color: {color}; border-radius:10px')
         
     def selectColor(self) -> None:
@@ -452,10 +457,10 @@ class fluSettingsBox(QWidget):
         color = QColorDialog.getColor()
         if color.isValid():
             color = str(color.name())  # convert to hex string
-            chanNum = self.sender().chanNum
-            self.fluBox.colors[chanNum] = color
+            chanNum0 = self.sender().chanNum0
+            self.fluBox.colors[chanNum0] = color
             self.fluBox.updateColors()
-            self.setLabelColor(chanNum, color)
+            self.setLabelColor(chanNum0, color)
             
         
         
@@ -481,18 +486,20 @@ class fluSettingsBox(QWidget):
         
     def updateFlags(self) -> None:
         '''update the flags in the channel objects'''
-        chanNum = self.sender().chanNum
-        oldflag1 = self.fluBox.pChannels[chanNum].flag1
+        chanNum0 = self.sender().chanNum0
+        oldflag1 = self.fluBox.pchannels[chanNum0].flag1
         newflag1 = int(self.sender().text())
         if newflag1==oldflag1:
             return
-        if self.fluBox.sbWin.flagTaken(newflag-1): # convert to 0-indexed
+        if self.fluBox.sbWin.flagTaken(newflag1-1): # convert to 0-indexed
             # another device is already assigned to that flag. revert
             self.sender.setText(str(oldflag1))
             return
         else:
-            # free flag
-            self.fluBox.pChannels[chanNum].flag1 = newflag1
+            # free flag: assign
+            self.fluBox.pchannels[chanNum0].flag1 = newflag1
+            self.fluBox.sbWin.flagBox.labelFlags()
+            self.fluBox.updateStatus(f'Changing flag of channel {chanNum0} to {newflag1}', True)
             
         
         
@@ -656,13 +663,13 @@ class fluBox(connectBox):
         
     #-----------------------------------------
     
-    def turnOnChannel(self, channum:int) -> None:
+    def turnOnChannel(self, chanNum0:int) -> None:
         '''turn the pressure channel on to the run pressure'''
-        self.pchannels[channum].goToRunPressure()
+        self.pchannels[chanNum0].goToRunPressure()
         
-    def turnOffChannel(self, channum:int) -> None:
+    def turnOffChannel(self, chanNum0:int) -> None:
         '''turn the pressure channel on to the run pressure'''
-        self.pchannels[channum].zeroChannel()
+        self.pchannels[chanNum0].zeroChannel()
 
     def resetAllChannels(self, exclude:int) -> None:
         '''Set all of the channels to 0 except for exclude (0-indexed). exclude is a channel that we want to keep on. Input -1 to turn everything off'''
@@ -671,9 +678,9 @@ class fluBox(connectBox):
                 fgt.fgt_set_pressure(i,0)
                 
     
-    def updateReading(self, channum:int, preading:int) -> None:
+    def updateReading(self, chanNum0:int, preading:int) -> None:
         '''updates the status box that tells us what pressure this channel is at'''
-        self.pchannels[channum].readLabel.setText(preading)
+        self.pchannels[chanNum0].readLabel.setText(preading)
         
     def updateRange(self) -> None:
         '''Update the plot time range'''
@@ -688,9 +695,9 @@ class fluBox(connectBox):
         for i in range(len(self.pchannels)):
             self.pchannels[i].updateColor(self.colors[i])
             
-    def addRowToCalib(self, runPressure:float, runTime:float, chanNum:int) -> None:
+    def addRowToCalib(self, runPressure:float, runTime:float, chanNum0:int) -> None:
         '''add pressure and time to the calibration table'''
-        self.sbWin.calibDialog.addRowToCalib(runPressure, runTime, chanNum)
+        self.sbWin.calibDialog.addRowToCalib(runPressure, runTime, chanNum0)
         
         
     #-----------------------------------------
@@ -772,9 +779,10 @@ class fluBox(connectBox):
     def close(self) -> None:
         '''this runs when the window is closed'''
         # close the fluigent
-        if self.connected:      
-            try:
+        if self.connected:   
+            if hasattr(self, 'fluPlot'):
                 self.fluPlot.close()
+            try:
                 self.resetAllChannels(-1)
                 fgt.fgt_close() 
             except Exception as e:

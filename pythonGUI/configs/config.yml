@@ -1,4 +1,4 @@
-appid: leanfried.sbgui.v1.0.4
+appid: leanfried.sbgui.v1.0.5
 camera:
   cam0:
     diag: 1
@@ -93,8 +93,11 @@ shopbot:
   currentFile: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleVertPics.sbp
   dt: 50.0
   flag1: 12
+  flag1max: 12
+  flag1min: 1
   includeFlagInTable: true
   includePositionInTable: true
+  savePicMetadata: true
   sbpFiles:
   - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleVertPics.sbp
   - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleHorizPics.sbp
