@@ -4,7 +4,7 @@
 # external packages
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QButtonGroup, QFormLayout, QMainWindow, QLabel, QHBoxLayout, QPushButton, QToolButton, QToolBar, QListWidget, QAbstractItemView, QRadioButton, QGridLayout, QListWidgetItem
+from PyQt5.QtWidgets import QAbstractItemView, QHBoxLayout, QListWidget, QListWidgetItem, QPushButton
 import os, sys
 import winreg
 import subprocess

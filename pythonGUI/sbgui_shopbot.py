@@ -2,9 +2,9 @@
 '''Shopbot GUI Shopbot functions'''
 
 # external packages
-from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QIcon, QDoubleValidator, QIntValidator
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QButtonGroup, QFormLayout, QMainWindow, QLabel, QHBoxLayout, QPushButton, QToolButton, QToolBar, QListWidget, QAbstractItemView, QRadioButton, QGridLayout, QListWidgetItem
+from PyQt5.QtCore import QTimer
+from PyQt5.QtGui import QDoubleValidator, QIntValidator
+from PyQt5.QtWidgets import QFormLayout, QHBoxLayout, QMainWindow, QVBoxLayout, QWidget
 import os, sys
 import winreg
 import subprocess

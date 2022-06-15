@@ -2,9 +2,8 @@
 '''Shopbot GUI functions for setting up the GUI window'''
 
 # external packages
-from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QIcon, QFont
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QMainWindow, QPushButton, QGridLayout, QTabWidget, QAction, QApplication, QCheckBox, QPlainTextEdit, QDesktopWidget
+from PyQt5.QtGui import  QFont
+from PyQt5.QtWidgets import QAction, QApplication, QGridLayout, QMainWindow, QWidget
 import os, sys
 import ctypes
 from typing import List, Dict, Tuple, Union, Any, TextIO

@@ -2,7 +2,7 @@
 '''Shopbot GUI file handling functions. Refers to top box in GUI.'''
 
 # external packages
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QButtonGroup, QFormLayout, QMainWindow, QLineEdit, QLabel
+from PyQt5.QtWidgets import QButtonGroup, QFormLayout, QMainWindow, QVBoxLayout, QWidget 
 import os, sys
 import subprocess
 import time

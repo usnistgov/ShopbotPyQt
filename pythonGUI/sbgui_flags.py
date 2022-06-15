@@ -2,9 +2,8 @@
 '''Shopbot GUI Shopbot functions for shopbot flag and registry key handling'''
 
 # external packages
-from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QButtonGroup, QFormLayout, QMainWindow, QLabel, QHBoxLayout, QPushButton, QToolButton, QToolBar, QListWidget, QAbstractItemView, QRadioButton, QGridLayout, QListWidgetItem
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QGridLayout, QLabel, QMainWindow
 import os, sys
 import winreg
 import subprocess

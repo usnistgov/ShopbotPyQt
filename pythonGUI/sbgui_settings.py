@@ -2,9 +2,7 @@
 '''Shopbot GUI functions for setting up the GUI window'''
 
 # external packages
-from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QIcon, QFont
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QMainWindow, QPushButton, QGridLayout, QTabWidget, QAction, QApplication, QCheckBox, QPlainTextEdit, QDesktopWidget
+from PyQt5.QtWidgets import QDialog, QMainWindow, QTabWidget, QVBoxLayout, QWidget, 
 import os, sys
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
@@ -22,11 +20,11 @@ from config import *
 class settingsDialog(QDialog):
     '''Creates a settings window'''
     
-    def __init__(self, parent, meta:bool=True, file:bool=True, sb:bool=True, flu:bool=True, cam:bool=True):
-        '''This is called by the parent, which is the main SBwindow'''
+    def __init__(self, sbWin:QMainWindow, meta:bool=True, file:bool=True, sb:bool=True, flu:bool=True, cam:bool=True):
+        '''This is called by the sbWin, which is the main SBwindow'''
         
-        super().__init__(parent)
-        self.parent = parent
+        super().__init__(sbWin)
+        self.sbWin = sbWin
         
         self.meta=meta
         self.file=file
@@ -41,7 +39,7 @@ class settingsDialog(QDialog):
         self.tabs = QTabWidget()       
         self.tabs.setTabBar(TabBar(self))
         self.tabs.setTabPosition(QTabWidget.West)
-        for box in [self]+self.parentTabs():
+        for box in [self]+self.sbWinTabs():
             if hasattr(box, 'settingsBox') and hasattr(box, 'bTitle'):
                 self.tabs.addTab(box.settingsBox, box.bTitle)  
 #             else:
@@ -50,15 +48,15 @@ class settingsDialog(QDialog):
 #                 else:
 #                     logging.debug(f'No bTitle in {box}')
         if file:
-            parent.fileBox.checkFormats() # update the initial file format
+            sbWin.fileBox.checkFormats() # update the initial file format
         self.layout.addWidget(self.tabs)
         self.setLayout(self.layout)
         
         self.setWindowTitle('Settings')
     
-    def parentTabs(self) -> List:
-        '''list of settings tabs in the parent'''
-        return self.parent.boxes()
+    def sbWinTabs(self) -> List:
+        '''list of settings tabs in the sbWin'''
+        return self.sbWin.boxes()
         
     def generalBox(self) -> None:
         '''create a tab for settings of settings'''
@@ -91,16 +89,16 @@ class settingsDialog(QDialog):
         if not os.path.exists(sf):
             return
         cfg = loadConfigFile(sf)
-        parent = self.parent
-        for box in (self.parent.boxes()):
+        sbWin = self.sbWin
+        for box in (self.sbWin.boxes()):
             box.loadConfig(cfg)
         logging.info(f'Loaded settings from {sf}')
         
     def saveCfg(self, file:str):
         '''save the config file to file'''
-        parent = self.parent
+        sbWin = self.sbWin
         cfg1 = cfg.copy()
-        for box in (self.parent.boxes()):
+        for box in (self.sbWin.boxes()):
             if hasattr(box, 'saveConfig'):
                 cfg1 = box.saveConfig(cfg1)
         out = dumpConfigs(cfg1, file)
@@ -123,7 +121,7 @@ class settingsDialog(QDialog):
         
     def close(self):
         '''Close the window'''
-        if self.alwaysSave.isChecked() and not self.parent.test:
+        if self.alwaysSave.isChecked() and not self.sbWin.test:
             # only save settings if the checkbox is checked and this is not a test
             self.saveCfg(os.path.join(getConfigDir(), 'config.yml'))
         self.done(0)

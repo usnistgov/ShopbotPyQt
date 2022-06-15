@@ -2,9 +2,9 @@
 '''Shopbot GUI Shopbot functions'''
 
 # external packages
-from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtCore import pyqtSignal, QObject, QRunnable, QThreadPool, QTimer, Qt
-from PyQt5.QtWidgets import QButtonGroup, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QRadioButton, QMainWindow, QToolBar, QToolButton, QVBoxLayout, QWidget
+from PyQt5.QtGui import QImage, QPixmap, QIntValidator
+from PyQt5.QtWidgets import QButtonGroup, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QMainWindow, QPushButton, QRadioButton, QToolBar, QToolButton, QVBoxLayout, QWidget
 import cv2
 import time
 import datetime
@@ -868,11 +868,12 @@ class camSettingsBox(QWidget):
                                          self.camObj.diag, col=False, headerRow=False,
                                           func=self.changeDiag)
         form.addRow("Log", self.diagGroup.layout)
-        
+        objValidator3 = QIntValidator(cfg.shopbot.flag1min,cfg.shopbot.flag1max)
         self.flagBox = fLineEdit(form, title='SB output flag'
                                  , text=str(self.camObj.flag1)
                                  , tooltip='1-indexed Shopbot output flag that triggers snaps on this camera.'
-                                 , func=self.updateFlag)
+                                 , func=self.updateFlag
+                                , validator=objValidator3)
 
         fpsRow = QHBoxLayout()
         self.fpsBox = fLineCommand(layout=fpsRow, text=str(self.camObj.fps), func = self.updateVars)

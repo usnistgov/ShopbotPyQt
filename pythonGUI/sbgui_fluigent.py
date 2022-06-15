@@ -4,7 +4,7 @@
 # external packages
 from PyQt5.QtCore import pyqtSignal, QObject, QRunnable, Qt, QTimer, QThreadPool
 from PyQt5.QtGui import QIntValidator
-from PyQt5.QtWidgets import QLabel, QColorDialog, QCheckBox, QFormLayout, QGridLayout, QLineEdit, QMainWindow, QPushButton, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QLabel, QColorDialog, QCheckBox, QFormLayout, QGridLayout, QLineEdit, QMainWindow, QVBoxLayout, QWidget
 import pyqtgraph as pg
 import csv
 import time

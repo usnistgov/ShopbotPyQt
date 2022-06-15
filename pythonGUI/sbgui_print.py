@@ -2,7 +2,7 @@
 '''Shopbot GUI Shopbot functions'''
 
 # external packages
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QTableWidgetItem, QTableWidget
+from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget 
 import os, sys
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging

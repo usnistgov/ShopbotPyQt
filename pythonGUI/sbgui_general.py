@@ -4,7 +4,7 @@
 # external packages
 from PyQt5.QtCore import QDir, Qt, QPoint, QRect
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QButtonGroup, QCheckBox, QDialog, QFileDialog, QFormLayout, QFrame,  QGroupBox, QHBoxLayout, QLabel,  QLayout, QLineEdit, QProxyStyle, QPushButton, QRadioButton, QSpacerItem, QStyle, QStyleOptionTab,  QStylePainter, QTabBar, QToolBar, QToolButton, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QButtonGroup, QCheckBox, QDialog, QFileDialog, QFormLayout, QFrame,  QGroupBox, QHBoxLayout, QLabel,  QLayout, QLineEdit, QProxyStyle, QPushButton, QRadioButton, QSpacerItem, QStyle, QStyleOptionTab, QStylePainter, QTabBar, QToolBar, QToolButton, QVBoxLayout, QWidget
 import sip
 import os, sys
 import subprocess
