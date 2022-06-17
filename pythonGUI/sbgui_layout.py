@@ -136,6 +136,7 @@ class SBwindow(QMainWindow):
             logging.info('Low screen resolution: using wide window')
             # short window
             self.fullLayout.addWidget(self.fluBox, 0,2)
+            self.fluBox.small()
             row = 2
             col = 0
             for camBox in self.camBoxes.list:

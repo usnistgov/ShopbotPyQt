@@ -92,6 +92,7 @@ def loadConfig() -> Box:
     path = findConfigFile()
     cfg = loadConfigFile(path)
     return cfg
+
         
 #----------------------------------------------------
 

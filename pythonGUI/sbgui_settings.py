@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-'''Shopbot GUI functions for setting up the GUI window'''
+'''Shopbot GUI functions for setting up the GUI settings window'''
 
 # external packages
-from PyQt5.QtWidgets import QDialog, QMainWindow, QTabWidget, QVBoxLayout, QWidget, 
+from PyQt5.QtWidgets import QDialog, QMainWindow, QTabWidget, QVBoxLayout, QWidget
 import os, sys
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging

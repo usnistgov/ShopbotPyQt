@@ -242,11 +242,14 @@ class SBPPoints:
         if not file.endswith('.sbp'):
             raise ValueError('Input to SBPPoints must be an SBP file')
         self.header = SBPHeader(file)  # scrape variables
-        try:
-            self.ms = self.header.speed_move_xy
+        if hasattr(self.header, 'speed_move_xy'):
+            self.ms = self.header.speed_move_xy 
+        else:
+            raise ValueError(f'Missing move speed definition in {file}')
+        if hasattr(self.header, 'speed_jog_xy'):
             self.js = self.header.speed_jog_xy
-        except:
-            raise ValueError(f'Missing speed definition in {file}')
+        else:
+            self.js = 40
         self.file = file
         self.channels = channelsTriggered(file)
         self.cp = ['','','']

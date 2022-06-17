@@ -24,6 +24,7 @@ from sbgui_sbList import *
 
 
 
+
 ##################################################  
   
 class sbSettingsBox(QWidget):
@@ -39,12 +40,12 @@ class sbSettingsBox(QWidget):
         
         # SBP folder
         fLabel(layout, title='.SBP file folder', style=labelStyle())
-        self.folderRow = fileSetOpenRow(width=600, title='Set SBP folder',
+        self.folderRow = fileSetOpenRow(width=500, title='Set SBP folder',
                                    initFolder=self.sbBox.sbpFolder, 
                                    tooltip='Open SBP folder',
                                   setFunc = self.setSBPFolder,
-                                  openFunc = self.openSBPFolder)
-        layout.addLayout(self.folderRow)
+                                  openFunc = self.openSBPFolder,
+                                       layout = layout)
 
         # display settings
         fLabel(layout, title='File queue', style=labelStyle())
@@ -77,35 +78,38 @@ class sbSettingsBox(QWidget):
         fLabel(layout, title='SB3 timing error correction:', style=labelStyle())
         fileForm = QFormLayout()
         objValidator = QDoubleValidator(0, 10, 2)
+        w = 100
         self.critTimeOn = fLineEdit(fileForm, title='Crit time on (s)',
                                     text=str(cfg.shopbot.critTimeOn), 
                                     tooltip='Turn on the pressure this amount of time before the flag is turned on',
-                                   func=self.updateCritTimeOn)
+                                   func=self.updateCritTimeOn,
+                                   width=w)
         self.critTimeOff = fLineEdit(fileForm, title='Crit time off (s)', 
                                      text=str(cfg.shopbot.critTimeOff), 
                                      tooltip='Turn off the pressure this amount of time after the flag is turned on',
-                                    func=self.updateCritTimeOff)
+                                    func=self.updateCritTimeOff,
+                                   width=w)
         self.zeroDist = fLineEdit(fileForm, title=f'Zero distance ({self.sbBox.units})', 
                                   text=str(cfg.shopbot.zeroDist), 
-                                  tooltip='If we are within this distance from a point, we are considered to be at the point. In other words, margin of error or tolerance on distance measurements.',
-                                 func = self.updateZeroDist)
+                                  tooltip='If we are within this distance from a point, we are considered to be at the point. \
+                                  In other words, margin of error or tolerance on distance measurements.',
+                                 func = self.updateZeroDist,
+                                   width=w)
         objValidator2 = QIntValidator(0, 10000)
         self.checkFreq = fLineEdit(fileForm, title=f'Check flag frequency (ms)', 
                                   text=str(cfg.shopbot.dt), 
                                   tooltip='Check the status of the shopbot every _ ms',
-                                  validator=objValidator2)
+                                  validator=objValidator2,
+                                   width=w)
         objValidator3 = QIntValidator(cfg.shopbot.flag1min,cfg.shopbot.flag1max)
         self.flag1Edit = fLineEdit(fileForm, title=f'Run flag ({cfg.shopbot.flag1min}-{cfg.shopbot.flag1max})',
                               text =str(cfg.shopbot.flag1),
                               tooltip = 'Flag that triggers the start of print',
                               validator = objValidator3,
-                              func = self.updateFlag1)
-        
-        for w in [self.critTimeOn, self.critTimeOff, self.zeroDist, self.checkFreq, self.flag1Edit]:
-            w.setMaximumWidth(100)
+                              func = self.updateFlag1,
+                                   width=w)
         layout.addLayout(fileForm)
         layout.addStretch()
-
         self.setLayout(layout)
         
     def loadConfig(self, cfg1) -> None:
@@ -243,6 +247,8 @@ class sbBox(connectBox):
     def connect(self):
         '''connect to the SB3 software'''
         self.keys = SBKeys(self)
+        if hasattr(self.sbWin, 'flagBox'):
+            self.flagBox = self.sbWin.flagBox    # adopt the parent's flagBox for shorter function calls
         if not self.keys.connected:
              self.failLayout()
         else:
@@ -338,6 +344,13 @@ class sbBox(connectBox):
             self.flagBox.update(sbFlag)
         else:
             logging.debug('flagBox not initialized')
+            
+    def readAndUpdateFlag(self) -> None:
+        if self.runningSBP:
+            return
+        if hasattr(self, 'keys'):
+            sbflag = self.keys.getSBFlag()
+            self.updateFlag(sbFlag)
        
         
       
@@ -370,6 +383,7 @@ class sbBox(connectBox):
         t1 = sh.table()
         for row in t1:
             writer.writerow(row)
+        writer.writerow(['run_flag1', '', self.runFlag1])
 
     def testTime(self) -> None:
         '''create metadata file'''
@@ -385,38 +399,20 @@ class sbBox(connectBox):
         '''layout if we found the sb3 files and windows registry keys'''
         
         swidth = 600
-        
         self.settingsBox = sbSettingsBox(self)
-
         self.resetLayout()
-            
-        self.layout0 = QHBoxLayout()
-        self.layout = QVBoxLayout()
-        
         self.runButt = runButt(self, size=50)
         self.createStatus(swidth, height=70, status='Waiting for file ...')
-        
-        self.topBar = QHBoxLayout()
-        self.topBar.addWidget(self.runButt)
-        self.topBar.addWidget(self.status)
-        self.topBar.setSpacing(10)
-        
+        self.topBar = fHBoxLayout(self.runButt, self.status, spacing=10)
         self.sbList = sbpNameList(self)
-        
-        self.layout.addItem(self.topBar)
-        self.layout.addLayout(self.sbList)
+        self.layout = fVBoxLayout(self.topBar, self.sbList)
         self.addFluBox(self.layout)
- 
-        self.layout0.addLayout(self.layout)
-        if hasattr(self.sbWin, 'flagBox'):
-            self.flagBox = self.sbWin.flagBox    # adopt the parent's flagBox for shorter function cals
-#         self.layout0.addLayout(self.flagBox)
-        self.setLayout(self.layout0)
+        self.setLayout(self.layout)
     
     def addFluBox(self, layout:QLayout) -> None:
         '''add the fluigent boxes to the shopbot box'''
         if hasattr(self.sbWin, 'fluBox'):
-            layout.addItem(self.sbWin.fluBox.printButtRow())
+            self.sbWin.fluBox.addPrintButtRow(layout)
     
     def reformatFileList(self) -> None:
         if hasattr(self, 'sbList'):
@@ -467,6 +463,10 @@ class sbBox(connectBox):
     def getCritFlag(self) -> int:
         '''Identify which channels are triggered during the run. critFlag is a shopbot flag value that indicates that the run is done. We always set this to 0. If you want the video to shut off after the first flow is done, set this to 2^(cfg.shopbot.flag-1). We run this function at the beginning of the run to determine what flag will trigger the start of videos, etc.'''
         self.channelsTriggered = channelsTriggered(self.sbpName())
+        if not self.runFlag1-1 in self.channelsTriggered:
+            # abort run: no signal to run this file
+            self.triggerKill()
+        self.channelsTriggered.remove(self.runFlag1-1)
         return 0
     
     
@@ -612,8 +612,8 @@ class sbBox(connectBox):
         # start the cameras if any flow is triggered in the run
         if min(self.channelsTriggered)<len(self.sbWin.fluBox.pchannels):
             self.sbWin.camBoxes.startRecording()
-        if len(self.channelsTriggered)>0 and not self.channelsTriggered==[2]:
-            # only save speeds and pressures if there is extrusion
+        if self.savePicMetadata or (len(self.channelsTriggered)>0 and not self.channelsTriggered==[2]):
+            # only save speeds and pressures if there is extrusion or if the checkbox is marked
             self.sbWin.saveMetaData()
             self.sbWin.fluBox.startRecording()
     
@@ -649,14 +649,19 @@ class sbBox(connectBox):
     def stopRunning(self) -> None:
         '''stop watching for changes in pressure, stop recording  '''
         self.keys.getSBFlag()  # update the flag readout
+        if hasattr(self, 'sbpTiming'):
+            self.sbpTiming.done()  # tell the timings to stop
         if self.runningSBP:
-            self.sbWin.fluBox.resetAllChannels(-1) # turn off all channels
-            self.sbWin.fluBox.stopRecording()      # save fluigent
-            self.sbWin.camBoxes.stopRecording()    # turn off cameras
-            try:
-                self.timer.stop()
-            except:
-                pass
+            if hasattr(self.sbWin, 'fluBox'):
+                self.sbWin.fluBox.resetAllChannels(-1) # turn off all channels
+                self.sbWin.fluBox.stopRecording()      # save fluigent
+                self.sbWin.camBoxes.stopRecording()    # turn off cameras
+            if hasattr(self, 'timer'):
+                try:
+                    self.timer.stop()
+                except Exception as e:
+                    print(f'Error deleting shopbot timer: {e}')
+                    pass
         
     def triggerKill(self) -> None:
         '''the stop button was hit, so stop'''

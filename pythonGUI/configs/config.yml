@@ -39,7 +39,7 @@ fluigent:
         Technology (NIST)/NIST/data/material properties/flow rates
       initDensity: 1
       initDiam: 0.603
-      initSpeed: 40.0
+      initSpeed: 2.0
     color: '#3f8d88'
     flag1: 1
   channel1:
@@ -90,17 +90,16 @@ shopbot:
   autoplay: false
   critTimeOff: 0.0
   critTimeOn: 0.1
-  currentFile: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleVertPics.sbp
+  currentFile: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/calibration/timing_calibration_2.sbp
   dt: 50.0
-  flag1: 12
+  flag1: 4
   flag1max: 12
   flag1min: 1
   includeFlagInTable: true
   includePositionInTable: true
   savePicMetadata: true
   sbpFiles:
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleVertPics.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleHorizPics.sbp
+  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/calibration/timing_calibration_2.sbp
   sbpFolder: C:\Users\lmf1\Documents\GitHub\ShopbotPyQt\SBP_files
   showFolder: false
   units: mm

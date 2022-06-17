@@ -32,18 +32,17 @@ class fluChannel:
         '''chanNum0 is a 0-indexed channel number (e.g. 0)
         fluBox is the parent box that holds the Fluigent GUI display'''
 
-        
         self.chanNum0 = chanNum0  # 0-indexed
+        self.bTitle = f'Channel {chanNum0}'
+        self.cname = f'channel{self.chanNum0}'
+        
         self.fluBox = fluBox
         self.loadConfig(cfg)
         
         columnw = fluBox.columnw
-        self.bTitle = f'Channel {chanNum0}'
-        self.label = QLabel(self.bTitle)
-        self.label.setFixedWidth(1.5*columnw)
-        self.label2 = QLabel(self.bTitle)
-        self.label2.setFixedWidth(1.5*columnw)
-              
+        # make 2 labels
+        for i in range(2):
+            setattr(self, f'label{i}', fLabel(title=self.bTitle, width=1.5*columnw))
         self.readLabel = fLabel(title='0', width=1.5*columnw, tooltip='Current pressure')
         
         # setBox is a one line input box that lets the user turn the pressure on to setBox
@@ -52,42 +51,41 @@ class fluChannel:
                                    , func=self.setPressure
                                    , tooltip='Set the pressure. Press [enter] or click Go to set the pressure.'
                                    , validator=objValidator)
-        
         self.setButton = fButton(None, title='Go', width=0.5*columnw
                                  , func=self.setPressure
                                  , tooltip='Set pressure to [Set pressure] mbar.')
-        self.setButton.setAutoDefault(False)   # don't put focus on this button
         self.constTimeBox = fLineCommand(width=columnw, text='0', validator=objValidator
                                          , func=self.runConstTime
-                                         , tooltip = 'Set pressure to [Set Pressure] for [Fixed time] s, then turn off.\nPress [enter] or click Go to start.')
+                                         , tooltip = 'Set pressure to [Set Pressure] for [Fixed time] s,\
+                                         then turn off.\nPress [enter] or click Go to start.')
         self.constTimeButton = fButton(None, title='Go', width=0.5*columnw, func=self.runConstTime,
                                       tooltip = 'Set pressure to [Set Pressure] for [Fixed time] s, then turn off.')
-        self.constTimeButton.setAutoDefault(False)  # don't put focus on this button
-        self.constBox = fLineCommand(width=columnw, text='0', validator=objValidator, tooltip='Pressure to use during printing')
+        self.constBox = fLineCommand(width=columnw, text='0', validator=objValidator
+                                     , tooltip='Pressure to use during printing')
         
         self.updateColor(self.color)           
         
         # line up the label and input box horizontally
         col1 = 1+2*self.chanNum0
-        self.fluBox.fluButts.addWidget(self.label, 0, col1+0, 1, 2)
-        self.fluBox.fluButts.addWidget(self.readLabel, 1,col1+ 0, 1, 2)
-        self.fluBox.fluButts.addWidget(self.setBox, 3, col1+0)
-        self.fluBox.fluButts.addWidget(self.setButton, 4, col1+1)
-        self.fluBox.fluButts.addWidget(self.constTimeBox, 5, col1+0)
+        self.fluBox.fluButts.addWidget(self.label0,          0, col1+0, 1, 2)
+        self.fluBox.fluButts.addWidget(self.readLabel,       1, col1+0, 1, 2)
+        self.fluBox.fluButts.addWidget(self.setBox,          3, col1+0)
+        self.fluBox.fluButts.addWidget(self.setButton,       4, col1+1)
+        self.fluBox.fluButts.addWidget(self.constTimeBox,    5, col1+0)
         self.fluBox.fluButts.addWidget(self.constTimeButton, 5, col1+1)
         
-        self.fluBox.printButts.addWidget(self.label2, 0, col1+0)
-        self.fluBox.printButts.addWidget(self.constBox, 1, col1+0)
+        self.fluBox.printButts.addWidget(self.label1,        0, col1+0)
+        self.fluBox.printButts.addWidget(self.constBox,      1, col1+0)
         
     def loadConfig(self, cfg1) -> None:
         '''load settings from the config file'''
-        self.color = cfg.fluigent[f'channel{self.chanNum0}'].color
-        self.flag1 = cfg.fluigent[f'channel{self.chanNum0}'].flag1
+        self.color = cfg.fluigent[self.cname].color
+        self.flag1 = cfg.fluigent[self.cname].flag1
         self.fluBox.settingsBox.flagBoxes[self.chanNum0].setText(str(self.flag1))
         
     def saveConfig(self, cfg1):
-        cfg1.fluigent[f'channel{self.chanNum0}'].color = self.color
-        cfg1.fluigent[f'channel{self.chanNum0}'].flag1 = self.flag1
+        cfg1.fluigent[self.cname].color = self.color
+        cfg1.fluigent[self.cname].flag1 = self.flag1
         return cfg1
     
     def updateFlag(self, flag1) -> None:
@@ -98,7 +96,7 @@ class fluChannel:
         '''update color of text items'''
         self.color = color
         try:
-            for o in [self.label, self.label2, self.readLabel, self.setButton, self.constTimeButton, self.setBox, self.constTimeBox, self.constBox]:
+            for o in [self.label0, self.label1, self.readLabel, self.setButton, self.constTimeButton, self.setBox, self.constTimeBox, self.constBox]:
                 o.setStyleSheet(f'color: {color};')  
                 # this makes the label our input color
         except:
@@ -144,7 +142,8 @@ class fluChannel:
     def writeToTable(self, writer) -> None:
         '''write metatable values to a csv writer object'''
         press = int(self.constBox.text())
-        writer.writerow([f'ink pressure channel {self.chanNum0}','mbar', press])
+        writer.writerow([f'ink_pressure_channel_{self.chanNum0}','mbar', press])
+        writer.writerow([f'flag1_channel_{self.chanNum0}','', self.flag1])
         
 
         
@@ -220,7 +219,6 @@ class plotRunnable(QRunnable):
                 else:
                     pnew = 0
                 newpressures[i].append(pnew)         # Add the current pressure to the list, for each channel
-#             self.fluBox.sbWin.sbBox.keys.getSBFlag()  # update flags
         except Exception as e:
             self.signals.error.emit(f'Error reading pressure', True)
         else:
@@ -245,7 +243,7 @@ class fluPlot:
         # create the plot
         self.graphWidget = pg.PlotWidget() 
 #         self.graphWidget.setFixedSize(800, 390)
-        self.graphWidget.setFixedHeight(390)
+        
         self.graphWidget.setYRange(-10, fb.pmax + 100, padding=0) 
             # set the range from 0 to 7000 mbar
         self.graphWidget.setBackground('w')         
@@ -267,7 +265,16 @@ class fluPlot:
         self.timerRunning = False
         self.startTimer()
         # create a thread to update the pressure list
-         
+        
+    def fullSize(self):
+        '''full size plot widget'''
+        self.graphWidget.setMaximumHeight(390)
+        self.graphWidget.setMaximumWidth(600)
+        
+    def small(self):
+        '''small plot widget'''
+        self.graphWidget.setMaximumHeight(200)
+        self.graphWidget.setMaximumWidth(500)
         
         
     def startTimer(self) -> None:
@@ -319,7 +326,9 @@ class fluPlot:
                 if len(self.pw.time) == len(self.pw.pressures[i]):
                     self.datalines[i].setData(self.pw.time, self.pw.pressures[i], pen=self.pens[i])
                 # update the pressure reading
-                self.fluBox.updateReading(i, str(self.pw.pressures[i][-1]))  
+                self.fluBox.updateReading(i, str(self.pw.pressures[i][-1])) 
+                
+#         self.sbWin.sbBox.readAndUpdateFlag()  # update flags reading
         
     def updateRange(self) -> None:
         '''update the plot time and pressure range'''
@@ -376,22 +385,30 @@ class fluSettingsBox(QWidget):
         
         layout = QVBoxLayout()
         
-        self.savePressureCheck = QCheckBox('Save pressure graph during print')
-        self.savePressureCheck.setChecked(fluBox.savePressure)
-        self.savePressureCheck.clicked.connect(self.updateSavePressure)
-        layout.addWidget(self.savePressureCheck)
+        self.savePressureCheck = fCheckBox(layout, title='Save pressure graph during print'
+                                           , checked=fluBox.savePressure
+                                           , func=self.updateSavePressure)
         
         objValidator = QIntValidator()
         form = QFormLayout()
         form.setSpacing(10)
         
         editw = 100
-        self.dtBox = fLineEdit(form, title='Time between readings (ms)', text=str(fluBox.dt), tooltip='Time in ms between pressure readings', func=self.updateDt, width=editw)
-        self.trangeBox = fLineEdit(form, title='Plot time range (s)', text=str(fluBox.trange), tooltip='Time in s to display in plot', func=self.updateTrange, width=editw)
-        self.pmaxBox = fLineEdit(form, title='Plot pressure range (mbar)', text=str(fluBox.pmax), tooltip='Max pressure in mbar to display in plot', func=self.updatePmax, width=editw)
-        
-        for box in [self.dtBox, self.trangeBox, self.pmaxBox]:
-            box.setValidator(objValidator)
+        self.dtBox = fLineEdit(form, title='Time between readings (ms)'
+                               , text=str(fluBox.dt)
+                               , tooltip='Time in ms between pressure readings'
+                               , func=self.updateDt, width=editw
+                              , validator=objValidator)
+        self.trangeBox = fLineEdit(form, title='Plot time range (s)'
+                                   , text=str(fluBox.trange)
+                                   , tooltip='Time in s to display in plot'
+                                   , func=self.updateTrange, width=editw
+                                  , validator=objValidator)
+        self.pmaxBox = fLineEdit(form, title='Plot pressure range (mbar)'
+                                 , text=str(fluBox.pmax)
+                                 , tooltip='Max pressure in mbar to display in plot'
+                                 , func=self.updatePmax, width=editw
+                                , validator=objValidator)
 
         layout.addItem(form)
         
@@ -406,7 +423,7 @@ class fluSettingsBox(QWidget):
         objValidator2 = QIntValidator(1, 12)
         self.clabs = [QLabel(f'Channel {i}') for i in range(self.fluBox.numChans)]
         self.colorBoxes = ['' for i in range(self.fluBox.numChans)]
-        self.flagBoxes = [QLineEdit() for i in range(self.fluBox.numChans)]     # 1-indexed
+        self.flagBoxes = ['' for i in range(self.fluBox.numChans)]     # 1-indexed
         for i in range(fluBox.numChans):
             col = 2*i+2
             grid.setColumnMinimumWidth(col-1, padding)
@@ -414,26 +431,14 @@ class fluSettingsBox(QWidget):
             grid.addWidget(self.clabs[i], 0, col)
             cboxsize = 50
             self.colorBoxes[i] = fButton(None, width=cboxsize, height=cboxsize, tooltip=f'Channel {i} color', func=self.selectColor)
-            
-            
-#             self.colorBoxes[i].setMinimumWidth(cboxsize)
-#             self.colorBoxes[i].setMinimumHeight(cboxsize)
-#             self.colorBoxes[i].setMaximumWidth(cboxsize)
-#             self.colorBoxes[i].setMaximumHeight(cboxsize)
-#             self.colorBoxes[i].setToolTip(f'Channel {i} color')
-#             self.colorBoxes[i].clicked.connect(self.selectColor)
             self.colorBoxes[i].chanNum0 = i
             grid.addWidget(self.colorBoxes[i], 2, col)
-        
             self.flagBoxes[i] = fLineCommand(func=self.updateFlags, validator=objValidator2, maxwidth=editw)
-#             self.flagBoxes[i].returnPressed.connect(self.updateFlags)
-#             self.flagBoxes[i].setValidator(objValidator2)
             self.flagBoxes[i].chanNum0 = i
-#             self.flagBoxes[i].setMaximumWidth(editw)
             grid.addWidget(self.flagBoxes[i], 4, col)
             self.setLabelColor(i, color)
             
-        grid.addWidget(QLabel(), 1, 2*fluBox.numChans+1)
+        grid.addWidget(QLabel(), 1, 2*fluBox.numChans+1)   # spacer
 
         layout.addItem(grid)
         layout.addStretch()
@@ -444,6 +449,7 @@ class fluSettingsBox(QWidget):
     def updateDt(self) -> None:
         '''update the value of dt in the parent'''
         self.fluBox.dt = int(self.dtBox.text())
+        self.fluBox.updateStatus(f'Changed Fluigent plot dt to {self.fluBox.dt} ms', True)
         
     def setLabelColor(self, chanNum0:int, color:str) -> None:
         '''set the labels on the settings boxes'''
@@ -461,8 +467,7 @@ class fluSettingsBox(QWidget):
             self.fluBox.colors[chanNum0] = color
             self.fluBox.updateColors()
             self.setLabelColor(chanNum0, color)
-            
-        
+
         
     def updateTrange(self) -> None:
         '''update the value of trange in the parent'''
@@ -580,6 +585,9 @@ class fluBox(connectBox):
         self.loadConfig(cfg)
         self.pcolors = self.cfgColors()
         self.fluPlot = fluPlot(self.pcolors, self)      # create plot
+        
+    def small(self):
+        self.fluPlot.small()
 
     def successLayout(self) -> None:
         '''display if we successfully connected to the fluigent'''
@@ -593,46 +601,37 @@ class fluBox(connectBox):
         self.createStatus(800)              # 800 px wide status bar
         self.layout.addWidget(self.status)
         
-        self.fluButts = QGridLayout()   # fluigent operations grid
-        self.fluButts.setSpacing(10)         # px between channel buttons
-        self.fluButts.setAlignment(Qt.AlignLeft)
+        self.fluButts = fGridLayout(spacing=10, alignment='left')
+        self.printButts = fGridLayout(spacing=10, alignment='left')
         
-        self.printButts = QGridLayout()   # constant values during run
-        self.printButts.setSpacing(10)         # px between channel buttons
-        self.printButts.setAlignment(Qt.AlignLeft)
-        
-        self.columnw = 100       
-        
-        channelLabel = QLabel(' ')
-        readLabel = QLabel('Current pressure (mBar)')
-        setPressureLabel = QLabel('Set pressure (mBar)')
-        pressureGoLabel = QLabel('  ... indefinitely')
-        runTimeLabel = QLabel('  ... for fixed time (s)')
+        self.columnw = 100  
+        channelLabel = fLabel(title=' ')
+        readLabel = fLabel(title='Current pressure (mBar)')
+        setPressureLabel = fLabel(title='Set pressure (mBar)')
+        pressureGoLabel = fLabel(title='  ... indefinitely')
+        runTimeLabel = fLabel(title='  ... for fixed time (s)')
         qhline = QHLine()
-        qhline2 = QHLine()
         
         for i, l in enumerate([channelLabel, readLabel, qhline, setPressureLabel, pressureGoLabel, runTimeLabel]):
             if i==2 or i==6:
                 w = 1+2*self.numChans
             else:
                 w=1
-#                 l.setFixedWidth(self.columnw*2.2)
             self.fluButts.addWidget(l, i, 0, 1, w)
             
-        runPressureLabel = QLabel('Pressure during print (mBar)')
+        runPressureLabel = fLabel(title='Pressure during print (mBar)')
         self.printButts.addWidget(runPressureLabel, 1,0)
-
+        
+        # create channels
         self.pchannels = []                 # pchannels is a list of fluChannel objects
         for i in range(self.numChans):
             pc = fluChannel(i, self)  # channel buttons are added to the layout during initialization
             self.pchannels.append(pc)
-
-        
-        self.layout.addItem(self.fluButtRow())   # put the buttons in the layout
-    
+            
+        # create plot
         self.fluPlot = fluPlot(self.pcolors, self)      # create plot
-        self.layout.addWidget(self.fluPlot.graphWidget) # add plot to the layout
-        
+
+        self.layout = fVBoxLayout(self.status, self.fluButtRow(), self.fluPlot.graphWidget)
         self.setLayout(self.layout)          # put the whole layout in the box
         
     def buttRow(self, name:str) -> QLayout:
@@ -646,6 +645,11 @@ class fluBox(connectBox):
     def printButtRow(self) -> QLayout:
         '''get a layout with the print pressure buttons'''
         return self.buttRow('printButts')
+    
+    def addPrintButtRow(self, layout:QLayout):
+        '''add the print butts to the lyout'''
+        if hasattr(self, 'printButts'):
+            layout.addItem(self.printButtRow())
         
     def fluButtRow(self) -> QLayout:
         '''get a layout with the fluigent buttons'''
@@ -713,13 +717,10 @@ class fluBox(connectBox):
     def startRecording(self) -> None:
         '''Start keeping track of pressure readings in a table to be saved to file'''
         if self.savePressure or self.sbWin.sbBox.savePos:
-            print('recording time series')
             self.saveTable = []
             self.save = True
             self.getFileName() # determine the current file name
-        else:
-            print(f'Not recording time series: {self.savePressure}, {self.sbWin.sbBox.savePos}')
-        
+
     def stopRecording(self) -> None:
         '''Save the recorded pressure readings in a csv'''
         dummy = 0

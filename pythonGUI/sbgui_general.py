@@ -4,7 +4,7 @@
 # external packages
 from PyQt5.QtCore import QDir, Qt, QPoint, QRect
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QButtonGroup, QCheckBox, QDialog, QFileDialog, QFormLayout, QFrame,  QGroupBox, QHBoxLayout, QLabel,  QLayout, QLineEdit, QProxyStyle, QPushButton, QRadioButton, QSpacerItem, QStyle, QStyleOptionTab, QStylePainter, QTabBar, QToolBar, QToolButton, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QButtonGroup, QCheckBox, QDialog, QFileDialog, QFormLayout, QFrame, QGridLayout, QGroupBox, QHBoxLayout, QLabel,  QLayout, QLineEdit, QProxyStyle, QPushButton, QRadioButton, QSpacerItem, QStyle, QStyleOptionTab, QStylePainter, QTabBar, QToolBar, QToolButton, QVBoxLayout, QWidget
 import sip
 import os, sys
 import subprocess
@@ -142,6 +142,8 @@ class fileSetOpenRow(QHBoxLayout):
             self.saveButt.clicked.connect(kwargs['setFunc'])
         if 'openFunc' in kwargs:
             self.saveFolderLink.clicked.connect(kwargs['openFunc'])
+        if 'layout' in kwargs:
+            kwargs['layout'].addLayout(self)
         
     def updateText(self, sf:str) -> None:
         '''set the folder name display'''
@@ -304,8 +306,10 @@ class fRadioGroup:
         if len(tooltip)>0:
             self.buttonGroup.setToolTip(tooltip)
         self.layout.addLayout(self.buttonLayout)
+        setAlign(self.layout, 'left')
         if hasattr(layout, 'addLayout'):
-            layout.addLayout(self.layout)   
+            layout.addLayout(self.layout)  
+
         
     def value(self) -> Any:
         '''returns the value of the button that the clicked button corresponds to'''
@@ -344,31 +348,52 @@ class fToolButton(QToolButton):
         if 'func' in kwargs:
             self.clicked.connect(kwargs['func'])
             
+#---
             
-            
+def addArgsToLayout(l:QLayout, *args, **kwargs):
+    '''generic value for initializing an fHBoxLayout or fVBoxlayout'''
+    for arg in args:
+        if arg.isWidgetType():
+            l.addWidget(arg)
+        else:
+            l.addLayout(arg)
+    if 'spacing' in kwargs:
+        l.setSpacing(kwargs['spacing'])
+        
+def setAlign(l:QLayout, alignment:str) -> None:
+    '''set the alignment on the layout'''
+    for s in ['Left', 'Right', 'Bottom', 'Top', 'Center', 'HCenter', 'VCenter']:
+        if alignment.lower()==s.lower():
+            l.setAlignment(getattr(Qt, f'Align{s}'))
+        
+        
+class fGridLayout(QGridLayout):
+    '''quick way to initialize a grid'''
+    
+    def __init__(self, **kwargs):
+        super(fGridLayout, self).__init__()
+        if 'spacing' in kwargs:
+            self.setSpacing(kwargs['spacing'])
+        if 'alignment' in kwargs:
+            setAlign(self, kwargs['alignment'])
+                    
             
 class fHBoxLayout(QHBoxLayout):
     '''quick way to initialize a row of layout elements'''
     
-    def __init__(self, *args):
+    def __init__(self, *args, **kwargs):
         super(fHBoxLayout, self).__init__()
-        for arg in args:
-            if arg.isWidgetType():
-                self.addWidget(arg)
-            else:
-                self.addLayout(arg)
+        addArgsToLayout(self, *args, **kwargs)
+        
                 
 class fVBoxLayout(QVBoxLayout):
     '''quick way to initialize a column of layout elements'''
     
-    def __init__(self, *args):
-        super(fHBoxLayout, self).__init__()
-        for arg in args:
-            if arg.isWidgetType():
-                self.addWidget(arg)
-            else:
-                self.addLayout(arg)
-
+    def __init__(self, *args, **kwargs):
+        super(fVBoxLayout, self).__init__()
+        addArgsToLayout(self, *args, **kwargs)
+        
+        
 
 
 

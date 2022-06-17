@@ -121,7 +121,9 @@ class sbpNameList(QHBoxLayout):
         cfg1.shopbot.currentFile = self.getFullPath(self.currentFile)
         l = []
         for x in range(self.count()):
-            l.append(self.getFullPath(self.listW.item(x).text()))
+            item  = self.listW.item(x)
+            if hasattr(item, 'text'):
+                l.append(self.getFullPath(item.text()))
         cfg1.shopbot.sbpFiles = l
         return cfg1
     

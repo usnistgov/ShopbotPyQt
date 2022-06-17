@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-'''Shopbot GUI functions for setting up the GUI window'''
+'''Shopbot GUI functions for setting up the log window'''
 
 # external packages
 from PyQt5.QtCore import Qt, QTimer

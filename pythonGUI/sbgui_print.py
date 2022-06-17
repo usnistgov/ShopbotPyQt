@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-'''Shopbot GUI Shopbot functions'''
+'''Shopbot GUI functions for handling changes of state during a print'''
 
 # external packages
 from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget 
@@ -28,6 +28,7 @@ def ppdist(p1:List[float], p2:List[float]) -> float:
         return np.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2+(p1[2]-p2[2])**2)
     except ValueError:
         return 0
+
     
 
 class metaBox(QWidget):
@@ -167,8 +168,9 @@ class channelWatch:
 
         self.points = pd.read_csv(csvfile, index_col=0)
         self.currentIndex = 0
-        self.readPoint()
         self.findChannel()
+        self.readPoint()
+        
         
     def findChannel(self) -> None:
         '''determine the pressure channel or camera that this flag corresponds to'''
@@ -181,7 +183,7 @@ class channelWatch:
                     self.pChannel = channel
                     self.pressBox = self.pChannel.constBox
                     if hasattr(self.sbWin, 'calibDialog'):
-                        self.calibBox = self.sbWin.calibDialog.calibWidgets[self.pChannel.chanNum]
+                        self.calibBox = self.sbWin.calibDialog.calibWidgets[self.pChannel.chanNum0]
                     return
             
         # didn't find any pressure channels
@@ -190,6 +192,24 @@ class channelWatch:
             if iscam:
                 self.camBox = camBox
                 self.mode = 2
+                self.setCheck()
+                
+    def setCheck(self):
+        '''set checked during the run'''
+        if not self.mode==2:
+            return
+        if hasattr(self, 'camBox'):
+            if hasattr(self.camBox, 'camInclude'):
+                self.oldChecked = self.camBox.camInclude.isChecked()
+                self.camBox.camInclude.setChecked(True)
+        
+    def resetCheck(self):
+        '''reset to value at beginning of run'''
+        if not self.mode==2:
+            return
+        if hasattr(self, 'camBox'):
+            if hasattr(self.camBox, 'camInclude'):
+                self.camBox.camInclude.setChecked(self.oldChecked)
         
         
     def readPoint(self) -> None:
@@ -257,12 +277,10 @@ class channelWatch:
     
     def turnOn(self) -> None:
         '''turn the pressure on, or snap a picture'''
-        print(self.mode)
         if self.mode == 1:
             # turn pressure on
             self.pChannel.goToRunPressure()
         elif self.mode == 2:
-            print(self.camBox)
             # snap pictures
             if self.camBox.connected:
                 self.camBox.cameraPic()
@@ -315,7 +333,6 @@ class channelWatch:
             endPointDist = self.endPointDist()
             if dist>self.critDistance and (dist+lastdist)>(endPointDist+self.zero):
                 # point must not be on line between the two endpoints and must be greater than critDistance past endpoint
-                print(self.dist(x,y,z), self.critDistance, [x,y,z], self.targetPoint, self.lastPoint, sbFlag)
                 self.turnOff()
                 self.readPoint()
                 return True
@@ -325,6 +342,10 @@ class channelWatch:
                 self.turnOn()
                 self.readPoint()
                 return True
+            
+    def done(self):
+        if self.mode==2:
+            self.resetCheck()
 
         
 class SBPtimings:
@@ -364,3 +385,6 @@ class SBPtimings:
                 allowEnd = False
         return allowEnd
     
+    def done(self):
+        for channel in self.channels:
+            channel.done()

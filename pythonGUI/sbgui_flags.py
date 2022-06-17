@@ -284,9 +284,6 @@ class SBKeys:
             self.updateStatus('Shopbot is ready', True)
             self.ready = True
  
-
-        
-    
     def getSBFlag(self) -> int:
         '''run this function continuously during print to watch the shopbot status'''
         
@@ -300,7 +297,6 @@ class SBKeys:
         self.currentFlag = sbFlag
         self.sbBox.updateFlag(sbFlag)
         return sbFlag
-    
 
     
     def getuCommands(self) -> List[str]:

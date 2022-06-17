@@ -63,28 +63,25 @@ class okDialog(QDialog):
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
 
-        self.layout = QVBoxLayout()
         message = QLabel("Calibration not saved. Are you sure you want to clear?")
-        self.layout.addWidget(message)
-        self.layout.addWidget(self.buttonBox)
-        self.setLayout(self.layout)
+        self.setLayout(fVBoxLayout(message, self.buttonBox))
 
 #---------------------------------
 
 class calibPlot:
     '''Pressure calibration plot'''
     
-    def __init__(self, parent):
+    def __init__(self, pCalibTab):
         '''this is called by the parent, which is the pCalibration dialog'''
-        self.parent = parent
+        self.pCalibTab = pCalibTab
         self.graph = pg.PlotWidget()
         self.graph.setBackground('w')
         self.graph.setLabel('left', 'Flow speed (mm/s)')
         self.graph.setLabel('bottom', 'Pressure (mBar)')
         self.horizPen =  pg.mkPen(color='#888888', width=2)
         self.prange = [0,10]
-        self.horizLine = self.graph.plot(self.prange, [self.parent.targetSpeed(), self.parent.targetSpeed()], pen=self.horizPen)
-        self.dataline = pg.ScatterPlotItem([], [], brush='b', symbol='o', name=self.parent.sample())
+        self.horizLine = self.graph.plot(self.prange, [self.pCalibTab.targetSpeed(), self.pCalibTab.targetSpeed()], pen=self.horizPen)
+        self.dataline = pg.ScatterPlotItem([], [], brush='b', symbol='o', name=self.pCalibTab.sample())
         self.graph.addItem(self.dataline)
         self.fitPoint = pg.ScatterPlotItem([], [], brush='r',  symbol='s')
         self.graph.addItem(self.fitPoint)
@@ -108,7 +105,7 @@ class calibPlot:
         p,_ = self.getPS()
         if len(p)>1:
             self.prange = [min(p), max(p)]
-            self.horizLine.setData(self.prange, [self.parent.targetSpeed(), self.parent.targetSpeed()], pen=self.horizPen)
+            self.horizLine.setData(self.prange, [self.pCalibTab.targetSpeed(), self.pCalibTab.targetSpeed()], pen=self.horizPen)
             self.calcPressure()
         
     def updateEq(self) -> None:
@@ -117,8 +114,8 @@ class calibPlot:
         
     def getPS(self) -> Tuple:
         '''Get the pressure and speed, with only valid data, as floats'''
-        p = self.parent.data['pressure']
-        s = self.parent.data['speed']
+        p = self.pCalibTab.data['pressure']
+        s = self.pCalibTab.data['speed']
         ps = (np.array([p,s])).transpose()
         ps3 = []
         for row in ps:
@@ -138,7 +135,7 @@ class calibPlot:
         a = self.a
         b = self.b
         c = self.c
-        s = self.parent.targetSpeed()
+        s = self.pCalibTab.targetSpeed()
         if abs(a)>0:
             d = b**2-4*a*(c-s)
             if d>0:
@@ -150,8 +147,8 @@ class calibPlot:
             p = (s-c)/b
         else:
             p = c
-        self.parent.updatePressure(p)
-        self.fitPoint.setData([p], [self.parent.targetSpeed()]) # put a point on the plot
+        self.pCalibTab.updatePressure(p)
+        self.fitPoint.setData([p], [self.pCalibTab.targetSpeed()]) # put a point on the plot
             
         
     def update(self) -> None:
@@ -184,22 +181,24 @@ class calibPlot:
 #-------------------------------------------------------------
 
 class calibTable(QTableWidget):
-    def __init__(self, parent, *args):
-        w = parent.numCols()
-        h = parent.numRows()
+    '''holds the data table collected during calibration'''
+    
+    def __init__(self, pCalibTab, *args):
+        w = pCalibTab.numCols()
+        h = pCalibTab.numRows()
         QTableWidget.__init__(self, h,w, *args)
-        self.parent = parent
+        self.pCalibTab = pCalibTab
         self.updateData() 
-        self.itemChanged.connect(self.parent.updateTable)
+        self.itemChanged.connect(self.pCalibTab.updateTable)
         self.setFixedHeight(400)
  
     def setData(self): 
         '''copy the data dict to the displayed table'''
-        horHeadersDict=self.parent.headerDict
+        horHeadersDict=self.pCalibTab.headerDict
         horHeaders = []
-        for n, key in enumerate(self.parent.data.keys()):
+        for n, key in enumerate(self.pCalibTab.data.keys()):
             horHeaders.append(horHeadersDict[key])
-            for m, item in enumerate(self.parent.data[key]):
+            for m, item in enumerate(self.pCalibTab.data[key]):
                 newitem = QTableWidgetItem(str(item))
                 self.setItem(m, n, newitem)
         self.setHorizontalHeaderLabels(horHeaders)
@@ -223,11 +222,11 @@ class calibTable(QTableWidget):
     def readData(self) -> None:
         '''copy the displayed table to the data dict'''
         newdict = []
-        for n,key in enumerate(list(self.parent.data.keys())):
-            numcols = len(self.parent.data[key])
+        for n,key in enumerate(list(self.pCalibTab.data.keys())):
+            numcols = len(self.pCalibTab.data[key])
             newdict.append([key, [self.itemF(m,n) for m in range(numcols)]])
         newdict = dict(newdict)
-        self.parent.data = newdict
+        self.pCalibTab.data = newdict
                 
 
 #------------------------------------------------------------
@@ -269,33 +268,46 @@ class pCalibrationTab(QWidget):
         
     def successLayout(self) -> None:
         '''Create the layout'''
-        
-        self.layout = QVBoxLayout()
+
         self.status = createStatus(700) 
-        self.layout.addWidget(self.status)
         topRow = QHBoxLayout()
         leftcol = QVBoxLayout()
         
-        fButton(leftcol, title='Save', tooltip='Save current configuration to csv file', func=self.saveTable)
-        fButton(leftcol, title='Clear', tooltip='Clear the display', func=self.clear)
-        fButton(leftcol, title='Load calibration', tooltip='Clear display and load previous calibration', func=self.loadCalibration)
+        fButton(leftcol, title='Save'
+                , tooltip='Save current configuration to csv file'
+                , func=self.saveTable)
+        fButton(leftcol, title='Clear'
+                , tooltip='Clear the display'
+                , func=self.clear)
+        fButton(leftcol, title='Load calibration'
+                , tooltip='Clear display and load previous calibration'
+                , func=self.loadCalibration)
         self.densityDropdown()
         leftcol.addWidget(self.densityDropdown)
         form = QFormLayout()
-        self.sampleBox = fLineEdit(form, title='Sample', text='', tooltip='Name of the fluid you are calibrating', func=self.updateDensityDropdown)
-        self.densityBox = fLineEdit(form, title='Density (g/mL)', text='', tooltip='Fluid density in g/mL', func=self.updateConsts)
-        self.diamBox = fLineEdit(form, title='Nozzle diameter (mm)', text='', tooltip='Nozzle inner diameter (mm)', func=self.updateConsts)
-        self.speedBox = fLineEdit(form, title='Target speed (mm/s)', text='', tooltip='Flow speed you are trying to achieve in mm/s', func=self.updateTargetSpeed)
+        self.sampleBox = fLineEdit(form, title='Sample', text=''
+                                   , tooltip='Name of the fluid you are calibrating'
+                                   , func=self.updateDensityDropdown)
+        self.densityBox = fLineEdit(form, title='Density (g/mL)', text=''
+                                    , tooltip='Fluid density in g/mL'
+                                    , func=self.updateConsts)
+        self.diamBox = fLineEdit(form, title='Nozzle diameter (mm)', text=''
+                                 , tooltip='Nozzle inner diameter (mm)'
+                                 , func=self.updateConsts)
+        self.speedBox = fLineEdit(form, title='Target speed (mm/s)', text=''
+                                  , tooltip='Flow speed you are trying to achieve in mm/s'
+                                  , func=self.updateTargetSpeed)
         self.loadConfig(cfg)
         self.pressureLabel = QLabel('0')
         form.addRow('Pressure (mBar)', self.pressureLabel)
         leftcol.addLayout(form)
-        fButton(leftcol, title='Use this pressure', tooltip=f'Copy this pressure to the channel {self.channel} Pressure During Print box in the main window', func=self.copyPressure)
-        topRow.addLayout(leftcol)
-        topRow.addLayout(self.plot.layout)
-        self.layout.addLayout(topRow)
-        self.layout.addWidget(self.grid)       
-        self.setLayout(self.layout)
+        fButton(leftcol, title='Use this pressure'
+                , tooltip=f'Copy this pressure to the channel {self.channel} \
+                Pressure During Print box in the main window'
+                , func=self.copyPressure)
+        
+        topRow = fHBoxLayout(leftcol, self.plot.layout)
+        self.setLayout(fVBoxLayout(self.status, topRow, self.grid))
         
         
     #-------------------------------------
@@ -700,16 +712,16 @@ class pCalibrationTab(QWidget):
     def writeToTable(self, writer) -> None:
         '''write metatable values to a csv writer object'''
         inkspeed = self.speedBox.text()
-        writer.writerow([f'ink speed channel {self.channel}', 'mm/s', inkspeed])
+        writer.writerow([f'ink_speed_channel_{self.channel}', 'mm/s', inkspeed])
         caliba = self.plot.a
-        writer.writerow([f'caliba channel {self.channel}', 'mm/s/mbar^2', caliba])
+        writer.writerow([f'caliba_channel_{self.channel}', 'mm/s/mbar^2', caliba])
         calibb = self.plot.b
-        writer.writerow([f'calibb channel {self.channel}', 'mm/s/mbar', calibb])
+        writer.writerow([f'calibb_channel_{self.channel}', 'mm/s/mbar', calibb])
         calibc = self.plot.c
-        writer.writerow([f'calibc channel {self.channel}', 'mm/s', calibc])
+        writer.writerow([f'calibc_channel_{self.channel}', 'mm/s', calibc])
         ndiam = self.diamBox.text()
-        writer.writerow([f'nozzle {self.channel} diameter', 'mm', ndiam])
-        writer.writerow([f'ink {self.channel} density', 'g/mL', self.density()])
+        writer.writerow([f'nozzle_{self.channel}_diameter', 'mm', ndiam])
+        writer.writerow([f'ink_{self.channel}_density', 'g/mL', self.density()])
     
     def close(self):
         '''Close the window'''
@@ -721,13 +733,12 @@ class pCalibrationTab(QWidget):
 class pCalibration(QDialog):
     '''Creates a calibration window with tabs for each pressure channel'''
     
-    def __init__(self, parent):
-        '''This is called by the parent, which is the main SBwindow'''
+    def __init__(self, sbWin):
+        '''This is called by the sbWin, which is the main SBwindow'''
         
-        super().__init__(parent)
-        self.sbWin = parent
+        super().__init__(sbWin)
+        self.sbWin = sbWin
         self.setWindowTitle('Pressure calibration tool')
-        self.layout = QVBoxLayout()
         
         self.tabs = QTabWidget()       
         self.tabs.setTabBar(QTabBar(self))
@@ -737,8 +748,7 @@ class pCalibration(QDialog):
         self.calibWidgets = dict([[i, pCalibrationTab(self.sbWin, i)] for i in range(channels)])
         for w,val in self.calibWidgets.items():
             self.tabs.addTab(val, val.bTitle)    
-        self.layout.addWidget(self.tabs)
-        self.setLayout(self.layout)
+        self.setLayout(fVBoxLayout(self.tabs))
 
         
     def close(self):
