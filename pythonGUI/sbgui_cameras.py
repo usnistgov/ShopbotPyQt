@@ -77,6 +77,10 @@ class camSettingsBox(QWidget):
         self.fpsAutoButt = fButton(fpsRow, title='Auto', func=self.fpsAuto, width=w)
         form.addRow('Frame rate (fps)', fpsRow)
         
+        pfpsRow = QHBoxLayout()
+        self.pfpsBox = fLineCommand(layout=pfpsRow, text=str(self.camObj.previewFPS), func=self.updateVars, width=w)
+        form.addRow('Preview frame rate (fps)', pfpsRow)
+        
         exposureRow = QHBoxLayout()
         self.exposureBox = fLineCommand(layout=exposureRow, text=str(self.camObj.exposure), func=self.updateVars, width=w)
         self.exposureAutoButt = fButton(exposureRow, title='Auto', func=self.exposureAuto, width=w)
@@ -140,10 +144,18 @@ class camSettingsBox(QWidget):
         '''Log the change in fps'''
         if self.camObj.diag>0:
             self.camObj.updateStatus(f'Changed frame rate to {self.camObj.fps} fps', True)
+            
+    def pfpsStatus(self):
+        '''Log the change in fps'''
+        if self.camObj.diag>0:
+            self.camObj.updateStatus(f'Changed preview frame rate to {self.camObj.previewFPS} fps', True)
         
     def updateFPS(self):
         '''Update the frame rate used by the GUI to the given frame rate'''
-        out = self.camObj.setFrameRate(float(self.fpsBox.text()))
+        out = self.camObj.setPFrameRate(float(self.pfpsBox.text()))   # update preview fps
+        if out==0:
+            self.pfpsStatus()
+        out = self.camObj.setFrameRate(float(self.fpsBox.text())) # update fps
         if out==0:
             self.fpsStatus()
             

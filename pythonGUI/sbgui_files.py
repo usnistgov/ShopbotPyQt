@@ -63,7 +63,7 @@ class fileSettingsBox(QWidget):
                 
         # include sample
         iSampleRow = QVBoxLayout()
-        fLabel(iSampleRow, title='Include sample:', style=labelStyle)
+        fLabel(iSampleRow, title='Include sample', style=labelStyle)
         self.iSampleFileCheck = fCheckBox(iSampleRow, title='In file name'
                                           , tooltip = 'Include the sample in the file name'
                                           , checked=cfg.files.includeSampleInFile)   
@@ -76,7 +76,7 @@ class fileSettingsBox(QWidget):
         # include date
         iDateRow = QVBoxLayout()
         self.iDateGroup = QButtonGroup()
-        fLabel(iDateRow, title='Include date:', style=labelStyle)
+        fLabel(iDateRow, title='Include date', style=labelStyle)
         self.iDate1 = fRadio(iDateRow, self.iDateGroup, title='In sample folder name'
                              , tooltip='Append the date to the name of the folder for this sample'
                              , func=self.checkFormats, i=0)
@@ -92,7 +92,7 @@ class fileSettingsBox(QWidget):
         
         # include time
         iTimeRow = QVBoxLayout()
-        fLabel(iTimeRow, title='Include time:', style=labelStyle)
+        fLabel(iTimeRow, title='Include time', style=labelStyle)
         self.iTimeCheck = fCheckBox(iTimeRow, title='In file name'
                                     , tooltip = 'Include the time in the file name'
                                     , checked=cfg.files.includeTimeInFile
@@ -102,7 +102,7 @@ class fileSettingsBox(QWidget):
         # include Shopbot file name
         iSBRow = QVBoxLayout()
         self.iSBGroup = QButtonGroup()
-        fLabel(iSBRow, title='Include SB file name:', style=labelStyle)
+        fLabel(iSBRow, title='Include SB file name', style=labelStyle)
         self.iSB1 = fRadio(iSBRow, self.iSBGroup, title='In sample folder name'
                            , tooltip='Append the shopbot file name to the name of the folder for this sample'
                            , func=self.checkFormats, i=0)
@@ -120,7 +120,7 @@ class fileSettingsBox(QWidget):
         layout.addLayout(iSBRow)
 
         # formatting
-        fLabel(layout, title='Formatting options:', style=labelStyle)
+        fLabel(layout, title='Formatting options', style=labelStyle)
         fileForm = QFormLayout()
         w = 300
         self.dateFormatBox = fLineEdit(fileForm, title='Date format'
@@ -144,7 +144,8 @@ class fileSettingsBox(QWidget):
                                      , width=w)
         layout.addLayout(fileForm)
 
-        self.status = createStatus(500, height=200, status='')
+        self.status = createStatus(300, height=150, status='')
+        self.status.setMaximumWidth(500)
         layout.addWidget(self.status)
         
         for b in (self.iDateList + self.iSBList):
@@ -360,6 +361,7 @@ class fileBox(connectBox):
         
         appendForm = QFormLayout()
         appendForm.setSpacing(5)
+        
         self.folderRow = fileSetOpenRow(width=450, title='Set video folder', 
                                    initFolder=cfg.files.save, 
                                    tooltip='Open video folder',
@@ -394,7 +396,7 @@ class fileBox(connectBox):
         '''set the folder to save all the files we generate from the whole gui'''
         self.saveFolder = setFolder(self.saveFolder)        
         logging.info('Changed save folder to %s' % self.saveFolder)
-        self.fsor.updateText(self.saveFolder)
+        self.folderRow.updateText(self.saveFolder)
         self.settingsBox.checkFormats()
             
     def openSaveFolder(self) -> None:

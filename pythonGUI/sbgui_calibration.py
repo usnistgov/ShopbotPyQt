@@ -313,7 +313,7 @@ class pCalibrationTab(QWidget):
     #-------------------------------------
 
     
-    def initTable(self, size:int=20) -> None:
+    def initTable(self, size:int=50) -> None:
         self.columns = ['initwt', 'finalwt', 'pressure', 'time', 'speed']
         self.headerDict = {'initwt':'init wt (g)', 'finalwt':'final wt (g)', 'pressure':'pressure (mBar)', 'time':'time (s)', 'speed':'speed (mm/s)'}
         blank = ['' for i in range(size)]
@@ -406,6 +406,10 @@ class pCalibrationTab(QWidget):
         i = 0
         while not (self.data['time'][i]=='' and self.data['pressure'][i]==''):
             i+=1
+            # expand the table if you've hit the end
+            if len(self.data['time'])==i:
+                for key in self.data:
+                    self.data[key].append('')
         self.data['time'][i]=runTime
         self.data['pressure'][i]=runPressure
         self.updateGrid()
@@ -566,6 +570,9 @@ class pCalibrationTab(QWidget):
         file = self.loadFile()
         
         self.updateVal('initwt', 0, 100)
+        
+        if not os.path.exists(file):
+            return
 
         # read the file
         with open(file) as csv_file:

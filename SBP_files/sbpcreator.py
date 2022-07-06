@@ -86,6 +86,11 @@ class sbpCreator:
     
     def printVolume(self):
         print('{:0.3f}'.format(self.volume/1000), 'mL,', int(np.floor(self.time/60)), 'min', int(self.time%60), 's')
+        
+    def prime(self, channel:int=0):
+        self.turnOn(cfg.shopbot.flag1-1)
+        self.turnOn(channel)
+        self.turnOff(channel)
      
     def takeLastPt(self, other) -> int:
         '''return 1 if the last point is not valid'''
@@ -241,6 +246,9 @@ class sbpCreator:
         '''Move in 3D'''
         return self.mj3(x,y,z,'M', pOn=pOn)
     
+    def m0(self) -> str:
+        return self.m3(self.cp[0], self.cp[1], self.cp[2])
+    
     def j3(self, x:Union[float, str], y:Union[float, str], z:Union[float, str], pOn:bool=False) -> str:
         '''Jump in 3D'''
         return self.mj3(x,y,z,'J', pOn=pOn)
@@ -309,6 +317,8 @@ class sbpCreator:
     def jz(self, z:Union[float, str], pOn:bool=False) -> str:
         '''Jump in z'''
         return self.mj1('Z', z, 'J', pOn=pOn)
+    
+
     
     def withdraw(self, pOn=False) -> None:
         '''Go back to the loading zone'''

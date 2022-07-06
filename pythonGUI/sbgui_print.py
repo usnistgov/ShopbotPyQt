@@ -19,6 +19,8 @@ sys.path.append(parentdir)
 sys.path.append(os.path.join(parentdir, 'SBP_files'))  # add python folder
 from sbpRead import *
 
+printDiag = False
+
 
 ##################################################  
 
@@ -27,6 +29,8 @@ def ppdist(p1:List[float], p2:List[float]) -> float:
     try:
         return np.sqrt((p1[0]-p2[0])**2+(p1[1]-p2[1])**2+(p1[2]-p2[2])**2)
     except ValueError:
+        return 0
+    except TypeError:
         return 0
 
     
@@ -148,7 +152,7 @@ def flagOn(sbFlag:int, flag0:int) -> bool:
 class channelWatch:
     '''a tool for watching changes in state'''
     
-    def __init__(self, csvfile:str, flag0:int, critTimeOn:float, critTimeOff:float, zero:float, sbWin):
+    def __init__(self, csvfile:str, flag0:int, sbWin):
         
         # state codes: 
         # 0 = no change at point
@@ -157,14 +161,25 @@ class channelWatch:
         # 3 = turn off when past critical distance of point
         # 4 = snap when flag is on
         self.state = 0    
-        self.flag0 = flag0              # 0-indexed flag to watch
-        self.critTimeOn = critTimeOn    # time before the corner when we turn on the flow
-        self.zero = zero                # margin of error for distance. 
-                                        # if distance to the point is less than self.zero, we're at the point
-        self.critTimeOff = critTimeOff  # time after the start of the new move when we turn off flow
+        self.flag0 = flag0              
+            # 0-indexed flag to watch
+        self.critTimeOn = sbWin.sbBox.critTimeOn    
+            # time before the corner when we turn on the flow
+        self.zero = sbWin.sbBox.zeroDist               
+            # margin of error for distance. 
+            # if distance to the point is less than self.zero, we're at the point
+        self.critTimeOff = sbWin.sbBox.critTimeOff  
+            # time after the start of the new move when we turn off flow
+        self.burstScale = sbWin.sbBox.burstScale
+            # pressure scaling for initial burst
+        self.burstLength = sbWin.sbBox.burstLength
+            # length over which to decrease pressure to target pressure
         self.targetPoint = ['','','']   # next point to hit
         self.lastPoint = ['','','']     # point we're coming from
         self.sbWin = sbWin              # gui window
+        self.on = False
+        self.steps = 0
+        
 
         self.points = pd.read_csv(csvfile, index_col=0)
         self.currentIndex = 0
@@ -210,14 +225,84 @@ class channelWatch:
         if hasattr(self, 'camBox'):
             if hasattr(self.camBox, 'camInclude'):
                 self.camBox.camInclude.setChecked(self.oldChecked)
+                
+    def dist(self, x:float, y:float, z:float) -> float:
+        '''distance to the target point'''
+        return ppdist([x,y,z], self.targetPoint)
+        
+    def lastDist(self, x:float, y:float, z:float) -> float:
+        '''distance to the last target point'''
+        return ppdist([x,y,z], self.lastPoint)
+    
+    def nextDist(self, x:float, y:float, z:float) -> float:
+        '''distance to the next target point'''
+        return ppdist([x,y,z], self.nextPoint)
+    
+#     def angle(self, x:float, y:float, z:float) -> float:
+#         '''get the angle between the line between the last point and next point and the line between this point and the next point'''
+#         v1 = [self.targetPoint[2]-self.lastPoint[2], self.targetPoint[1]-self.lastPoint[1], self.targetPoint[0]-self.lastPoint[0]]
+#         v2 = [self.targetPoint[2]-x, self.targetPoint[1]-y, self.targetPoint[0]-z]
+        
+    
+    def endPointDist(self) -> float:
+        '''distance between the last point and target point'''
+        return ppdist(self.targetPoint, self.lastPoint)
+    
+    def turnOn(self) -> None:
+        '''turn the pressure on to the burst pressure, or snap a picture'''
+        if self.mode == 1:
+            # turn pressure on to burst pressure
+            self.pChannel.goToRunPressure(self.burstScale)
+            self.on=True
+            if printDiag:
+                print('turn on')
+        elif self.mode == 2:
+            # snap pictures
+            if self.camBox.connected:
+                self.camBox.cameraPic()
+            else:
+                logging.info(f'Cannot take picture: {self.camBox.bTitle} not connected')
+                
+    def turnDown(self, x:float, y:float, z:float) -> None:
+        '''turn the pressure down'''
+        if self.mode==1 and self.on:
+            l = self.lastDist(x,y,z)
+            if l>self.burstLength:
+                scale = 1
+            else:
+                scale = 1 + (self.burstScale-1)*(1-l/self.burstLength)
+            self.pChannel.goToRunPressure(scale)
+            if printDiag:
+                print(f'turn down {scale}')
+                        
+    def turnOff(self) -> None:
+        '''turn the pressure off'''
+        if self.mode == 1:
+            self.pChannel.zeroChannel(status=False)
+            self.on=False
+            if printDiag:
+                print('turn off')
+            
+    def printState(self) -> None:
+        '''print the state of the print'''
+        statecodes = {0:'No change at point', 1:'Turn on at point', 2:'Go to state 3 when flag is off', 3:'Turn off after point', 4:'snap picture when flag is on', 5:'Go to state 2 when flag is on'}
+        logging.info(f'{self.state}:{statecodes[self.state]}. {self.targetPoint}')
         
         
     def readPoint(self) -> None:
         '''update the current state to reflect the next row'''
+        self.steps=0
         if (self.currentIndex)>=len(self.points):
             # end of file
             return
         row = self.points.loc[self.currentIndex]
+        if self.currentIndex+1<len(self.points):
+            nextrow = self.points.loc[self.currentIndex+1]
+            self.nextPoint =  [float(nextrow['x']), float(nextrow['y']), float(nextrow['z'])]
+        else:
+            nextrow = dict([[key, 1000] for key in self.points])
+            self.nextPoint = [1000,1000,1000]
+        
         self.currentIndex+=1
         if pd.isna(row['x']) or pd.isna(row['y']) or pd.isna(row['z']):
             # undefined points, skip
@@ -236,22 +321,38 @@ class channelWatch:
             return
         self.lastPoint = self.targetPoint
         self.targetPoint = [float(row['x']), float(row['y']), float(row['z'])]
+        if self.currentIndex+1<len(self.points):
+            self.nextPoint =  [float(nextrow['x']), float(nextrow['y']), float(nextrow['z'])]
+        else:
+            self.nextPoint = [1000,1000,1000]
         if row[f'p{self.flag0}_before']==0 and row[f'p{self.flag0}_after']==1:
             # turn on at point
+            
+            if nextrow['x']==row['x'] and nextrow['y']==row['y'] and nextrow['z']==row['z'] and nextrow[f'p{self.flag0}_before']==1 and nextrow[f'p{self.flag0}_after']==0:
+                # we're turning the flag on, then turning it right back off
+                self.state=6
+            
             if self.mode == 1:
                 # turn on pressure before we hit the point
                 self.state = 1
                 self.critDistance = max(self.zero, self.critTimeOn*row['speed'])  # distance from point when we turn on
+                
             elif self.mode == 2:
                 # turn on camera with flag
                 self.state = 4
                 self.critDistance = self.zero
+                
         elif row[f'p{self.flag0}_before']==1 and row[f'p{self.flag0}_after']==0:
             # turn off at point
+            
             if self.mode == 1:
                 # turn off pressure after we leave the point
                 self.state = 5
-                self.critDistance = max(self.zero, self.critTimeOff*row['speed'])  # distance from point when we turn on
+                if self.critTimeOff>0:
+                    self.critDistance = max(self.zero, self.critTimeOff*row['speed'])  # distance from point when we turn on
+                else:
+                    self.critDistance = max(self.zero, -self.critTimeOff*row['speed'])  # distance from point when we turn on
+                    
             elif self.mode == 2:
                 # turn off camera with flag
                 self.state = 0
@@ -261,87 +362,127 @@ class channelWatch:
             self.state = 0
             self.critDistance = self.zero
           
-    
-            
-    def dist(self, x:float, y:float, z:float) -> float:
-        '''distance to the target point'''
-        return ppdist([x,y,z], self.targetPoint)
         
-    def lastDist(self, x:float, y:float, z:float) -> float:
-        '''distance to the last target point'''
-        return ppdist([x,y,z], self.lastPoint)
+    def state3turnOff(self, x:float, y:float, z:float) -> bool:
+        '''determine if we are ready to leave state 3'''
+        dist = self.dist(x,y,z)
+        lastdist = self.lastDist(x,y,z)
+        endPointDist = self.endPointDist()
+        if self.critTimeOff>0:
+            return (dist<self.critDistance or (dist+lastdist)>(endPointDist+self.zero))
+        else:
+            if printDiag:
+                print((dist+lastdist),dist,self.critDistance,(endPointDist+self.zero), x, y, z, self.targetPoint)
+            return (dist>self.critDistance and (dist+lastdist)>(endPointDist+self.zero))
+        
+    def state1turnOff(self, x:float, y:float, z:float) -> bool:
+        '''determine if we are ready to leave state 1'''
+        dist = self.dist(x,y,z)
+        lastdist = self.lastDist(x,y,z)
+        endPointDist = self.endPointDist()
+        return dist<self.critDistance or (dist+lastdist)>(endPointDist+self.zero)
     
-    def endPointDist(self) -> float:
-        '''distance between the last point and target point'''
-        return ppdist(self.targetPoint, self.lastPoint)
-    
-    def turnOn(self) -> None:
-        '''turn the pressure on, or snap a picture'''
-        if self.mode == 1:
-            # turn pressure on
-            self.pChannel.goToRunPressure()
-        elif self.mode == 2:
-            # snap pictures
-            if self.camBox.connected:
-                self.camBox.cameraPic()
-            else:
-                logging.info(f'Cannot take picture: {self.camBox.bTitle} not connected')
-                        
-    def turnOff(self) -> None:
-        '''turn the pressure off'''
-        if self.mode == 1:
-            self.pChannel.zeroChannel(status=False)
-            
-    def printState(self) -> None:
-        '''print the state of the print'''
-        statecodes = {0:'No change at point', 1:'Turn on at point', 2:'Go to state 3 when flag is off', 3:'Turn off after point', 4:'snap picture when flag is on', 5:'Go to state 2 when flag is on'}
-        logging.info(f'{self.state}:{statecodes[self.state]}. {self.targetPoint}')
+    def hitNextPoint(self, x:float, y:float, z:float) -> bool:
+        '''determine if the next point was hit'''
+        if not self.nextDist(x,y,z)<self.zero:
+            return False
+        if self.steps<5:
+            return False
+        logging.info(f'Skipped step at {x}, {y}, {z}')
+        return True
         
 
     def checkPoint(self, sbFlag:int, x:float, y:float, z:float) -> bool:
         '''check if we need a change in pressure or a change in state, make changes
         return True if the run may be over, False if not'''
         # state codes: 
-
+        if printDiag:
+            print(self.state, sbFlag, x, y, z)
         if self.state==0:
             # 0 = no change at point
-            if self.dist(x,y,z)<self.critDistance:
+            if self.hitNextPoint(x,y,z):
+                # if we've skipped a point, read 2 points
                 self.readPoint()
                 return True
+            elif self.state1turnOff(x,y,z):
+                # if we've reached the endpoint or left the line between the last point and target point, move on
+                self.readPoint()
+                return True
+            else:
+                self.turnDown(x,y,z)
+                # we have not reached endpoint
+                return False
+        
+        # fluigent            
+        # turn on functions
         elif self.state==1:
-            # 1 = turn on when within critical distance of point
-            if self.dist(x,y,z)<self.critDistance:
+            # 1 = turn on to high pressure when within critical distance of point
+            if self.dist(x,y,z)<self.critDistance or flagOn(sbFlag, self.flag0):
+                self.turnOn()    # go to burst pressure
+                self.readPoint()  # look for next point
+            elif self.hitNextPoint(x,y,z):
                 self.turnOn()
                 self.readPoint()
-                return False
+            return False
         elif self.state==5:
             # 5 = wait for the flag to turn on, then go to state 2
-            if flagOn(sbFlag, self.flag0):
+            if self.hitNextPoint(x,y,z):
+                # if we've reached the next point, skip this point
+                self.turnOff()
+                self.readPoint()
+            elif flagOn(sbFlag, self.flag0):
                 # flag is on
                 self.state=2
-                return False
+            return False
+        elif self.state==6:
+            self.turnOn()
+            self.turnOff()
+            self.readPoint()
+            self.readPoint()
+            return True
+        
+        # turn off functions
         elif self.state==2:
             # 2 = wait for the flag to turn off, then go to state 3
-            if sbFlag>0 and not flagOn(sbFlag, self.flag0):  # flag is 1-indexed
+            if self.hitNextPoint(x,y,z):
+                # we've skipped a point. turn off
+                self.turnOff()
+                self.readPoint()
+            elif sbFlag>0 and not flagOn(sbFlag, self.flag0):  # flag is 1-indexed
                 # flag is off
                 self.state=3
-                return False
+            else:
+                # continue to print line, scale pressure down
+                self.turnDown(x,y,z)
+            return False
         elif self.state==3:
             # 3 = turn off when past critical distance of point
-            dist = self.dist(x,y,z)
-            lastdist = self.lastDist(x,y,z)
-            endPointDist = self.endPointDist()
-            if dist>self.critDistance and (dist+lastdist)>(endPointDist+self.zero):
-                # point must not be on line between the two endpoints and must be greater than critDistance past endpoint
+            if self.hitNextPoint(x,y,z):
+                # we've skipped a point. turn off and read 2 points
+                self.turnOff()
+                self.readPoint()
+            elif self.state3turnOff(x,y,z):
+                # if critTimeOff is positive, point must be within 
+                # critDistance of endpoint or not on line between two endpoints
+                # if critTimeOff is negative, point must not be on line 
+                # between the two endpoints and must be greater than critDistance past endpoint
                 self.turnOff()
                 self.readPoint()
                 return True
+            else:
+                return False
+            
+            
+        # camera
         elif self.state==4:
             # 4 = snap when flag is on
             if flagOn(sbFlag, self.flag0):
                 self.turnOn()
                 self.readPoint()
                 return True
+            else:
+                return False
+
             
     def done(self):
         if self.mode==2:
@@ -357,6 +498,7 @@ class SBPtimings:
     '''
 
     def __init__(self, sbpfile:str, sbWin, critTimeOn:float=0.1, critTimeOff:float=0, zero:float=0.1):
+        self.sbWin = sbWin
         if not sbpfile.endswith('.sbp'):
             raise ValueError('Input to SBPtimings must be an SBP file')
         self.sbpfile = sbpfile
@@ -371,8 +513,10 @@ class SBPtimings:
         self.channels =[]
         for key in sp:
             if key.startswith('p') and key.endswith('_before'):
-                flag0 = int(key[1])   # 0-indexed
-                self.channels.append(channelWatch(self.csvfile, flag0, critTimeOn, critTimeOff, zero, sbWin))
+                spl = re.split('p|_', key)
+                flag0 = int(spl[1])   # 0-indexed
+                if not flag0==self.sbWin.sbBox.runFlag1-1:
+                    self.channels.append(channelWatch(self.csvfile, flag0, sbWin))
         
     def check(self, sbFlag:int, x:float, y:float, z:float) -> bool:
         '''update status of channels based on position and flags

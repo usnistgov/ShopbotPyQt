@@ -1,0 +1,32 @@
+&slideW = 25.000
+&slideH = 75.000
+&margin = 5.000
+&spacing = 5.000
+&nid = 0.603
+&nd = 0.907
+&downdisp = 0.000
+&wait1 = 1.000
+&wait2 = 0.500
+VD , , 1
+VU, 157.480315, 157.480315, -157.480315
+MS, 10, 10
+JS, 20, 20
+VR,10.06, 10.06, , , 10.06, 10.06, , , 5.08, 5.08, 100, 3.81, 65, , , 5.08
+&nid = 0.603
+SO, 12, 1
+MX, &slideW/2
+J2, &slideW/2, &margin/2
+JZ, -0.9*&slideW
+SO, 1, 1
+MY, 2.0*&margin
+SO, 1, 0
+JZ, 0.5*&nid - 0.9*&slideW
+SO, 1, 1
+MY, &margin/2
+SO, 1, 0
+JZ, 1.0*&nid - 0.9*&slideW
+SO, 1, 1
+MY, 2.0*&margin
+SO, 1, 0
+SO, 12, 0
+MZ, 10.000

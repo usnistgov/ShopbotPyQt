@@ -109,10 +109,11 @@ class fluChannel:
         if status:
             self.fluBox.updateStatus(f'Setting channel {self.chanNum0} to {runPressure} mbar', True)
             
-    def goToRunPressure(self) -> None:
+    def goToRunPressure(self, scale:float=1) -> None:
         '''set the pressure for this channel to the pressure in the constBox'''
         runPressure = int(self.constBox.text())
-        self.goToPressure(runPressure, False)
+        self.goToPressure(runPressure*scale, False)
+#         print(f'go to {runPressure*scale}')
     
     def setPressure(self) -> None:
         '''set the pressure for this channel to the pressure in the setBox'''

@@ -1,0 +1,166 @@
+&slideW = 25.000
+&slideH = 75.000
+&margin = 5.000
+&spacing = 5.000
+&nid = 0.603
+&nd = 0.907
+&downdisp = 0.000
+&wait1 = 1.000
+&wait2 = 0.500
+VD , , 1
+VU, 157.480315, 157.480315, -157.480315
+MS, 10, 10
+JS, 20, 20
+VR,10.06, 10.06, , , 10.06, 10.06, , , 5.08, 5.08, 100, 3.81, 65, , , 5.08
+MS, 5, 5
+JS, 20, 20
+SO, 12, 1
+M2, &slideW/2, 1.5*&margin
+M3, &slideW/2, 1.5*&margin, 0.75*&margin - &slideW
+M3, &slideW/2, 1.5*&margin, 0.75*&margin - &slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+M3, &slideW/2, 1.5*&margin, 3*&margin/2 - &slideW
+M3, &slideW/2, 1.5*&margin, 3*&margin/2 - &slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+M3, &slideW/2, 3.75*&margin, 0.75*&margin - &slideW
+M3, &slideW/2, 3.75*&margin, 0.75*&margin - &slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+M3, &slideW/2, 3.75*&margin, 3*&margin/2 - &slideW
+M3, &slideW/2, 3.75*&margin, 3*&margin/2 - &slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+M3, &slideW/2, 6.0*&margin, 0.75*&margin - &slideW
+M3, &slideW/2, 6.0*&margin, 0.75*&margin - &slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+M3, &slideW/2, 6.0*&margin, 3*&margin/2 - &slideW
+M3, &slideW/2, 6.0*&margin, 3*&margin/2 - &slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+M3, &slideW/2, 8.25*&margin, 0.75*&margin - &slideW
+M3, &slideW/2, 8.25*&margin, 0.75*&margin - &slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+M3, &slideW/2, 8.25*&margin, 3*&margin/2 - &slideW
+M3, &slideW/2, 8.25*&margin, 3*&margin/2 - &slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+M3, &slideW/2, 10.5*&margin, 0.75*&margin - &slideW
+M3, &slideW/2, 10.5*&margin, 0.75*&margin - &slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+M3, &slideW/2, 10.5*&margin, 3*&margin/2 - &slideW
+M3, &slideW/2, 10.5*&margin, 3*&margin/2 - &slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+M3, &slideW/2, 12.75*&margin, 0.75*&margin - &slideW
+M3, &slideW/2, 12.75*&margin, 0.75*&margin - &slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+M3, &slideW/2, 12.75*&margin, 3*&margin/2 - &slideW
+M3, &slideW/2, 12.75*&margin, 3*&margin/2 - &slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+M3, &slideW/2, 1.5*&margin, 0.25*&margin - 0.5*&slideW
+M3, &slideW/2, 1.5*&margin, 0.25*&margin - 0.5*&slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+M3, &slideW/2, 1.5*&margin, &margin - 0.5*&slideW
+M3, &slideW/2, 1.5*&margin, &margin - 0.5*&slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+M3, &slideW/2, 3.75*&margin, 0.25*&margin - 0.5*&slideW
+M3, &slideW/2, 3.75*&margin, 0.25*&margin - 0.5*&slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+M3, &slideW/2, 3.75*&margin, &margin - 0.5*&slideW
+M3, &slideW/2, 3.75*&margin, &margin - 0.5*&slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+M3, &slideW/2, 6.0*&margin, 0.25*&margin - 0.5*&slideW
+M3, &slideW/2, 6.0*&margin, 0.25*&margin - 0.5*&slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+M3, &slideW/2, 6.0*&margin, &margin - 0.5*&slideW
+M3, &slideW/2, 6.0*&margin, &margin - 0.5*&slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+M3, &slideW/2, 8.25*&margin, 0.25*&margin - 0.5*&slideW
+M3, &slideW/2, 8.25*&margin, 0.25*&margin - 0.5*&slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+M3, &slideW/2, 8.25*&margin, &margin - 0.5*&slideW
+M3, &slideW/2, 8.25*&margin, &margin - 0.5*&slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+M3, &slideW/2, 10.5*&margin, 0.25*&margin - 0.5*&slideW
+M3, &slideW/2, 10.5*&margin, 0.25*&margin - 0.5*&slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+M3, &slideW/2, 10.5*&margin, &margin - 0.5*&slideW
+M3, &slideW/2, 10.5*&margin, &margin - 0.5*&slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+M3, &slideW/2, 12.75*&margin, 0.25*&margin - 0.5*&slideW
+M3, &slideW/2, 12.75*&margin, 0.25*&margin - 0.5*&slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+M3, &slideW/2, 12.75*&margin, &margin - 0.5*&slideW
+M3, &slideW/2, 12.75*&margin, &margin - 0.5*&slideW
+PAUSE &wait1
+SO, 3, 1
+PAUSE &wait2
+SO, 3, 0
+SO, 12, 0
+JZ, 10.000
+JY, 180.000
+JX, 30.000

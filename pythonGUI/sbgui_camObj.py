@@ -254,7 +254,8 @@ class camera:
         self.resetVidStats()
         self.framesSincePrev = 0  # how many frames we've collected since we updated the live display
 #         self.diag = cfg.camera.diag             
-        self.fps = 0              # this will be set during subclass init (webcam.__init__, bascam.__init__)
+        self.fps = 1              # this will be set during subclass init (webcam.__init__, bascam.__init__)
+        self.previewFPS = 1
         self.exposure = 0         # this will be set during subclass init (webcam.__init__, bascam.__init__)
         self.fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
         self.prevWindow = QLabel()                # the window that the live preview will be displayed in
@@ -270,6 +271,7 @@ class camera:
         self.type = d['type']        # type of camera, either bascam or webcam
         self.cameraName = d['name']  # full name of the camera (e.g. Basler camera)
         self.diag = int(d['diag'])        # diag tells us which messages to log. 0 means none, 1 means some, 2 means a lot
+        self.previewFPS = int(d['previewFPS'])
         
     def loadConfig(self, cfg1):
         '''load the current settings from the config Box object'''
@@ -282,6 +284,7 @@ class camera:
         cfg1.camera[self.guiBox.cname].type = self.type
         cfg1.camera[self.guiBox.cname].name = self.cameraName
         cfg1.camera[self.guiBox.cname].diag = self.diag
+        cfg1.camera[self.guiBox.cname].previewFPS = self.previewFPS
         return cfg1
     
     def writeToTable(self, writer) -> None:
@@ -293,6 +296,13 @@ class camera:
         writer.writerow([f'{b2}_exposure','ms', self.exposure])
         writer.writerow([f'{b2}_flag1','', self.flag1])
         
+    def setPFrameRate(self, previewFPS:float) -> int:
+        '''update the preview frame rate'''
+        if self.previewFPS==previewFPS:
+            return 1
+        else:
+            self.previewFPS =  previewFPS
+            self.updateFramesToPrev()
             
     def setFrameRate(self, fps:float) -> int:
         '''Set the frame rate of the camera. Return 0 if value changed, 1 if not'''
@@ -306,6 +316,7 @@ class camera:
                 return 1
             self.fps = fps
             self.mspf = int(round(1000./self.fps))  # ms per frame
+            self.updateFramesToPrev()   # update the preview downsample rate
             return 0
         
     def setFrameRateAuto(self) -> int:
@@ -372,14 +383,18 @@ class camera:
     
     #---------------------------------
     
+    def updateFramesToPrev(self):
+        '''calculate the number of frames to downsample for preview'''
+        self.critFramesToPrev = max(round(self.fps/self.previewFPS), 1)
+        self.framesSincePrev = self.critFramesToPrev
+    
     def startPreview(self) -> None: 
         '''start live preview'''
         # critFramesToPrev reduces the live display frame rate, 
         # so only have to update the display at a comfortable viewing rate.
         # if the camera is at 200 fps, the video will be saved at full rate but
         # preview will only show at 15 fps
-        self.critFramesToPrev = max(round(self.fps/15), 1)
-        self.framesSincePrev = self.critFramesToPrev
+        self.updateFramesToPrev()
         self.previewing = True
         self.startTimer()      # this only starts the timer if we're not already recording
 

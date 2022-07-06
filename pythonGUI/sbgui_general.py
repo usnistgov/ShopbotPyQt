@@ -83,7 +83,10 @@ def setFolder(folder:str) -> str:
     if os.path.exists(folder):
         startFolder = folder
     else:
-        startFolder = "C:\\"
+        while not os.path.exists(folder):
+            startFolder = os.path.dirname(folder)
+            if startFolder==folder or len(startFolder)==0:
+                startFolder = "C:\\"
     sf = fileDialog(startFolder, '', True)
     if len(sf)>0:
         sf = sf[0]

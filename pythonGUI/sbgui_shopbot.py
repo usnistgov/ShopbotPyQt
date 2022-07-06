@@ -67,7 +67,7 @@ class sbSettingsBox(QWidget):
                                       func=self.updateSavePicMetadata)
 
         # autoplay checkboxes
-        self.autoPlayChecks = fRadioGroup(layout, 'When the print is done:', 
+        self.autoPlayChecks = fRadioGroup(layout, 'When the print is done', 
                                           {0:'Automatically start the next file', 
                                            1:'Wait for the user to press play'}, 
                                           {0:True, 1:False},
@@ -75,10 +75,20 @@ class sbSettingsBox(QWidget):
                                           func=self.changeAutoPlay)
 
         # timing error
-        fLabel(layout, title='SB3 timing error correction:', style=labelStyle())
+        fLabel(layout, title='SB3 timing error correction', style=labelStyle())
         fileForm = QFormLayout()
         objValidator = QDoubleValidator(0, 10, 2)
         w = 100
+        self.burstScale = fLineEdit(fileForm, title='Burst pressure scaling (default=1)',
+                                    text=str(cfg.shopbot.burstScale), 
+                                    tooltip='When you first turn on pressure, turn it to this value times the target value before you turn it down to the target value',
+                                   func=self.updateBurstScale,
+                                   width=w)
+        self.burstLength = fLineEdit(fileForm, title='Burst pressure length (mm)',
+                                    text=str(cfg.shopbot.burstLength), 
+                                    tooltip='After you turn on the pressure, decrease to the target pressure over this amount of distance in mm',
+                                   func=self.updateBurstLength,
+                                   width=w)
         self.critTimeOn = fLineEdit(fileForm, title='Crit time on (s)',
                                     text=str(cfg.shopbot.critTimeOn), 
                                     tooltip='Turn on the pressure this amount of time before the flag is turned on',
@@ -86,7 +96,7 @@ class sbSettingsBox(QWidget):
                                    width=w)
         self.critTimeOff = fLineEdit(fileForm, title='Crit time off (s)', 
                                      text=str(cfg.shopbot.critTimeOff), 
-                                     tooltip='Turn off the pressure this amount of time after the flag is turned on',
+                                     tooltip='Turn off the pressure this amount of time before the flag is turned off',
                                     func=self.updateCritTimeOff,
                                    width=w)
         self.zeroDist = fLineEdit(fileForm, title=f'Zero distance ({self.sbBox.units})', 
@@ -121,9 +131,6 @@ class sbSettingsBox(QWidget):
         
     def saveConfig(self, cfg1):
         '''save values to the config file'''
-#         cfg1.shopbot.critTimeOn = self.getCritTimeOn()
-#         cfg1.shopbot.critTimeOff = self.getCritTimeOff()
-#         cfg1.shopbot.zeroDist = self.getZeroDist()
         cfg1.shopbot.dt = self.getDt()
         return cfg1
         
@@ -137,18 +144,6 @@ class sbSettingsBox(QWidget):
             else:
                 self.checkFreq.setText(str(dt))
         return dt
-        
-#     def getCritTimeOn(self) -> float:
-#         '''get the critTimeOn'''
-#         return float(self.critTimeOn.text())
-    
-#     def getCritTimeOff(self) -> float:
-#         '''get the critTimeOn'''
-#         return float(self.critTimeOff.text())
-    
-#     def getZeroDist(self) -> float:
-#         '''get the critTimeOn'''
-#         return float(self.zeroDist.text())
         
     def changeAutoPlay(self) -> None:
         '''Change autoPlay settings'''
@@ -208,6 +203,16 @@ class sbSettingsBox(QWidget):
         '''update sbBox crit zero dist'''
         self.sbBox.zeroDist=float(self.zeroDist.text())
         self.sbBox.updateStatus(f'Updated zero distance to {self.sbBox.zeroDist}', True)
+        
+    def updateBurstScale(self) -> None:
+        '''update the burst pressure scaling'''
+        self.sbBox.burstScale = float(self.burstScale.text())
+        self.sbBox.updateStatus(f'Updated burst scale to {self.sbBox.burstScale}', True)
+        
+    def updateBurstLength(self) -> None:
+        '''update the burst pressure length'''
+        self.sbBox.burstLength = float(self.burstLength.text())
+        self.sbBox.updateStatus(f'Updated burst length to {self.sbBox.burstLength}', True)
 
     def setSBPFolder(self) -> None:
         '''set the folder to save all the files we generate from the whole gui'''
@@ -307,6 +312,12 @@ class sbBox(connectBox):
         cfg1.shopbot.includePositionInTable = self.savePos
         cfg1.shopbot.includeFlagInTable = self.saveFlag
         cfg1.shopbot.savePicMetadata = self.savePicMetadata
+        cfg1.shopbot.critTimeOn = self.critTimeOn
+        cfg1.shopbot.critTimeOff = self.critTimeOff
+        cfg1.shopbot.zeroDist = self.zeroDist
+        cfg1.shopbot.dt = self.checkFreq
+        cfg1.shopbot.burstScale = self.burstScale
+        cfg1.shopbot.burstLength = self.burstLength
         cfg1 = self.settingsBox.saveConfig(cfg1)
         cfg1 = self.sbList.saveConfig(cfg1)
         return cfg1
@@ -324,6 +335,8 @@ class sbBox(connectBox):
         self.critTimeOff=cfg1.shopbot.critTimeOff
         self.zeroDist=cfg1.shopbot.zeroDist
         self.checkFreq=cfg1.shopbot.dt
+        self.burstScale = cfg1.shopbot.burstScale
+        self.burstLength = cfg1.shopbot.burstLength
         
     
     def loadConfig(self, cfg1):
@@ -384,6 +397,12 @@ class sbBox(connectBox):
         for row in t1:
             writer.writerow(row)
         writer.writerow(['run_flag1', '', self.runFlag1])
+        writer.writerow(['critTimeOn', '', self.critTimeOn])
+        writer.writerow(['critTimeOff', '', self.critTimeOff])
+        writer.writerow(['zeroDist', '', self.zeroDist])
+        writer.writerow(['checkFreq', '', self.checkFreq])
+        writer.writerow(['burstScale', '', self.burstScale])
+        writer.writerow(['burstLength', '', self.burstLength])
 
     def testTime(self) -> None:
         '''create metadata file'''
@@ -463,10 +482,13 @@ class sbBox(connectBox):
     def getCritFlag(self) -> int:
         '''Identify which channels are triggered during the run. critFlag is a shopbot flag value that indicates that the run is done. We always set this to 0. If you want the video to shut off after the first flow is done, set this to 2^(cfg.shopbot.flag-1). We run this function at the beginning of the run to determine what flag will trigger the start of videos, etc.'''
         self.channelsTriggered = channelsTriggered(self.sbpName())
+        
         if not self.runFlag1-1 in self.channelsTriggered:
             # abort run: no signal to run this file
+            self.updateStatus('Missing flag in sbp file', True)
             self.triggerKill()
-        self.channelsTriggered.remove(self.runFlag1-1)
+        if self.runFlag1-1 in self.channelsTriggered:
+            self.channelsTriggered.remove(self.runFlag1-1)
         return 0
     
     
@@ -528,10 +550,7 @@ class sbBox(connectBox):
             
         self.updateStatus(f'Running SBP file {self.sbpName()}, critFlag = {self.critFlag}', True)
         
-        self.sbpTiming = SBPtimings(self.sbpName(), self.sbWin
-                                    , critTimeOn=self.critTimeOn
-                                    , critTimeOff=self.critTimeOff
-                                    , zero=self.zeroDist)
+        self.sbpTiming = SBPtimings(self.sbpName(), self.sbWin)
                 # this object updates changes in state
 
         # send the file to the shopbot via command line
@@ -539,7 +558,7 @@ class sbBox(connectBox):
         arg = self.sbpName() + ', ,4, ,0,0,0"'
         subprocess.Popen([appl, arg])
         
-        # wait to start videos and fluigent
+        # wait to start videos and fluigentf
         self.triggerWait()
         
     
@@ -563,22 +582,33 @@ class sbBox(connectBox):
         '''if we use output flag 1 (1-indexed), the shopbot thinks we are starting the router/spindle and triggers a popup. Because we do not have a router/spindle on this instrument, this popup is irrelevant. This function automatically checks if the window is open and closes the window'''
         hwndMain = win32gui.FindWindow(None, 'NOW STARTING ROUTER/SPINDLE !')
         if hwndMain>0:
+            QTimer.singleShot(50, self.killSpindle) # wait 50 milliseconds, then kill the window
+            
+    def killSpindle(self) -> None:
+        hwndMain = win32gui.FindWindow(None, 'NOW STARTING ROUTER/SPINDLE !')
+        if hwndMain>0:
             # disable the spindle warning
-            hwndChild = win32gui.GetWindow(hwndMain, win32con.GW_CHILD)
-            win32gui.SetForegroundWindow(hwndChild)
-            win32api.PostMessage( hwndChild, win32con.WM_KEYDOWN, win32con.VK_RETURN, 0)
+            try:
+                hwndChild = win32gui.GetWindow(hwndMain, win32con.GW_CHILD)
+                win32gui.SetForegroundWindow(hwndChild)
+            except Exception as e:
+                logging.error('Failed to disable spindle popup')
+            else:
+                win32api.PostMessage( hwndChild, win32con.WM_KEYDOWN, win32con.VK_RETURN, 0)
             
             
     def checkStopHit(self) -> None:
         '''this checks for a window that indicates that the stop has been hit, either on the SB3 software, or through an emergency stop. this function tells sb3 to quit printing and tells sbgui to kill this print '''
-        hwndMain = win32gui.FindWindow(None, 'PAUSED in Movement or File Action')
-        if hwndMain>0:
-            # trigger the end of print
-            hwndChild = win32gui.GetWindow(hwndMain, win32con.GW_CHILD)
-            win32gui.SetForegroundWindow(hwndChild)
-            win32api.PostMessage( hwndChild, win32con.WM_KEYDOWN, 0x51, 0)
-            self.allowEnd=True
-            self.triggerKill()
+#         hwndMain = win32gui.FindWindow(None, 'PAUSED in Movement or File Action')
+#         if hwndMain>0:
+#             # trigger the end of print
+#             hwndChild = win32gui.GetWindow(hwndMain, win32con.GW_CHILD)
+#             win32gui.SetForegroundWindow(hwndChild)
+#             win32api.PostMessage( hwndChild, win32con.WM_KEYDOWN, 0x51, 0)
+#             self.allowEnd=True
+#             self.updateStatus('SB3 Stop button pressed', True)
+#             self.triggerKill()
+        return
             
     
     def waitForStart(self) -> None:
@@ -669,7 +699,7 @@ class sbBox(connectBox):
 #         self.sbList.activateNext()     # activate the next sbp file in the list
         self.runningSBP = False   # we're no longer running a sbp file
         self.updateRunButt()    
-        self.updateStatus('Stop button was clicked', True)
+        
 
     def triggerEndOfPrint(self) -> None:
         '''we finished the file, so stop and move onto the next one'''
