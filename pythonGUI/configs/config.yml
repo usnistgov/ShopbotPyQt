@@ -31,9 +31,9 @@ files:
   includeSampleInFile: true
   includeSampleInFolder: true
   includeTimeInFile: true
-  save: C:\Users\lmf1\Videos\Shopbot Videos\220706 LapRD LapRD visc
+  save: C:\Users\lmf1\Videos\Shopbot Videos\220714 mineral LapRD visc
   separator: _
-  tag: I_4.00_S_2.25
+  tag: I_M9_S_4.00
   timeFormat: '%y%m%d_%H%M%S_%f'
 fluigent:
   channel0:
@@ -91,11 +91,11 @@ meta:
 savePressure: true
 shopbot:
   autoplay: true
-  burstLength: 0.1
-  burstScale: 1.1
+  burstLength: 0.05
+  burstScale: 1.05
   critTimeOff: -0.0001
-  critTimeOn: 0.1
-  currentFile: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide\crossDoubleVert_0.5_1.000.sbp
+  critTimeOn: 0.05
+  currentFile: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide\crossDoubleHoriz_0.5_0.500.sbp
   dt: 25.0
   flag1: 12
   flag1max: 12

@@ -513,10 +513,12 @@ class SBPtimings:
         self.channels =[]
         for key in sp:
             if key.startswith('p') and key.endswith('_before'):
-                spl = re.split('p|_', key)
-                flag0 = int(spl[1])   # 0-indexed
-                if not flag0==self.sbWin.sbBox.runFlag1-1:
-                    self.channels.append(channelWatch(self.csvfile, flag0, sbWin))
+                if not list(sp[key].unique())==[0]:
+                    # make sure flag changes
+                    spl = re.split('p|_', key)
+                    flag0 = int(spl[1])   # 0-indexed
+                    if not flag0==self.sbWin.sbBox.runFlag1-1:
+                        self.channels.append(channelWatch(self.csvfile, flag0, sbWin))
         
     def check(self, sbFlag:int, x:float, y:float, z:float) -> bool:
         '''update status of channels based on position and flags
