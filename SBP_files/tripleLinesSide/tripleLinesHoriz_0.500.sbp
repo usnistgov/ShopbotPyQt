@@ -17,8 +17,9 @@ SO, 12, 1
 SO, 2, 1
 SO, 2, 0
 MX, &slideW/2
+J2, &slideW/2, &margin/2 - 0.1
+MZ, -0.9*&slideW
 J2, &slideW/2, &margin/2
-JZ, -0.9*&slideW
 SO, 1, 1
 MY, 2.325*&margin
 SO, 1, 0
@@ -32,8 +33,9 @@ MY, 2.325*&margin
 SO, 1, 0
 JZ, -0.8*&slideW
 JY, &margin/2
+J2, &slideW/2, &margin/2 - 0.1
+MZ, -0.7*&slideW
 J2, &slideW/2, &margin/2
-JZ, -0.7*&slideW
 SO, 1, 1
 MY, 2.325*&margin
 SO, 1, 0
@@ -47,8 +49,9 @@ MY, 2.325*&margin
 SO, 1, 0
 JZ, -0.6*&slideW
 JY, &margin/2
+J2, &slideW/2, &margin/2 - 0.1
+MZ, -0.5*&slideW
 J2, &slideW/2, &margin/2
-JZ, -0.5*&slideW
 SO, 1, 1
 MY, 2.325*&margin
 SO, 1, 0
@@ -62,8 +65,9 @@ MY, 2.325*&margin
 SO, 1, 0
 JZ, -0.4*&slideW
 JY, &margin/2
+J2, &slideW/2, &margin/2 - 0.1
+MZ, -0.3*&slideW
 J2, &slideW/2, &margin/2
-JZ, -0.3*&slideW
 SO, 1, 1
 MY, 2.325*&margin
 SO, 1, 0

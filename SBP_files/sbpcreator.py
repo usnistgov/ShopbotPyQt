@@ -607,8 +607,9 @@ class zigzag(sbpCreator):
         shortlist = self.getShortList()
         
         self.reset()  # reset the file and position lists
+        self.j2(self.x0, p(self.y0,-0.1), pOn=False) # go next to first xy position
+        self.mz(self.z0) # go to first z position
         self.j2(self.x0, self.y0, pOn=False) # go to first xy position
-        self.jz(self.z0) # go to first z position
         self.turnOn(self.flag0)
         llpos = 1
 

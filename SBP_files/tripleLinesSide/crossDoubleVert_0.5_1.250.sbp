@@ -41,8 +41,9 @@ JZ, &margin/2 - &slideW
 SO, 1, 1
 MZ, -&margin/2 - &slideW/2
 SO, 1, 0
+J2, 12.5 - 1.25*&nid, 10.5*&margin + 16.875*&nid - 0.1
+MZ, 3*&margin/4 - &slideW
 J2, 12.5 - 1.25*&nid, 10.5*&margin + 16.875*&nid
-JZ, 3*&margin/4 - &slideW
 SO, 1, 1
 MY, 12.0*&margin + 16.875*&nid
 MZ, 13*&margin/12 - &slideW

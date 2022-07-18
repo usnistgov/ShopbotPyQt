@@ -16,8 +16,9 @@ VR,10.06, 10.06, , , 10.06, 10.06, , , 5.08, 5.08, 100, 3.81, 65, , , 5.08
 SO, 12, 1
 SO, 2, 1
 SO, 2, 0
+J2, &margin/2 + &slideW/2, 7.625*&margin - 0.1
+MZ, -12.500
 J2, &margin/2 + &slideW/2, 7.625*&margin
-JZ, -12.500
 SO, 1, 1
 MY, 9.625*&margin
 MX, &margin/2 + 0.875*&nid + &slideW/2
@@ -32,8 +33,9 @@ MX, 1.5*&margin + 0.875*&nid + &slideW/2
 MY, 7.625*&margin
 SO, 1, 0
 MZ, 0.875*&nid - 12.5
+J2, -&margin/2 + &slideW, 7.875*&margin - 0.1
+MZ, 0.875*&nid - 12.5
 J2, -&margin/2 + &slideW, 7.875*&margin
-JZ, 0.875*&nid - 12.5
 SO, 1, 1
 MX, 0.25*&margin + 0.5*&slideW
 MY, 8.375*&margin

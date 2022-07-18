@@ -16,8 +16,9 @@ VR,10.06, 10.06, , , 10.06, 10.06, , , 5.08, 5.08, 100, 3.81, 65, , , 5.08
 SO, 12, 1
 SO, 2, 1
 SO, 2, 0
+J2, 12.500, &margin/2 - 0.1
+MZ, &margin/2 -&slideW
 J2, 12.500, &margin/2
-JZ, &margin/2 -&slideW
 SO, 1, 1
 MY, 5*&margin/2
 MZ, &margin/2 + &nid/2 -&slideW

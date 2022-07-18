@@ -29,8 +29,9 @@ JZ, -&slideW/2
 SO, 1, 1
 MZ, -&margin
 SO, 1, 0
+J2, 12.5 - 0.5*&margin, 3.0*&margin + 3.25*&nid - 0.1
+MZ, &margin/4 - &slideW/2
 J2, 12.5 - 0.5*&margin, 3.0*&margin + 3.25*&nid
-JZ, &margin/4 - &slideW/2
 SO, 1, 1
 MX, 0.5*&margin + 12.5
 SO, 1, 0
@@ -58,8 +59,9 @@ JZ, -&slideW/2
 SO, 1, 1
 MZ, -&margin
 SO, 1, 0
+J2, 12.5 - 0.5*&margin, 3.5*&margin + 4.5*&nid - 0.1
+MZ, &margin/4 - &slideW/2
 J2, 12.5 - 0.5*&margin, 3.5*&margin + 4.5*&nid
-JZ, &margin/4 - &slideW/2
 SO, 1, 1
 MX, 0.5*&margin + 12.5
 SO, 1, 0

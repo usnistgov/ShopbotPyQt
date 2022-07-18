@@ -418,9 +418,14 @@ class channelWatch:
         elif self.state==1:
             # 1 = turn on to high pressure when within critical distance of point
             if self.dist(x,y,z)<self.critDistance or flagOn(sbFlag, self.flag0):
+                if self.dist(x,y,z)<self.critDistance:
+                    print(f'state 1, dist hit, turn on, {self.critDistance}')
+                else:
+                    print(f'state 1, flag on, turn on, {self.critDistance}')
                 self.turnOn()    # go to burst pressure
                 self.readPoint()  # look for next point
             elif self.hitNextPoint(x,y,z):
+                print('hit next point, turn on')
                 self.turnOn()
                 self.readPoint()
             return False
@@ -435,6 +440,7 @@ class channelWatch:
                 self.state=2
             return False
         elif self.state==6:
+            print('state 6, turn on turn off')
             self.turnOn()
             self.turnOff()
             self.readPoint()
