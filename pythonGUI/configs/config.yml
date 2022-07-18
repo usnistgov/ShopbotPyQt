@@ -31,7 +31,7 @@ files:
   includeSampleInFile: true
   includeSampleInFolder: true
   includeTimeInFile: true
-  save: C:\Users\lmf1\Videos\Shopbot Videos\220714 mineral LapRD visc
+  save: C:\\
   separator: _
   tag: I_M9_S_4.00
   timeFormat: '%y%m%d_%H%M%S_%f'

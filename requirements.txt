@@ -5,7 +5,7 @@ filelock==3.0.12
 numpy==1.22.0
 opencv-python==4.5.5.62
 pandas==1.4.2
-pythonGUI/pypylon/pypylon-1.7.4rc1-cp38-cp38-win_amd64.whl
+pypylon==1.8.0
 PyQt5==5.15.6
 PyQt5-Qt5==5.15.2
 PyQt5-sip==12.9.0
@@ -15,5 +15,6 @@ python-box==5.4.1
 pytz==2022.1
 PyYAML==6.0
 shiboken2==5.15.2
+sympy==1.10.1
 virtualenv==20.4.3
 wincertstore==0.2

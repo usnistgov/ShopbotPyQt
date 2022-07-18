@@ -466,12 +466,13 @@ class camBoxes:
             if hasattr(camBox, 'camObj'):
                 layout.addWidget(QLabel(camBox.camObj.cameraName), row, col)
                 col = col+1
-                layout.addWidget(camBox.camInclude, row, col)
-                if vert:
-                    row = row+1
-                    col = 0
-                else:
-                    col = col+1
+                if hasattr(camBox, 'camInclude'):
+                    layout.addWidget(camBox.camInclude, row, col)
+                    if vert:
+                        row = row+1
+                        col = 0
+                    else:
+                        col = col+1
             else:
                 logging.debug(f'No camera object in {camBox.bTitle}')
         layout.setSpacing(5)
