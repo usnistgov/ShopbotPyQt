@@ -12,7 +12,7 @@ import logging
 
 # local packages
 from config import cfg
-from sbgui_general import *
+from general import *
 
 
 ###############################################################

@@ -15,8 +15,8 @@ from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
 
 # local packages
-from sbgui_general import *
-from sbgui_camObj import *
+from general import *
+from camObj import *
 from config import cfg
 
 

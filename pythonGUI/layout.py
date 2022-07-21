@@ -13,16 +13,16 @@ import csv
 
 
 # local packages
-from sbgui_general import *
-from sbgui_settings import *
-from sbgui_log import *
-import sbgui_fluigent
-import sbgui_files
-import sbgui_shopbot
-import sbgui_cameras
-import sbgui_calibration
-import sbgui_print
-import sbgui_flags
+from general import *
+from settings import *
+from log import *
+import fluigent
+import files
+import shopbot
+import cameras
+import calibration
+import sbprint
+import flags
 from config import cfg
 
 currentdir = os.path.dirname(os.path.realpath(__file__))
@@ -41,13 +41,13 @@ class SBwindow(QMainWindow):
         
         # initialize all boxes to empty value so if we hit an error during setup and need to disconnect, we aren't trying to call empty variables
 
-        self.fileBox = sbgui_files.fileBox(self, connect=False)
-        self.sbBox = sbgui_shopbot.sbBox(self, connect=False)   
-        self.fluBox = sbgui_fluigent.fluBox(self, connect=False)
+        self.fileBox = files.fileBox(self, connect=False)
+        self.sbBox = shopbot.sbBox(self, connect=False)   
+        self.fluBox = fluigent.fluBox(self, connect=False)
         self.logDialog = None
-        self.camBoxes = sbgui_cameras.camBoxes(self, connect=False)
-        self.metaBox = sbgui_print.metaBox(self, connect=False) 
-        self.flagBox = sbgui_flags.flagGrid(self, tall=False)
+        self.camBoxes = cameras.camBoxes(self, connect=False)
+        self.metaBox = sbprint.metaBox(self, connect=False) 
+        self.flagBox = flags.flagGrid(self, tall=False)
         self.settingsDialog = QDialog()
         
         self.meta = meta
@@ -199,7 +199,7 @@ class SBwindow(QMainWindow):
     
     def setupCalib(self, menubar) -> None:
         '''Create the pressure calibration tool dialog'''
-        self.calibDialog = sbgui_calibration.pCalibration(self)
+        self.calibDialog = calibration.pCalibration(self)
         self.calibButt = QAction('Speed calibration tool', self)
         self.calibButt.setStatusTip('Tool for calibrating speed vs pressure')
         self.calibButt.triggered.connect(self.openCalib)

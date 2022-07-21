@@ -18,9 +18,9 @@ import win32gui, win32api, win32con
 # local packages
 # import Fluigent.SDK as fgt
 from config import cfg
-from sbgui_general import *
-from sbgui_print import *
-from sbgui_flags import *
+from general import *
+from sbprint import *
+from flags import *
 
 
 ##################################################

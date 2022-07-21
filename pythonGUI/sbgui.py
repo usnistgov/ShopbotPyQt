@@ -2,7 +2,7 @@
 '''Shopbot GUI. '''
 
 # local packages
-import sbgui_layout
+import layout
 
     
 ##################################################  

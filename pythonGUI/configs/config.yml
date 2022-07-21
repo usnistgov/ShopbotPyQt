@@ -31,15 +31,15 @@ files:
   includeSampleInFile: true
   includeSampleInFolder: true
   includeTimeInFile: true
-  save: C:\Users\lmf1\Documents\Shopbot videos
+  save: C:\Users\lmf1\Documents\Shopbot videos\mineral laprd visc
   separator: _
-  tag: test
+  tag: I_M8_220411_S_4.00
   timeFormat: '%y%m%d_%H%M%S_%f'
 fluigent:
   channel0:
     calibration:
-      flowRateFolder: C:/Users/lmf1/OneDrive - National Institute of Standards and
-        Technology (NIST)/NIST/data/material properties/flow rates
+      flowRateFolder: C:/Users/lmf1/OneDrive - NIST/NIST/data/material properties/flow
+        rates
       initDensity: 1
       initDiam: 0.603
       initSpeed: 10.0
@@ -95,7 +95,7 @@ shopbot:
   burstScale: 1.05
   critTimeOff: -0.0001
   critTimeOn: 0.05
-  currentFile: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+y_0.500.sbp
+  currentFile: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide\crossDoubleHoriz_0.5_0.500.sbp
   dt: 25.0
   flag1: 12
   flag1max: 12
@@ -104,7 +104,8 @@ shopbot:
   includePositionInTable: true
   savePicMetadata: true
   sbpFiles:
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+y_0.500.sbp
+  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide\crossDoubleHoriz_0.5_0.500.sbp
+  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide\crossDoubleHoriz_0.5_0.625.sbp
   sbpFolder: C:\Users\lmf1\Documents\GitHub\ShopbotPyQt\SBP_files
   showFolder: false
   units: mm

@@ -13,7 +13,7 @@ import traceback
 
 
 # local packages
-from sbgui_general import *
+from general import *
 
        
 ##################################################          

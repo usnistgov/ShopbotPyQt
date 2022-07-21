@@ -18,7 +18,7 @@ import traceback
 # local packages
 import Fluigent.SDK as fgt
 from config import cfg
-from sbgui_general import *
+from general import *
 
    
 #----------------------------------------------------------------------
