@@ -261,6 +261,13 @@ class camera:
 
     #---------------------------------
     
+    def stopTimer(self) -> None:
+        '''this only stops the timer if we are neither recording nor previewing'''
+        if not self.recording and not self.previewing:
+            self.timer.stop()
+            if self.diag>1:
+                logging.info(f'Stopping {self.cameraName} timer')
+    
     #---------------------------------
     
     def updatePrevFrame(self, frame:np.ndarray) -> None:
@@ -315,8 +322,7 @@ class camera:
     
     def saveFrame(self, frame:np.ndarray, vrid) -> None:
         '''save the frame to the video file. frames are in cv2 format. '''
-        
-                
+     
         try:
             self.frames.append(frame)
         except:
@@ -328,6 +334,17 @@ class camera:
             self.timeRec = self.cam.timeRec+self.cam.mspf/1000
             self.totalFrames+=1
             self.updateRecordStatus()
+            
+            if len(self.vridlist)==0:
+            vrid = 1
+        else:
+            vrid = max(self.vridlist)+1
+        self.vridlist.append(vrid)
+        runnable = vidReader(self, vrid, self.frames, self.lastFrame)  
+        runnable.signals.prevFrame.connect(self.updatePrevFrame)      # let the vidReader send back frames to display
+        runnable.signals.error.connect(self.updateStatus)           # let the vidReader send back error statuses to display
+        runnable.signals.recFrame.connect(self.saveFrameCheck)
+        QThreadPool.globalInstance().start(runnable)
             
                 
             
@@ -397,6 +414,14 @@ class camera:
         if not self.recording:
             self.fleft = fleft
             self.updateRecordStatus()
+            
+            
+    def close(self) -> None:
+        '''this gets triggered when the whole window is closed. Disconnects from the cameras and deletes videoCapture objects'''
+        if hasattr(self, 'vc'):
+            self.vc.close()
+            del self.vc
+        self.closeCam()
         
         
 

@@ -191,7 +191,7 @@ class bascam(camera):
         self.convertColors = True
 
         # get camera stats
-        self.vc = bascamVC(self.guiBox.bTitle, self.diag)
+        self.vc = self.createVC()
         if self.vc.connected:
             self.connected = True
             self.vc.status.connect(self.updateStatus)   # send status messages back to window
@@ -218,6 +218,10 @@ class bascam(camera):
             
         # delete the videoCapture
         del self.vc
+        
+    def createVC(self):
+        '''connect to the videocapture object'''
+        return bascamVC(self.guiBox.bTitle, self.diag)
 
     def setExposure(self, val:float) -> int:
         '''Set the exposure time to val. Returns 0 if the value was changed, 1 if not.'''
@@ -232,13 +236,4 @@ class bascam(camera):
             if hasattr(self, 'vc') and not self.vc==None:
                 self.vc.setExposure(val)                
             return 0
- 
-    
-    
-    #-----------------------------------------
-    
-    def close(self) -> None:
-        '''this gets triggered when the whole window is closed'''
-        self.closeCam()
-        
                 

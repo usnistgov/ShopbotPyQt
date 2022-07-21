@@ -119,10 +119,7 @@ class vidReader(QRunnable):
         self.signals = vrSignals()  # signals that let this send messages back to the GUI
         self.mspf = mspf
         self.cameraName = cameraName
-        if cam.type=='webcam':
-            self.vc = webcamVC(cam.webcamNum, cam.cameraName, cam.diag)
-        elif cam.type=='bascam':
-            self.vc = bascamVC(cam.cameraName, cam.diag)
+        self.vc = cam.createVC()    # create a videocapture object
 
         self.lastFrame = []
         
@@ -144,20 +141,6 @@ class vidReader(QRunnable):
         self.signals.prevFrame.emit(frame) # send the frame back to be displayed
         self.signals.recFrame.emit(frame, self.vrid) # send the frame back to be recorded
         
-    def readFrame(self):
-        '''get a frame from the webcam using cv2 '''
-        try:
-            rval, frame = self.camDevice.read()
-        except:
-            self.signals.error.emit('Error reading frame', True)
-            raise Exception
-        if not rval:
-            raise Exception
-        else:
-            # if we successfully read the frame, keep it in lastFrame
-            self.lastFrame = [frame]
-            return frame
-        
         
     # start the timer if there is not already a timer
     def startTimer(self) -> None:
@@ -170,29 +153,12 @@ class vidReader(QRunnable):
         if self.diag>1:
             logging.debug(f'Starting {self.cameraName} timer')
 
-    
-    def stopTimer(self) -> None:
-        '''this only stops the timer if we are neither recording nor previewing'''
-        if not self.recording and not self.previewing:
-            self.timer.stop()
-            if self.diag>1:
-                logging.info(f'Stopping {self.cameraName} timer')
-    
+            
     def timerFunc(self) -> None:
         '''Run this continuously when we are recording or previewing. Generates a vidReader object for each frame, letting us collect frames in the background. 
         vidReader ids (vrid) were implemented as a possible fix for a frame jumbling error. In the rare case where there are two vidReaders running at the same time and we have dropped frames to pad, it only lets one of the vidReaders generate the padded frames. It is possible that the vrids are not necessary, but I have not tried removing them. 
         We generate a new vidReader for each frame instead of having one continuously running vidReader because there may be a case where the camera can generate frames faster than the computer can read them. If we have a separate thread for each frame, we can have the computer receive multiple frames at once. This is a bit of a simplification because of the way memory is managed, but the multi-thread process lowers the number of dropped frames, compared to a single vidReader thread.'''
-        if len(self.vridlist)==0:
-            vrid = 1
-        else:
-            vrid = max(self.vridlist)+1
-        self.vridlist.append(vrid)
-        runnable = vidReader(self, vrid, self.frames, self.lastFrame)  
-        runnable.signals.prevFrame.connect(self.updatePrevFrame)      # let the vidReader send back frames to display
-        runnable.signals.error.connect(self.updateStatus)           # let the vidReader send back error statuses to display
-        runnable.signals.recFrame.connect(self.saveFrameCheck)
-        QThreadPool.globalInstance().start(runnable)
-        
+        self.getFrame()       
     
     
     def timerCheckDrop(self) -> None:

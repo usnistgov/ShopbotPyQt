@@ -112,7 +112,7 @@ class webcam(camera):
         
         
         # get image stats
-        self.vc = webcamVC(self.webcamNum, self.guiBox.bTitle)
+        self.vc = self.createVC()
         if self.vc.connected:
             self.connected = True
             self.vc.status.connect(self.updateStatus)   # send status messages back to window
@@ -137,7 +137,9 @@ class webcam(camera):
         self.convertColors = True
         
 
-
+    def createVC(self):
+        '''connect to the videocapture object'''
+        return webcamVC(self.webcamNum, self.guiBox.bTitle)
         
     def setExposure(self, val:float) -> int:
         '''Set the exposure time to val'''
@@ -146,9 +148,4 @@ class webcam(camera):
         return 1
 
 
-    def close(self) -> None:
-        '''this gets triggered when the whole window is closed. Disconnects from the cameras'''
-        if hasattr(self, 'vc'):
-            self.vc.close()
-            del self.vc
-        self.closeCam()
+    
