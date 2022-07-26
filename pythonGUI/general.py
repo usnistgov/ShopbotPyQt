@@ -472,8 +472,8 @@ class connectBox(QGroupBox):
         '''delete all the display items from the box'''
         deleteLayoutItems(self.layout)
         
-    
-    def updateStatus(self, st, log) -> None:
+    @pyqtSlot(str,bool)
+    def updateStatus(self, st:str, log:bool) -> None:
         '''update the displayed device status'''
         try:
             self.status.setText(st)

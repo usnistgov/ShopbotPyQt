@@ -2,7 +2,7 @@
 '''Shopbot GUI functions for handling camera functions'''
 
 # external packages
-from PyQt5.QtCore import pyqtSignal, QObject, QRunnable, QThreadPool, QTimer, Qt
+from PyQt5.QtCore import pyqtSignal, QMutex, QObject, QRunnable, QThreadPool, QTimer, Qt
 from PyQt5.QtGui import QImage, QPixmap, QIntValidator
 from PyQt5.QtWidgets import QButtonGroup, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QMainWindow, QPushButton, QRadioButton, QToolBar, QToolButton, QVBoxLayout, QWidget
 import cv2
@@ -34,7 +34,7 @@ except:
 #########################################    
 
 
-class bascamVC:
+class bascamVC(QMutex):
     '''holds a videoCapture object that reads frames from a webcam'''
     
     def __init__(self, cameraName:str, diag:int):
@@ -210,14 +210,8 @@ class bascam(camera):
             # update the GUI display to show camera model
             self.guiBox.model = self.vc.modelName()
             self.guiBox.updateBoxTitle()
-         # close the device
-            self.vc.close()
-            self.deviceOpen = False
         else:
             self.connected = False
-            
-        # delete the videoCapture
-        del self.vc
         
     def createVC(self):
         '''connect to the videocapture object'''

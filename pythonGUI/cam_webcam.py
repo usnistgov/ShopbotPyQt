@@ -2,7 +2,7 @@
 '''Shopbot GUI functions for handling webcam functions'''
 
 # external packages
-from PyQt5.QtCore import pyqtSignal, QObject, QRunnable, QThreadPool, QTimer, Qt
+from PyQt5.QtCore import pyqtSignal, QMutex, QObject, QRunnable, QThreadPool, QTimer, Qt
 from PyQt5.QtGui import QImage, QPixmap, QIntValidator
 from PyQt5.QtWidgets import QButtonGroup, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QMainWindow, QPushButton, QRadioButton, QToolBar, QToolButton, QVBoxLayout, QWidget
 import cv2
@@ -24,8 +24,8 @@ from config import cfg
 
 ##################
 
-class webcamVC:
-    '''holds a videoCapture object that reads frames from a webcam'''
+class webcamVC(QMutex):
+    '''holds a videoCapture object that reads frames from a webcam. lock this so only one thread can collect frames at a time'''
     
     def __init__(self, webcamNum:int, cameraName:str, diag:int):
         super(webcamVC, self).__init__(cameraName, diag)
@@ -123,16 +123,8 @@ class webcam(camera):
             self.imw = int(self.vc.get(3))               # image width (px)
             self.imh = int(self.vc.get(4))               # image height (px)
     #        self.prevWindow.setFixedSize(self.imw, self.imh)    # set the preview window to the image size
-            self.exposure = self.vc.getExposure()
-        
-            # close the device
-            self.vc.close()
-            self.deviceOpen = False
         else:
             self.connected = False
-            
-        # delete the device
-        del self.vc
 
         self.convertColors = True
         
