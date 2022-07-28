@@ -2,7 +2,7 @@
 '''Shopbot GUI general functions. Contains classes and functions that are shared among fluigent, cameras, shopbot.'''
 
 # external packages
-from PyQt5.QtCore import QDir, Qt, QPoint, QRect
+from PyQt5.QtCore import pyqtSlot, QDir, Qt, QPoint, QRect
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QButtonGroup, QCheckBox, QDialog, QFileDialog, QFormLayout, QFrame, QGridLayout, QGroupBox, QHBoxLayout, QLabel,  QLayout, QLineEdit, QProxyStyle, QPushButton, QRadioButton, QSpacerItem, QStyle, QStyleOptionTab, QStylePainter, QTabBar, QToolBar, QToolButton, QVBoxLayout, QWidget
 import sip

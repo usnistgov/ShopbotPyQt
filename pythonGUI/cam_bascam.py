@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-'''Shopbot GUI functions for handling camera functions'''
+'''Shopbot GUI functions for handling basler cameras'''
 
 # external packages
-from PyQt5.QtCore import pyqtSignal, QMutex, QObject, QRunnable, QThreadPool, QTimer, Qt
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, QMutex, QObject, QRunnable, QThreadPool, QTimer, Qt
 from PyQt5.QtGui import QImage, QPixmap, QIntValidator
 from PyQt5.QtWidgets import QButtonGroup, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QMainWindow, QPushButton, QRadioButton, QToolBar, QToolButton, QVBoxLayout, QWidget
 import cv2
@@ -34,8 +34,8 @@ except:
 #########################################    
 
 
-class bascamVC(QMutex):
-    '''holds a videoCapture object that reads frames from a webcam'''
+class bascamVC(vc):
+    '''holds a videoCapture object that reads frames from a basler cam'''
     
     def __init__(self, cameraName:str, diag:int):
         super(bascamVC, self).__init__(cameraName, diag)
@@ -194,7 +194,7 @@ class bascam(camera):
         self.vc = self.createVC()
         if self.vc.connected:
             self.connected = True
-            self.vc.status.connect(self.updateStatus)   # send status messages back to window
+            self.vc.signals.status.connect(self.updateStatus)   # send status messages back to window
             
             # update the window size
             f1 = self.vc.readFrame()                               # get a sample frame

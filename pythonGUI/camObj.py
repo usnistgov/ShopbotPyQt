@@ -2,7 +2,7 @@
 '''Shopbot GUI functions for handling camera functions'''
 
 # external packages
-from PyQt5.QtCore import pyqtSignal, QMutex, QObject, QRunnable, QThreadPool, QTimer, Qt
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, QMutex, QObject, QRunnable, QThreadPool, QTimer, Qt
 from PyQt5.QtGui import QImage, QPixmap, QIntValidator
 from PyQt5.QtWidgets import QButtonGroup, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QMainWindow, QPushButton, QRadioButton, QToolBar, QToolButton, QVBoxLayout, QWidget
 import cv2
@@ -19,40 +19,33 @@ from queue import Queue
 from general import *
 from camThreads import *
 from config import cfg
-
-
-try:
-    os.environ["PYLON_CAMEMU"] = "3"
-    from pypylon import genicam
-    from pypylon import pylon
-except:
-    logging.warning('Pylon SDK not installed')
-    pass
-
-           
-
    
 
- #########################################################      
+ #########################################################   
+
+class vcSignals(QObject):
+    status = pyqtSignal(str,bool)
     
-    
-class vc:
+class vc(QMutex):
     '''holds the videoCapture object and surrounding functions'''
     
     def __init__(self, cameraName:str, diag:int):
+        super(vc,self).__init__()
         self.cameraName = cameraName
-        self.status = pyqtSignal(str,bool)
+        self.signals = vcSignals()
         self.diag = diag
         self.connected = False
 
+
     
 
-class camera:
+class camera(QObject):
     '''a camera object is a generic camera which stores functions and camera info for both pylon cameras and webcams
         these objects are created by cameraBox objects
         each type of camera (Basler and webcam) has its own readFrame and close functions'''
     
     def __init__(self, sbWin:QMainWindow, guiBox:connectBox):
+        super(camera, self).__init__()
         self.previewing = False
         self.sbWin = sbWin                        # sbWin is the parent window
         self.guiBox = guiBox                      # guiBox is the parent box for this camera
@@ -188,6 +181,61 @@ class camera:
         snapthread.signals.result.connect(self.updateStatus)   # let the camSnap object send messages to the status bar
         snapthread.signals.error.connect(self.updateStatus)
         QThreadPool.globalInstance().start(snapthread)  # get snapshot in background thread
+        
+        
+    #---------------------------------
+    
+    def updateFramesToPrev(self):
+        '''calculate the number of frames to downsample for preview'''
+        self.critFramesToPrev = max(round(self.fps/self.previewFPS), 1)
+        self.framesSincePrev = self.critFramesToPrev
+    
+    def startPreview(self) -> None: 
+        '''start live preview'''
+        # critFramesToPrev reduces the live display frame rate, 
+        # so only have to update the display at a comfortable viewing rate.
+        # if the camera is at 200 fps, the video will be saved at full rate but
+        # preview will only show at 15 fps
+        self.updateFramesToPrev()
+        self.previewing = True
+        self.startTimer()      # this only starts the timer if we're not already recording
+    
+    def stopPreview(self) -> None:
+        '''stop live preview. This freezes the last frame on the screen.'''
+        self.previewing = False
+        self.stopTimer()       # this only stops the timer if we are neither recording nor previewing
+ 
+    #---------------------------------
+    
+    def startRecording(self) -> None:
+        '''start recording a video'''
+        self.recording = True
+        self.writing = True
+        self.resetVidStats()                       # this resets the frame list, and other vars
+        fn = self.getFilename('.avi')              # generate a new file name for this video
+        self.vFilename = fn
+        vidvars = {'fourcc':self.fourcc, 'fps':self.fps, 'imw':self.imw, 'imh':self.imh, 'cameraName':self.cameraName}
+        self.frames = Queue()                           # list of frames for this video. Frames are appended to back and popped from front.
+        recthread = vidWriter(fn, vidvars, self.frames)         # creates a new thread to write frames to file      
+        recthread.signals.finished.connect(self.doneRecording)        # connects vidWriter status updates to the status display
+        recthread.signals.progress.connect(self.writingRecording)
+        recthread.signals.error.connect(self.updateStatus)
+        self.updateStatus(f'Recording {self.vFilename} ... ', True) 
+        QThreadPool.globalInstance().start(recthread)          # start writing in a background thread
+        self.startTimer()                          # this only starts the timer if we're not already previewing
+        if self.diag>1:
+                                                   # if we're in super debug mode, print header for the table of frames
+            logging.debug('Camera name\tID\t# frames\tFrame time (ms)\tms/frame\tTotal time (s)')
+    
+    
+    def stopRecording(self) -> None:
+        '''stop collecting frames for the video'''
+        if not self.recording:
+            return
+        self.frames.put([None,0]) # this tells the vidWriter that this is the end of the video
+        self.recording = False     # this helps the frame reader and the status update know we're not reading frames
+        self.stopTimer()           # only turns off the timer if we're not recording or previewing
+
             
     
     #-------------------------------
@@ -202,6 +250,9 @@ class camera:
         self.fleft = 0          # how many frames we still need to write to file
         self.frames = Queue()        # frame queue. appended to back, popped from front.
         self.lastFrame = []     # last frame collected. kept in a list of one cv2 frame to make it easier to pass between functions
+        self.startTime = datetime.datetime.now()
+        self.lastTime = self.startTime
+        self.fnum = 0
 
         
     def startTimer(self) -> None:
@@ -220,75 +271,33 @@ class camera:
         '''Run this continuously when we are recording or previewing. Generates a vidReader object for each frame, letting us collect frames in the background. 
         vidReader ids (vrid) were implemented as a possible fix for a frame jumbling error. In the rare case where there are two vidReaders running at the same time and we have dropped frames to pad, it only lets one of the vidReaders generate the padded frames. It is possible that the vrids are not necessary, but I have not tried removing them. 
         We generate a new vidReader for each frame instead of having one continuously running vidReader because there may be a case where the camera can generate frames faster than the computer can read them. If we have a separate thread for each frame, we can have the computer receive multiple frames at once. This is a bit of a simplification because of the way memory is managed, but the multi-thread process lowers the number of dropped frames, compared to a single vidReader thread.'''
-        runnable = vidReader(self, vrid, self.frames, self.lastFrame)  
+        self.fnum+=1
+        runnable = vidReader(self.vc, self.frames, self.lastFrame, self.cameraName, self.diag, self.fnum)  
         runnable.signals.error.connect(self.updateStatus)           # let the vidReader send back error statuses to display
         runnable.signals.frame.connect(self.receiveFrame)
         QThreadPool.globalInstance().start(runnable)
-        
-    def receiveFrame(self, frame:np.ndarray):
-        '''receive a frame from the qrunnable'''
-        
-        
-        
-        self.timerCheckDrop() # check for missed frames
-        
-    
-  
-            
-    
-    #---------------------------------
-    
-    def updateFramesToPrev(self):
-        '''calculate the number of frames to downsample for preview'''
-        self.critFramesToPrev = max(round(self.fps/self.previewFPS), 1)
-        self.framesSincePrev = self.critFramesToPrev
-    
-    def startPreview(self) -> None: 
-        '''start live preview'''
-        # critFramesToPrev reduces the live display frame rate, 
-        # so only have to update the display at a comfortable viewing rate.
-        # if the camera is at 200 fps, the video will be saved at full rate but
-        # preview will only show at 15 fps
-        self.updateFramesToPrev()
-        self.previewing = True
-        self.startTimer()      # this only starts the timer if we're not already recording
 
-    
-    def stopPreview(self) -> None:
-        '''stop live preview. This freezes the last frame on the screen.'''
-        self.previewing = False
-        self.stopTimer()       # this only stops the timer if we are neither recording nor previewing
- 
-    #---------------------------------
-    
-    def startRecording(self) -> None:
-        '''start recording a video'''
-        self.recording = True
-        self.writing = True
-        self.resetVidStats()                       # this resets the frame list, and other vars
-        fn = self.getFilename('.avi')              # generate a new file name for this video
-        self.vFilename = fn
-        vidvars = {'fourcc':self.fourcc, 'fps':self.fps, 'imw':self.imw, 'imh':self.imh, 'cameraName':self.cameraName}
-        self.frames = Queue()                           # list of frames for this video. Frames are appended to back and popped from front.
-        recthread = vidWriter(fn, vidvars, self.frames, self)         # creates a new thread to write frames to file      
-        recthread.signals.finished.connect(self.doneRecording)        # connects vidWriter status updates to the status display
-        recthread.signals.progress.connect(self.writingRecording)
-        recthread.signals.error.connect(self.updateStatus)
-        self.updateStatus(f'Recording {self.vFilename} ... ', True) 
-        QThreadPool.globalInstance().start(recthread)          # start writing in a background thread
-        self.startTimer()                          # this only starts the timer if we're not already previewing
-        if self.diag>1:
-                                                   # if we're in super debug mode, print header for the table of frames
-            logging.debug('Camera name\tID\t# frames\tFrame time (ms)\tms/frame\tTotal time (s)')
-    
-    
-    def stopRecording(self) -> None:
-        '''stop collecting frames for the video'''
-        if not self.recording:
-            return
-        self.frames.put(None) # this tells the vidWriter that this is the end of the video
-        self.recording = False     # this helps the frame reader and the status update know we're not reading frames
-        self.stopTimer()           # only turns off the timer if we're not recording or previewing
+    @pyqtSlot(np.ndarray, int)
+    def receiveFrame(self, frame:np.ndarray, frameNum:int, checkDrop:bool=True):
+        '''receive a frame from the vidReader thread'''
+        if checkDrop and self.recording:
+            # create a thread to check for dropped frames
+            runnable = frameChecker(frame, self.startTime, self.lastTime, self.timeRec, self.cameraName, self.mspf, self.diag, frameNum)
+            runnable.signals.frameOut.connect(self.receiveFillerFrame)
+            QThreadPool.globalInstance().start(runnable)
+        
+        self.saveFrame(frame, frameNum)   
+        self.updatePrevFrame(frame, frameNum)  # update the preview window
+        
+
+                                    
+                                    
+    @pyqtSlot(np.ndarray, datetime.datetime, int)
+    def receiveFillerFrame(self, frame:np.ndarray, dnow:datetime.datetime, frameNum:int):
+        '''receive a filler frame from the frameChecker thread'''
+        self.framesDropped+=1       # count dropped frames
+        self.lastTime = dnow
+        self.receiveFrame(frame, frameNum, checkDrop=False)
 
 
     #---------------------------------
@@ -299,14 +308,20 @@ class camera:
             self.timer.stop()
             if self.diag>1:
                 logging.info(f'Stopping {self.cameraName} timer')
+            self.timerRunning = False
     
     #---------------------------------
     
-    def updatePrevFrame(self, frame:np.ndarray) -> None:
+    def updatePrevFrame(self, frame:np.ndarray, frameNum:int) -> None:
         '''update the live preview window'''
                 # update the preview
         if not self.previewing:
             return
+        
+        
+        if self.diag>1:
+            dnow = datetime.datetime.now()
+            logging.debug(f'Converting frame {frameNum}')
             
         # downsample preview frames
         if self.framesSincePrev==self.critFramesToPrev:
@@ -319,58 +334,43 @@ class camera:
             return
         
         # convert frame to pixmap in separate thread and update window when done
-        fc = frameConverter(frame, self.convertColors)
-        fc.frameOut.connect(self.updatePrevWindow) 
-        fc.error.connect(self.updateStatus)
+        self.updatePrevWindow(frame)
+        if self.diag>1:
+            dnow2 = datetime.datetime.now()
+            logging.debug(f'Showing frame {frameNum}, {(dnow2-dnow).total_seconds()}s')
         
-    @pyqtSlot(QPixmap)
-    def updatePrevWindow(self, frame:QPixmap) -> None:
+        
+    def updatePrevWindow(self, frame:np.ndarray) -> None:
         '''update the display with the new pixmap'''
+        if self.convertColors:
+            frame2 = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        else:
+            frame2 = frame
+        image = QImage(frame2, frame2.shape[1], frame2.shape[0], QImage.Format_RGB888)
+        pixmap = QPixmap.fromImage(image)
         self.prevWindow.setPixmap(pixmap)
-                
+
         
-            
-            
-        
-#     def saveFrameCheck(self, frame:np.ndarray, vrid) -> None:
-#         '''check if the frame should be saved. receives signals from vidReader'''
-#         # save the frame
-#         if self.recording:
-#             # if we've skipped at least 2 frames, fill that space with duplicate frames
-#             # if we have two vidReaders going at once, only do this with the first one
-#             if len(self.vridlist)==0 or vrid == min(self.vridlist):
-#                 self.timerCheckDrop() 
-                
-#             self.saveFrame(frame) 
-            
-#             # remove this vidreader id from the list of ids
-#             if self.vrid in self.cam.vridlist:
-#                 self.cam.vridlist.remove(self.vrid)
-        
-    
-    def saveFrame(self, frame:np.ndarray, vrid) -> None:
+    def saveFrame(self, frame:np.ndarray, frameNum:int) -> None:
         '''save the frame to the video file. frames are in cv2 format. '''
+        if not self.recording:
+            return
+        
+        if self.diag>1:
+            dnow = datetime.datetime.now()
+            logging.debug(f'Saving frame {frameNum}')
      
         try:
-            self.frames.put(frame)
+            self.frames.put([frame, frameNum])  # add the frame to the queue that videoWriter is watching
         except:
             # stop recording if we can't write
-            self.signals.error.emit(f'Error writing to video', True)
-            
+            self.updateStatus(f'Error writing to video', True)
         else:
             # display the time recorded
-            self.timeRec = self.cam.timeRec+self.cam.mspf/1000
+            self.timeRec = self.timeRec+self.mspf/1000
             self.totalFrames+=1
             self.updateRecordStatus()
-            
-            if len(self.vridlist)==0:
-            vrid = 1
-        else:
-            vrid = max(self.vridlist)+1
-        self.vridlist.append(vrid)
-        
-            
-                
+
             
     def updateCollisions(self, st:str) -> str:
         '''a common error during frame collection is 'Basler camera:Error collecting frame: Error collecting grab: There is already a thread waiting for a result. : RuntimeException thrown (file 'instantcameraimpl.h', line 1096)'. This prevents pile up of those messages. It returns a string to be logged.'''
@@ -386,11 +386,11 @@ class camera:
                     st = f'{self.collisionCount} frame read collisions in a row. Consider decreasing exposure time.'
                     return st
                 else:
-                    raise Exception('Do not log this message')
+                    raise ValueError('Do not log this message')
             else:
                 # reset the count and don't report if it's been at least 1 second since the last collision
                 self.collisionCount = 1
-                raise Exception('Do not log this message')
+                raise ValueError('Do not log this message')
         else:
             return st       
 
@@ -403,7 +403,7 @@ class camera:
         
         try:
             st = self.updateCollisions(st)
-        except Exception as e:
+        except ValueError as e:
             return
         else:  
             self.guiBox.updateStatus(st, log)
@@ -420,7 +420,7 @@ class camera:
         else:
             s = 'Recorded '
             log = True
-        s+= f'{self.vFilename} {self.timeRec:%2.2f} s, '
+        s+= f'{self.vFilename} {self.timeRec:2.2f} s, '
         if self.writing and not self.recording:
             s+= f'{self.fleft}/{self.totalFrames} frames left'
         else:
@@ -431,7 +431,7 @@ class camera:
     def writingRecording(self, fleft:int) -> None:  
         '''this function updates the status to say that the video is still being saved. 
         fleft is the number of frames left to record'''
-        if self.cam.diag>1:
+        if self.diag>1:
             # if we're in debug mode for this camera, log that we wrote a frame for this camera
             logging.debug(f'{self.cameraName}\twrite\t{fleft}')
         if not self.recording:
@@ -447,6 +447,8 @@ class camera:
             
     def close(self) -> None:
         '''this gets triggered when the whole window is closed. Disconnects from the cameras and deletes videoCapture objects'''
+        if hasattr(self, 'timer') and not self.timer is None:
+            self.timer.stop()
         if hasattr(self, 'vc'):
             self.vc.close()
             del self.vc

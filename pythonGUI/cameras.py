@@ -2,7 +2,7 @@
 '''Shopbot GUI functions for creating camera GUI elements'''
 
 # external packages
-from PyQt5.QtCore import pyqtSignal, QObject, QRunnable, QThreadPool, QTimer, Qt
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, QObject, QRunnable, QThreadPool, QTimer, Qt
 from PyQt5.QtGui import QImage, QPixmap, QIntValidator
 from PyQt5.QtWidgets import QButtonGroup, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QMainWindow, QPushButton, QRadioButton, QToolBar, QToolButton, QVBoxLayout, QWidget
 import cv2
@@ -17,25 +17,10 @@ import logging
 # local packages
 from general import *
 from camObj import *
+from cam_bascam import *
+from cam_webcam import *
 from config import cfg
-
-
-try:
-    os.environ["PYLON_CAMEMU"] = "3"
-    from pypylon import genicam
-    from pypylon import pylon
-except:
-    logging.warning('Pylon SDK not installed')
-    pass
-
-           
-#########################################################
-#########################################################
-######################## CAMERAS #######################
-#########################################################
-#########################################################
-
-            
+   
 ################################################
         
 class camSettingsBox(QWidget):

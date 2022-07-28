@@ -1,8 +1,8 @@
 #!/usr/bin/env python
-'''Shopbot GUI functions for handling webcam functions'''
+'''Shopbot GUI functions for handling webcams'''
 
 # external packages
-from PyQt5.QtCore import pyqtSignal, QMutex, QObject, QRunnable, QThreadPool, QTimer, Qt
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, QMutex, QObject, QRunnable, QThreadPool, QTimer, Qt
 from PyQt5.QtGui import QImage, QPixmap, QIntValidator
 from PyQt5.QtWidgets import QButtonGroup, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QMainWindow, QPushButton, QRadioButton, QToolBar, QToolButton, QVBoxLayout, QWidget
 import cv2
@@ -24,12 +24,15 @@ from config import cfg
 
 ##################
 
-class webcamVC(QMutex):
+class webcamVC(vc):
     '''holds a videoCapture object that reads frames from a webcam. lock this so only one thread can collect frames at a time'''
     
     def __init__(self, webcamNum:int, cameraName:str, diag:int):
         super(webcamVC, self).__init__(cameraName, diag)
+        self.webcamNum = webcamNum
         self.connectVC()
+        
+
         
     def connectVC(self):
         try:
@@ -115,13 +118,13 @@ class webcam(camera):
         self.vc = self.createVC()
         if self.vc.connected:
             self.connected = True
-            self.vc.status.connect(self.updateStatus)   # send status messages back to window
+            self.vc.signals.status.connect(self.updateStatus)   # send status messages back to window
             self.deviceOpen = True
             self.vc.readFrame()
             if self.fps==0:
                 self.setFrameRateAuto()
-            self.imw = int(self.vc.get(3))               # image width (px)
-            self.imh = int(self.vc.get(4))               # image height (px)
+            self.imw = int(self.vc.camDevice.get(3))               # image width (px)
+            self.imh = int(self.vc.camDevice.get(4))               # image height (px)
     #        self.prevWindow.setFixedSize(self.imw, self.imh)    # set the preview window to the image size
         else:
             self.connected = False
@@ -131,7 +134,7 @@ class webcam(camera):
 
     def createVC(self):
         '''connect to the videocapture object'''
-        return webcamVC(self.webcamNum, self.guiBox.bTitle)
+        return webcamVC(self.webcamNum, self.guiBox.bTitle, self.diag)
         
     def setExposure(self, val:float) -> int:
         '''Set the exposure time to val'''
