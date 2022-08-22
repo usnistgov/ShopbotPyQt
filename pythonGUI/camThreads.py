@@ -54,6 +54,8 @@ QRunnables run in the background. Trying to directly modify the GUI display from
     def run(self) -> None:
         '''this loops until we receive a frame that is a string
         the save function will pass None to the frame queue when we are done recording'''
+        printFreq = 100
+        
         while True:
             time.sleep(1) 
                 # this gives the GUI enough time to start adding frames before we start saving, otherwise we get stuck in infinite loop where it's immediately checking again and again if there are frames
@@ -71,54 +73,60 @@ QRunnables run in the background. Trying to directly modify the GUI display from
                 self.frameNum = frameNum
                 self.vw.write(frame) 
 
-                size = self.frames.qsize()
-                if size % 100==1:
+                size = int(self.frames.qsize())
+                print(size)
+                if size % printFreq==1:
                     # on every 100th frame, tell the GUI how many frames we still have to write
                     self.signals.progress.emit(size)
        
                     
 #---------------------------
 
-class frameCheckerSignals(QObject):
-    frameOut = pyqtSignal(np.ndarray, datetime.datetime, int)
+# class frameCheckerSignals(QObject):
+#     frameOut = pyqtSignal(np.ndarray, int)
+#     timeOut = pyqtSignal(datetime.datetime)
 
 
-class frameChecker(QRunnable):
-    '''checks for dropped frames'''
+# class frameChecker(QRunnable):
+#     '''checks for dropped frames'''
     
-    def __init__(self, frame:np.ndarray, startTime:datetime.datetime, lastTime:datetime.datetime, timeRec:float, cameraName:str, mspf:int, diag:bool, frameNum:int):
-        super(frameChecker,self).__init__()
-        self.frame = frame
-        self.startTime = startTime
-        self.lastTime = lastTime
-        self.timeRec = timeRec
-        self.cameraName = cameraName
-        self.mspf = mspf
-        self.diag = diag
-        self.frameNum = frameNum
-        self.signals = frameCheckerSignals()
+#     def __init__(self, frame:np.ndarray, startTime:datetime.datetime, lastTime:datetime.datetime, timeRec:float, cameraName:str, mspf:int, diag:bool, frameNum:int):
+#         super(frameChecker,self).__init__()
+#         self.frame = frame
+#         self.startTime = startTime
+#         self.lastTime = lastTime
+#         self.timeRec = timeRec
+#         self.cameraName = cameraName
+#         self.mspf = mspf
+#         self.diag = diag
+#         self.frameNum = frameNum
+#         self.signals = frameCheckerSignals()
 
         
-    @pyqtSlot()
-    def run(self) -> None:
-        '''check to see if the timer has skipped steps and fills the missing frames with duplicates. Called by run '''
-        dnow = datetime.datetime.now()
-        timeElapsed = (dnow-self.startTime).total_seconds()
-        framesElapsed = int(np.floor((timeElapsed-self.timeRec)/(self.mspf/1000)))
+#     @pyqtSlot()
+#     def run(self) -> None:
+#         '''check to see if the timer has skipped steps and fills the missing frames with duplicates. Called by run '''
+#         dnow = datetime.datetime.now()
+#         timeElapsed = (dnow-self.startTime).total_seconds()
+#         framesElapsed = int(np.floor((timeElapsed-self.timeRec)/(self.mspf/1000)))
             
-        if framesElapsed>2:
-            # if we've progressed at least 2 frames, fill that space with duplicate frames
-            numfill = framesElapsed-1
-            for i in range(numfill):
-                if self.diag>1:
-                    logging.debug(f'{self.cameraName}\t\tPAD\t\t\t\t '+'%2.3f'%self.timeRec)
-                self.signals.frameOut.emit(self.frame, dnow, self.frameNum)
-        if self.diag>1:
-            frameElapsed = ((dnow-self.lastTime).total_seconds())*1000
-            s = f'{self.cameraName}\t'
-            for si in ['%2.3f'%t for t in [frameElapsed,  timeElapsed, self.timeRec]]:
-                s = f'{s}{si}\t'
-            logging.debug(s)
+#         if self.diag>1:
+#             self.signals.timeOut.emit(dnow)
+            
+#         if framesElapsed>2:
+#             # if we've progressed at least 2 frames, fill that space with duplicate frames
+#             numfill = framesElapsed-1
+#             for i in range(numfill):
+#                 if self.diag>1:
+#                     logging.debug(f'{self.cameraName}\tPAD{numfill}\t\t'+'%2.3f'%self.timeRec)
+#                     self.timeRec = self.timeRec+self.mspf/1000
+#                 self.signals.frameOut.emit(self.frame, self.frameNum)
+#         if self.diag>1:
+#             frameElapsed = ((dnow-self.lastTime).total_seconds())
+#             s = f'{self.cameraName}\t'
+#             for si in ['%2.3f'%t for t in [frameElapsed,  timeElapsed, self.timeRec]]:
+#                 s = f'{s}{si}\t'
+#             logging.debug(s)
     
 
         
@@ -135,13 +143,13 @@ class vrSignals(QObject):
     finished = pyqtSignal()
     error = pyqtSignal(str, bool)
     progress = pyqtSignal(int)
-    frame = pyqtSignal(np.ndarray, int)
+    frame = pyqtSignal(np.ndarray, int, int)
         
                     
 class vidReader(QRunnable):
     '''vidReader puts frame collection into the background, so frames from different cameras can be collected in parallel. this collects a single frame from a camera'''
     
-    def __init__(self, vc:QMutex, frames:Queue, lastFrame:list, cameraName:str, diag:int, frameNumber:int):
+    def __init__(self, vc:QMutex, frames:Queue, lastFrame:list, cameraName:str, diag:int, frameNumber:int, vrid:int):
         super(vidReader, self).__init__()
         self.signals = vrSignals()  # signals that let this send messages back to the GUI
         self.vc = vc
@@ -149,7 +157,7 @@ class vidReader(QRunnable):
         self.lastFrame = lastFrame
         self.cameraName = cameraName
         self.diag = diag
-        self.vrid = 0
+        self.vrid = vrid
         self.frameNumber = frameNumber
         
         
@@ -169,7 +177,7 @@ class vidReader(QRunnable):
             else:
                 self.signals.error.emit(f'Error collecting frame: no last frame', True)
                 return
-        self.signals.frame.emit(frame, self.frameNumber)  # send the frame back to be displayed and recorded
+        self.signals.frame.emit(frame, self.frameNumber, self.vrid)  # send the frame back to be displayed and recorded
 
 
    

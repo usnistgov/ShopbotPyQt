@@ -35,6 +35,10 @@ class vc(QMutex):
         self.signals = vcSignals()
         self.diag = diag
         self.connected = False
+        
+    def updateStatus(self, msg:str, log:bool):
+        '''update the status bar by sending a signal'''
+        self.signals.status.emit(msg, log)
 
 
     
@@ -225,7 +229,7 @@ class camera(QObject):
         self.startTimer()                          # this only starts the timer if we're not already previewing
         if self.diag>1:
                                                    # if we're in super debug mode, print header for the table of frames
-            logging.debug('Camera name\tID\t# frames\tFrame time (ms)\tms/frame\tTotal time (s)')
+            logging.debug('Camera name\tFrame t\tTotal t\tRec t\tID')
     
     
     def stopRecording(self) -> None:
@@ -253,6 +257,7 @@ class camera(QObject):
         self.startTime = datetime.datetime.now()
         self.lastTime = self.startTime
         self.fnum = 0
+        self.rids = [-1]   # vidReader ids
 
         
     def startTimer(self) -> None:
@@ -272,33 +277,70 @@ class camera(QObject):
         vidReader ids (vrid) were implemented as a possible fix for a frame jumbling error. In the rare case where there are two vidReaders running at the same time and we have dropped frames to pad, it only lets one of the vidReaders generate the padded frames. It is possible that the vrids are not necessary, but I have not tried removing them. 
         We generate a new vidReader for each frame instead of having one continuously running vidReader because there may be a case where the camera can generate frames faster than the computer can read them. If we have a separate thread for each frame, we can have the computer receive multiple frames at once. This is a bit of a simplification because of the way memory is managed, but the multi-thread process lowers the number of dropped frames, compared to a single vidReader thread.'''
         self.fnum+=1
-        runnable = vidReader(self.vc, self.frames, self.lastFrame, self.cameraName, self.diag, self.fnum)  
+        vrid=max(self.rids)+1
+        runnable = vidReader(self.vc, self.frames, self.lastFrame, self.cameraName, self.diag, self.fnum, vrid)  
         runnable.signals.error.connect(self.updateStatus)           # let the vidReader send back error statuses to display
         runnable.signals.frame.connect(self.receiveFrame)
         QThreadPool.globalInstance().start(runnable)
+        
 
-    @pyqtSlot(np.ndarray, int)
-    def receiveFrame(self, frame:np.ndarray, frameNum:int, checkDrop:bool=True):
-        '''receive a frame from the vidReader thread'''
+    @pyqtSlot(np.ndarray, int, int)
+    def receiveFrame(self, frame:np.ndarray, frameNum:int, vrid:int, checkDrop:bool=True):
+        '''receive a frame from the vidReader thread. vrid is the id number of the vidReader object that sent the frame'''
         if checkDrop and self.recording:
-            # create a thread to check for dropped frames
-            runnable = frameChecker(frame, self.startTime, self.lastTime, self.timeRec, self.cameraName, self.mspf, self.diag, frameNum)
-            runnable.signals.frameOut.connect(self.receiveFillerFrame)
-            QThreadPool.globalInstance().start(runnable)
+            # # create a thread to check for dropped frames
+            # print('check frame', self.lastTime)
+            # runnable = frameChecker(frame, self.startTime, self.lastTime, self.timeRec, self.cameraName, self.mspf, self.diag, frameNum)
+            # print('connect frameOut')
+            # runnable.signals.frameOut.connect(self.receiveFillerFrame)
+            # runnable.signals.timeOut.connect(self.receiveTime)
+            # print('connected')
+            # QThreadPool.globalInstance().start(runnable)
+            self.checkFrames(frame, frameNum, vrid)
         
         self.saveFrame(frame, frameNum)   
-        self.updatePrevFrame(frame, frameNum)  # update the preview window
-        
+        self.updatePrevFrame(frame, frameNum)  # update the preview window            
 
-                                    
-                                    
-    @pyqtSlot(np.ndarray, datetime.datetime, int)
-    def receiveFillerFrame(self, frame:np.ndarray, dnow:datetime.datetime, frameNum:int):
+    def receiveFillerFrame(self, frame:np.ndarray, frameNum:int, vrid:int):
         '''receive a filler frame from the frameChecker thread'''
         self.framesDropped+=1       # count dropped frames
-        self.lastTime = dnow
-        self.receiveFrame(frame, frameNum, checkDrop=False)
+        # dnow = datetime.datetime.now()
+        # self.lastTime = dnow  # update recorded time
+        self.receiveFrame(frame, frameNum, vrid, checkDrop=False)
 
+        
+    #---------------------------------
+    # check dropped frames
+    
+    def checkFrames(self, frame:np.ndarray, frameNum:int, vrid:int):
+        '''check for dropped frames'''
+        dnow = datetime.datetime.now()
+        timeElapsed = (dnow-self.startTime).total_seconds()
+        framesElapsed = int(np.floor((timeElapsed-self.timeRec)/(self.mspf/1000)))
+        if vrid in self.rids:
+            # remove ID from list of taken IDs
+            self.rids.remove(vrid)
+        
+        if framesElapsed>2:
+            # if we've progressed at least 2 frames, fill that space with duplicate frames
+            numfill = framesElapsed-1
+            for i in range(numfill):
+                if self.diag>1:
+                    logging.debug(f'{self.cameraName}\tPAD{numfill}\t\t{self.timeRec:2.3f}\t{vrid}')
+                    self.timeRec = self.timeRec+self.mspf/1000
+                self.receiveFillerFrame(frame, frameNum, vrid)
+        
+        if self.diag>1:
+            frameElapsed = ((dnow-self.lastTime).total_seconds())
+            s = f'{self.cameraName}\t'
+            for si in ['%2.3f'%t for t in [frameElapsed,  timeElapsed, self.timeRec]]:
+                s = f'{s}{si}\t'
+            s = s + f'{vrid}'
+            logging.debug(s)
+            
+        self.lastTime = dnow
+    
+        
 
     #---------------------------------
     
@@ -356,9 +398,9 @@ class camera(QObject):
         if not self.recording:
             return
         
-        if self.diag>1:
-            dnow = datetime.datetime.now()
-            logging.debug(f'Saving frame {frameNum}')
+        # if self.diag>1:
+        #     dnow = datetime.datetime.now()
+        #     logging.debug(f'Saving frame {frameNum}')
      
         try:
             self.frames.put([frame, frameNum])  # add the frame to the queue that videoWriter is watching
@@ -431,9 +473,9 @@ class camera(QObject):
     def writingRecording(self, fleft:int) -> None:  
         '''this function updates the status to say that the video is still being saved. 
         fleft is the number of frames left to record'''
-        if self.diag>1:
-            # if we're in debug mode for this camera, log that we wrote a frame for this camera
-            logging.debug(f'{self.cameraName}\twrite\t{fleft}')
+        # if self.diag>1:
+        #     # if we're in debug mode for this camera, log that we wrote a frame for this camera
+        #     logging.debug(f'{self.cameraName}\twrite\t{fleft}')
         if not self.recording:
             self.fleft = fleft
             self.updateRecordStatus()
