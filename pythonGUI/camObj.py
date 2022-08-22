@@ -234,8 +234,10 @@ class camera(QObject):
     
     def stopRecording(self) -> None:
         '''stop collecting frames for the video'''
+        print('stop recording func')
         if not self.recording:
             return
+        print('put frame')
         self.frames.put([None,0]) # this tells the vidWriter that this is the end of the video
         self.recording = False     # this helps the frame reader and the status update know we're not reading frames
         self.stopTimer()           # only turns off the timer if we're not recording or previewing
@@ -271,7 +273,7 @@ class camera(QObject):
             if self.diag>1:
                 logging.debug(f'Starting {self.cameraName} timer')
             
-            
+    @pyqtSlot()     
     def timerFunc(self) -> None:
         '''Run this continuously when we are recording or previewing. Generates a vidReader object for each frame, letting us collect frames in the background. 
         vidReader ids (vrid) were implemented as a possible fix for a frame jumbling error. In the rare case where there are two vidReaders running at the same time and we have dropped frames to pad, it only lets one of the vidReaders generate the padded frames. It is possible that the vrids are not necessary, but I have not tried removing them. 
@@ -351,6 +353,7 @@ class camera(QObject):
             if self.diag>1:
                 logging.info(f'Stopping {self.cameraName} timer')
             self.timerRunning = False
+            logging.info('Timer stopped')
     
     #---------------------------------
     

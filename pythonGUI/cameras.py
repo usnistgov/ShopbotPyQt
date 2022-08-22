@@ -299,6 +299,7 @@ class cameraBox(connectBox):
             self.setRecButtStart()
             self.camObj.stopRecording()
         else:
+            print('stop recording button')
             self.setRecButtStop()
             self.camObj.startRecording()
         self.recording = not self.recording

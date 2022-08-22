@@ -43,6 +43,8 @@ class webcamVC(vc):
             return
         else:
             self.connected = True
+        self.imw = int(self.camDevice.get(3))               # image width (px)
+        self.imh = int(self.camDevice.get(4))               # image height (px)
             
     def getFrameRate(self) -> float:
         '''Determine the native device frame rate'''
@@ -82,15 +84,18 @@ class webcamVC(vc):
     
     def readFrame(self):
         '''get a frame from the webcam using cv2 '''
-        try:
-            rval, frame = self.camDevice.read()
-        except:
-            self.updateStatus('Error reading frame', True)
-            raise Exception
-        if not rval:
-            raise Exception
-        else:
-            return frame
+        # try:
+        #     rval, frame = self.camDevice.read()
+        #     print(frame.dtype)
+        # except:
+        #     self.updateStatus('Error reading frame', True)
+        #     raise Exception
+        # if not rval:
+        #     raise Exception
+        # else:
+        #     return frame
+        
+        return np.zeros((self.imh, self.imw, 3), dtype='uint8')
 
     def close(self):
         '''close the videocapture object'''
