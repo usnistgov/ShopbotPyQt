@@ -74,7 +74,6 @@ QRunnables run in the background. Trying to directly modify the GUI display from
                 self.vw.write(frame) 
 
                 size = int(self.frames.qsize())
-                print(size)
                 if size % printFreq==1:
                     # on every 100th frame, tell the GUI how many frames we still have to write
                     self.signals.progress.emit(size)
@@ -132,6 +131,53 @@ QRunnables run in the background. Trying to directly modify the GUI display from
         
 #---------------------------
 
+# class vrSignals(QObject):
+#     '''Defines the signals available from a running worker thread
+#         Supported signals are:
+#         finished: No data
+#         error: a string message and a bool whether this is worth printing to the log
+#         result:`object` data returned from processing, anything
+#         progress: `int` indicating % progress '''
+    
+#     finished = pyqtSignal()
+#     error = pyqtSignal(str, bool)
+#     progress = pyqtSignal(int)
+#     frame = pyqtSignal(np.ndarray, int, int)
+        
+                    
+# class vidReader(QRunnable):
+#     '''vidReader puts frame collection into the background, so frames from different cameras can be collected in parallel. this collects a single frame from a camera'''
+    
+#     def __init__(self, vc:QMutex, frames:Queue, lastFrame:list, cameraName:str, diag:int, frameNumber:int, vrid:int):
+#         super(vidReader, self).__init__()
+#         self.signals = vrSignals()  # signals that let this send messages back to the GUI
+#         self.vc = vc
+#         self.frames = frames
+#         self.lastFrame = lastFrame
+#         self.cameraName = cameraName
+#         self.diag = diag
+#         self.vrid = vrid
+#         self.frameNumber = frameNumber
+        
+        
+#     @pyqtSlot()    
+#     def run(self) -> None:
+#         '''Run this function when this thread is started. Collect a frame and return to the gui'''
+#         try:
+#             # self.vc.lock()     # lock camera so only this thread can read frames
+#             frame = self.vc.readFrame()
+#             # self.vc.unlock()   # unlock camera
+#         except Exception as e:
+#             if len(str(e))>0:
+#                 self.signals.error.emit(f'Error collecting frame: {e}', True)
+                
+#             if len(self.lastFrame)>0:
+#                 frame = self.lastFrame[0]
+#             else:
+#                 self.signals.error.emit(f'Error collecting frame: no last frame', True)
+#                 return
+#         self.signals.frame.emit(frame, self.frameNumber, self.vrid)  # send the frame back to be displayed and recorded
+
 class vrSignals(QObject):
     '''Defines the signals available from a running worker thread
         Supported signals are:
@@ -142,42 +188,108 @@ class vrSignals(QObject):
     
     finished = pyqtSignal()
     error = pyqtSignal(str, bool)
-    progress = pyqtSignal(int)
-    frame = pyqtSignal(np.ndarray, int, int)
-        
-                    
+    progress = pyqtSignal(str)
+    frame = pyqtSignal(np.ndarray, bool)
+
 class vidReader(QRunnable):
-    '''vidReader puts frame collection into the background, so frames from different cameras can be collected in parallel. this collects a single frame from a camera'''
+    '''vidReader puts frame collection into the background, so frames from different cameras can be collected in parallel. this collects a single frame from a camera. status is a camStatus object, vc is a vc object (defined in camObj)'''
     
-    def __init__(self, vc:QMutex, frames:Queue, lastFrame:list, cameraName:str, diag:int, frameNumber:int, vrid:int):
+    def __init__(self, vc:QMutex):
         super(vidReader, self).__init__()
-        self.signals = vrSignals()  # signals that let this send messages back to the GUI
+        self.signals = vrSignals()
         self.vc = vc
-        self.frames = frames
-        self.lastFrame = lastFrame
-        self.cameraName = cameraName
-        self.diag = diag
-        self.vrid = vrid
-        self.frameNumber = frameNumber
-        
+        self.lastFrame = []
+        self.cameraName = self.vc.cameraName
+        self.diag = self.vc.diag
+        self.mspf = self.vc.mspf
+        self.startTime = datetime.datetime.now()  # time at beginning of reader
+        self.lastTime = self.startTime   # time at beginning of last step
+        self.dnow = self.startTime   # current time
+        self.timeRec = 0             # time of video recorded
+        self.timeElapsed = 0
+        self.framesDropped = 0
+        self.dt = 0
+        self.sleepTime = 0
+
         
     @pyqtSlot()    
     def run(self) -> None:
         '''Run this function when this thread is started. Collect a frame and return to the gui'''
+        if self.diag>1:
+                                                   # if we're in super debug mode, print header for the table of frames
+            self.signals.progress.emit('Camera name\tFrame t\tTotal t\tRec t\tSleep t\tAdj t')
+            
+        self.cont = True
+        while self.cont:
+            self.lastTime = self.dnow
+            self.dnow = datetime.datetime.now()
+            frame = self.readFrame()  # read the frame
+            self.sendNewFrame(frame) # send back to window
+            self.checkDrop(frame)   # check for dropped frames
+            loopEnd = datetime.datetime.now()
+            inStepTimeElapsed = (loopEnd - self.dnow).total_seconds()  # time elapsed from beginning of step to end
+            self.sleepTime = self.mspf/1000 - inStepTimeElapsed - self.dt
+            if self.sleepTime>0:
+                time.sleep(self.sleepTime)   # wait for next frame
+        return
+
+            
+    def readFrame(self):
+        '''get a frame from the camera'''
         try:
             # self.vc.lock()     # lock camera so only this thread can read frames
-            frame = self.vc.readFrame()
+            frame = self.vc.readFrame() # read frame
+            self.mspf = self.vc.mspf    # update frame rate
+            self.diag = self.vc.diag    # update logging
+            self.cont = self.vc.previewing or self.vc.recording  # whether to continue
             # self.vc.unlock()   # unlock camera
         except Exception as e:
             if len(str(e))>0:
                 self.signals.error.emit(f'Error collecting frame: {e}', True)
-                
             if len(self.lastFrame)>0:
                 frame = self.lastFrame[0]
             else:
                 self.signals.error.emit(f'Error collecting frame: no last frame', True)
                 return
-        self.signals.frame.emit(frame, self.frameNumber, self.vrid)  # send the frame back to be displayed and recorded
+        else:
+            self.lastFrame = [frame]
+        return frame
+    
+    def sendFrame(self, frame:np.ndarray, pad:bool):
+        '''send a frame to the GUI'''
+        self.signals.frame.emit(frame, pad)  # send the frame back to be displayed and recorded
+        self.timeRec = self.timeRec + self.mspf/1000 # keep track of time recorded
+        
+    def sendNewFrame(self, frame):
+        '''send a new frame back to the GUI'''
+        self.sendFrame(frame, False)
+        
+        if self.diag>1:
+            frameElapsed = ((self.dnow-self.lastTime).total_seconds())  # time elapsed between this and the last frame
+            s = f'{self.cameraName}\t'
+            for si in ['%2.3f'%t for t in [frameElapsed,  self.timeElapsed, self.timeRec, self.sleepTime, self.dt]]:
+                s = f'{s}{si}\t'
+            self.signals.progress.emit(s)
+        
+    
+    def checkDrop(self, frame):
+        '''check for dropped frames'''
+        # check timing
+        self.timeElapsed = (self.dnow-self.startTime).total_seconds()
+        framesElapsed = int(np.floor((self.timeElapsed-self.timeRec)/(self.mspf/1000)))
+        
+        if framesElapsed<0:
+            # not pausing enough. pause more next time
+            self.dt = self.dt-0.001
+        elif framesElapsed>2:
+            # if we've progressed at least 2 frames, fill that space with duplicate frames
+            self.dt = self.dt+0.001    # pause less next time
+            numfill = framesElapsed-1
+            for i in range(numfill):
+                self.sendFrame(frame, True)
+                if self.diag>1:
+                    self.signals.progress.emit(f'{self.cameraName}\tPAD{numfill}\t\t{self.timeRec:2.3f}\t\t{self.dt}')
+        
 
 
    
@@ -193,34 +305,21 @@ class snapSignals(QObject):
 class camSnap(QRunnable):
     '''collects snapshots in the background'''
     
-    def __init__(self, vc:QMutex, readNew:bool, lastFrame:np.ndarray, fn:str):
+    def __init__(self, vc:QMutex, fn:str):
         super(camSnap, self).__init__()
         self.fn = fn
         self.vc = vc                  # cam is the camera object 
-        self.readNew = readNew          # readnew tells us if we need to read a new frame
         self.signals = snapSignals()
-        self.lastFrame = lastFrame      # lastFrame is the last frame collected by the camera, as a list of one cv2 frame
         
     @pyqtSlot()
     def run(self):
         '''Get a frame, export it, and return a status string to the GUI.'''
-        
-        if self.readNew:
-            # if we're not currently previewing, we need to collect a new frame.
-            try:
-                frame = self.readFrame()
-            except ValueError:
-                return
-        else:
-            # if we're not previewing, we can use the last frame
-            if len(self.lastFrame)>0:
-                frame = self.lastFrame
-            else:
-                try:
-                    frame = self.readFrame()
-                except ValueError:
-                    self.signals.error.emit('Error collecting snap: no frame', True)
-                    return           
+
+        # if we're not currently previewing, we need to collect a new frame.
+        try:
+            frame = self.readFrame()
+        except ValueError:
+            return       
         out = self.exportFrame(frame)
         self.signals.result.emit(out, True)
         

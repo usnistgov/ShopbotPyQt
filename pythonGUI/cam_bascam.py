@@ -37,8 +37,8 @@ except:
 class bascamVC(vc):
     '''holds a videoCapture object that reads frames from a basler cam'''
     
-    def __init__(self, cameraName:str, diag:int):
-        super(bascamVC, self).__init__(cameraName, diag)
+    def __init__(self, cameraName:str, diag:int, fps:int):
+        super(bascamVC, self).__init__(cameraName, diag, fps)
         self.errorStatus = 0     # 0 means we have no outstanding errors. This prevents us from printing a ton of the same error in a row.
         self.connectVC()
         
@@ -215,7 +215,7 @@ class bascam(camera):
         
     def createVC(self):
         '''connect to the videocapture object'''
-        return bascamVC(self.guiBox.bTitle, self.diag)
+        return bascamVC(self.guiBox.bTitle, self.diag, self.fps)
 
     def setExposure(self, val:float) -> int:
         '''Set the exposure time to val. Returns 0 if the value was changed, 1 if not.'''

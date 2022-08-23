@@ -27,8 +27,8 @@ from config import cfg
 class webcamVC(vc):
     '''holds a videoCapture object that reads frames from a webcam. lock this so only one thread can collect frames at a time'''
     
-    def __init__(self, webcamNum:int, cameraName:str, diag:int):
-        super(webcamVC, self).__init__(cameraName, diag)
+    def __init__(self, webcamNum:int, cameraName:str, diag:int, fps:int):
+        super(webcamVC, self).__init__(cameraName, diag, fps)
         self.webcamNum = webcamNum
         self.connectVC()
         
@@ -139,7 +139,7 @@ class webcam(camera):
 
     def createVC(self):
         '''connect to the videocapture object'''
-        return webcamVC(self.webcamNum, self.guiBox.bTitle, self.diag)
+        return webcamVC(self.webcamNum, self.guiBox.bTitle, self.diag, self.fps)
         
     def setExposure(self, val:float) -> int:
         '''Set the exposure time to val'''
