@@ -37,6 +37,7 @@ class webcamVC(vc):
     def connectVC(self):
         try:
             self.camDevice = cv2.VideoCapture(self.webcamNum, cv2.CAP_DSHOW)
+            self.camDevice.set(cv2.CAP_PROP_BUFFERSIZE, 1)  # limit buffer size to one frame
         except Exception as e:
             logging.info(f'Failed connect to {self.cameraName}: {e}')
             self.connected = False
@@ -84,18 +85,17 @@ class webcamVC(vc):
     
     def readFrame(self):
         '''get a frame from the webcam using cv2 '''
-        # try:
-        #     rval, frame = self.camDevice.read()
-        #     print(frame.dtype)
-        # except:
-        #     self.updateStatus('Error reading frame', True)
-        #     raise Exception
-        # if not rval:
-        #     raise Exception
-        # else:
-        #     return frame
+        try:
+            rval, frame = self.camDevice.read()
+        except:
+            self.updateStatus('Error reading frame', True)
+            raise Exception
+        if not rval:
+            raise Exception
+        else:
+            return frame
         
-        return np.zeros((self.imh, self.imw, 3), dtype='uint8')
+        # return np.zeros((self.imh, self.imw, 3), dtype='uint8')
 
     def close(self):
         '''close the videocapture object'''

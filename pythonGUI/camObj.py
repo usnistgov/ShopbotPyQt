@@ -206,6 +206,7 @@ class camera(QObject):
     
     def stopPreview(self) -> None:
         '''stop live preview. This freezes the last frame on the screen.'''
+        print('stop preview')
         self.previewing = False
         self.stopTimer()       # this only stops the timer if we are neither recording nor previewing
  
@@ -259,11 +260,12 @@ class camera(QObject):
         self.startTime = datetime.datetime.now()
         self.lastTime = self.startTime
         self.fnum = 0
-        self.rids = [-1]   # vidReader ids
+        self.rids = []   # vidReader ids
 
         
     def startTimer(self) -> None:
         '''start updating preview or recording'''
+        self.resetVidStats()
         if not self.timerRunning:
             self.timer = QTimer()
             self.timer.timeout.connect(self.timerFunc)        # run the timerFunc every mspf milliseconds
@@ -279,7 +281,11 @@ class camera(QObject):
         vidReader ids (vrid) were implemented as a possible fix for a frame jumbling error. In the rare case where there are two vidReaders running at the same time and we have dropped frames to pad, it only lets one of the vidReaders generate the padded frames. It is possible that the vrids are not necessary, but I have not tried removing them. 
         We generate a new vidReader for each frame instead of having one continuously running vidReader because there may be a case where the camera can generate frames faster than the computer can read them. If we have a separate thread for each frame, we can have the computer receive multiple frames at once. This is a bit of a simplification because of the way memory is managed, but the multi-thread process lowers the number of dropped frames, compared to a single vidReader thread.'''
         self.fnum+=1
-        vrid=max(self.rids)+1
+        if len(self.rids)==0:
+            vrid=0
+        else:
+            vrid=max(self.rids)+1
+        self.rids.append(vrid)
         runnable = vidReader(self.vc, self.frames, self.lastFrame, self.cameraName, self.diag, self.fnum, vrid)  
         runnable.signals.error.connect(self.updateStatus)           # let the vidReader send back error statuses to display
         runnable.signals.frame.connect(self.receiveFrame)
@@ -289,7 +295,10 @@ class camera(QObject):
     @pyqtSlot(np.ndarray, int, int)
     def receiveFrame(self, frame:np.ndarray, frameNum:int, vrid:int, checkDrop:bool=True):
         '''receive a frame from the vidReader thread. vrid is the id number of the vidReader object that sent the frame'''
-        if checkDrop and self.recording:
+        
+        self.lastFrame = frame
+        
+        if checkDrop and self.recording and vrid==min(self.rids):
             # # create a thread to check for dropped frames
             # print('check frame', self.lastTime)
             # runnable = frameChecker(frame, self.startTime, self.lastTime, self.timeRec, self.cameraName, self.mspf, self.diag, frameNum)
@@ -300,7 +309,8 @@ class camera(QObject):
             # QThreadPool.globalInstance().start(runnable)
             self.checkFrames(frame, frameNum, vrid)
         
-        self.saveFrame(frame, frameNum)   
+        if self.recording:
+            self.saveFrame(frame, frameNum)   
         self.updatePrevFrame(frame, frameNum)  # update the preview window            
 
     def receiveFillerFrame(self, frame:np.ndarray, frameNum:int, vrid:int):
@@ -364,9 +374,9 @@ class camera(QObject):
             return
         
         
-        if self.diag>1:
-            dnow = datetime.datetime.now()
-            logging.debug(f'Converting frame {frameNum}')
+        # if self.diag>1:
+        #     dnow = datetime.datetime.now()
+        #     logging.debug(f'Converting frame {frameNum}')
             
         # downsample preview frames
         if self.framesSincePrev==self.critFramesToPrev:
@@ -380,9 +390,9 @@ class camera(QObject):
         
         # convert frame to pixmap in separate thread and update window when done
         self.updatePrevWindow(frame)
-        if self.diag>1:
-            dnow2 = datetime.datetime.now()
-            logging.debug(f'Showing frame {frameNum}, {(dnow2-dnow).total_seconds()}s')
+        # if self.diag>1:
+        #     dnow2 = datetime.datetime.now()
+        #     logging.debug(f'Showing frame {frameNum}, {(dnow2-dnow).total_seconds()}s')
         
         
     def updatePrevWindow(self, frame:np.ndarray) -> None:

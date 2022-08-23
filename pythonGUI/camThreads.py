@@ -165,9 +165,9 @@ class vidReader(QRunnable):
     def run(self) -> None:
         '''Run this function when this thread is started. Collect a frame and return to the gui'''
         try:
-            self.vc.lock()     # lock camera so only this thread can read frames
+            # self.vc.lock()     # lock camera so only this thread can read frames
             frame = self.vc.readFrame()
-            self.vc.unlock()   # unlock camera
+            # self.vc.unlock()   # unlock camera
         except Exception as e:
             if len(str(e))>0:
                 self.signals.error.emit(f'Error collecting frame: {e}', True)
@@ -201,6 +201,7 @@ class camSnap(QRunnable):
         self.signals = snapSignals()
         self.lastFrame = lastFrame      # lastFrame is the last frame collected by the camera, as a list of one cv2 frame
         
+    @pyqtSlot()
     def run(self):
         '''Get a frame, export it, and return a status string to the GUI.'''
         
