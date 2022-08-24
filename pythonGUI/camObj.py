@@ -213,7 +213,6 @@ class camera(QObject):
     
     def stopPreview(self) -> None:
         '''stop live preview. This freezes the last frame on the screen.'''
-        print('stop preview')
         self.previewing = False
         self.vc.previewing = False
         self.stopTimer()       # this only stops the timer if we are neither recording nor previewing
