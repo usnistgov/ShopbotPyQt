@@ -122,12 +122,14 @@ class vidReader(QObject):
         if self.diag>1:
                                                    # if we're in super debug mode, print header for the table of frames
             self.signals.progress.emit('Camera name\tFrame t\tTotal t\tRec t\tSleep t\tAdj t')
-            
-        self.cont = True
-        while self.cont:
+
+        while True:
             self.lastTime = self.dnow
             self.dnow = datetime.datetime.now()
             frame = self.readFrame()  # read the frame
+            if not self.cont:
+                self.signals.finished.emit()
+                return
             self.sendNewFrame(frame) # send back to window
             self.checkDrop(frame)   # check for dropped frames
             loopEnd = datetime.datetime.now()
@@ -135,19 +137,17 @@ class vidReader(QObject):
             self.sleepTime = self.mspf/1000 - inStepTimeElapsed - self.dt
             if self.sleepTime>0:
                 time.sleep(self.sleepTime)   # wait for next frame
-        self.signals.finished.emit()
-        return
 
             
     def readFrame(self):
         '''get a frame from the camera'''
         try:
-            # self.vc.lock()     # lock camera so only this thread can read frames
+            self.vc.lock()     # lock camera so only this thread can read frames
             frame = self.vc.readFrame() # read frame
             self.mspf = self.vc.mspf    # update frame rate
             self.diag = self.vc.diag    # update logging
             self.cont = self.vc.previewing or self.vc.recording  # whether to continue
-            # self.vc.unlock()   # unlock camera
+            self.vc.unlock()   # unlock camera
         except Exception as e:
             if len(str(e))>0:
                 self.signals.error.emit(f'Error collecting frame: {e}', True)
@@ -180,6 +180,8 @@ class vidReader(QObject):
     def checkDrop(self, frame):
         '''check for dropped frames'''
         # check timing
+        if not self.cont:
+            return
         self.timeElapsed = (self.dnow-self.startTime).total_seconds()
         framesElapsed = int(np.floor((self.timeElapsed-self.timeRec)/(self.mspf/1000)))
         

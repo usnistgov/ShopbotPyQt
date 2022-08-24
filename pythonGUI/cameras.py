@@ -84,7 +84,7 @@ class camSettingsBox(QWidget):
         
     def changeDiag(self, diagbutton):
         '''Change the diagnostics status on the camera, so we print out the messages we want.'''
-        self.camObj.diag = self.diagGroup.value()
+        self.camObj.updateDiag(self.diagGroup.value())
         logging.info(f'Changed logging mode on {self.camObj.cameraName}.')
         
             

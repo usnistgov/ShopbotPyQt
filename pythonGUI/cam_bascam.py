@@ -70,6 +70,7 @@ class bascamVC(vc):
             self.converter = pylon.ImageFormatConverter()
             self.converter.OutputPixelFormat = pylon.PixelType_BGR8packed
             self.converter.OutputBitAlignment = pylon.OutputBitAlignment_MsbAligned
+            
 
         # if we failed to connect to the camera, close it, and display a failure state on the GUI
         except Exception as e:
@@ -194,6 +195,7 @@ class bascam(camera):
         self.vc = self.createVC()
         if self.vc.connected:
             self.connected = True
+            self.deviceOpen = True
             self.vc.signals.status.connect(self.updateStatus)   # send status messages back to window
             
             # update the window size
