@@ -533,7 +533,7 @@ class dropTestDialog(QDialog):
         super().__init__(sbWin)
         self.sbWin = sbWin
         self.layout=QFormLayout()
-        self.times = [10,30]
+        self.times = [20]
         self.timeEdit = fLineEdit(self.layout, title='Times', text=str(self.times)[1:-1], tooltip='How long to run videos')
         self.reclist = [['Basler camera'],['Basler camera', 'Nozzle camera'], ['Basler camera', 'Nozzle camera', 'Webcam 2'], ['Nozzle camera']]
         self.prevlist = [['Basler camera'],['Basler camera', 'Nozzle camera'], ['Basler camera', 'Nozzle camera', 'Webcam 2'], ['Nozzle camera']]

@@ -2,7 +2,7 @@
 '''Shopbot GUI functions for handling background camera functions'''
 
 # external packages
-from PyQt5.QtCore import pyqtSignal, pyqtSlot, QMutex, QObject, QRunnable, QThreadPool, QTimer, Qt
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, QMutex, QObject, QRunnable, QThread, QThreadPool, QTimer, Qt
 from PyQt5.QtGui import QImage, QPixmap, QIntValidator
 from PyQt5.QtWidgets import QButtonGroup, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QMainWindow, QPushButton, QRadioButton, QToolBar, QToolButton, QVBoxLayout, QWidget
 import cv2
@@ -77,6 +77,8 @@ QRunnables run in the background. Trying to directly modify the GUI display from
                 if size % printFreq==1:
                     # on every 100th frame, tell the GUI how many frames we still have to write
                     self.signals.progress.emit(size)
+                    
+    
        
                     
 #---------------------------
@@ -123,20 +125,30 @@ class vidReader(QObject):
                                                    # if we're in super debug mode, print header for the table of frames
             self.signals.progress.emit('Camera name\tFrame t\tTotal t\tRec t\tSleep t\tAdj t')
 
-        while True:
-            self.lastTime = self.dnow
-            self.dnow = datetime.datetime.now()
-            frame = self.readFrame()  # read the frame
-            if not self.cont:
-                self.signals.finished.emit()
-                return
-            self.sendNewFrame(frame) # send back to window
-            self.checkDrop(frame)   # check for dropped frames
-            loopEnd = datetime.datetime.now()
-            inStepTimeElapsed = (loopEnd - self.dnow).total_seconds()  # time elapsed from beginning of step to end
-            self.sleepTime = self.mspf/1000 - inStepTimeElapsed - self.dt
-            if self.sleepTime>0:
-                time.sleep(self.sleepTime)   # wait for next frame
+#         while True:
+#             self.loop()
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.loop)
+        self.timer.setTimerType(Qt.PreciseTimer)
+        self.timer.start(self.mspf)
+        self.timerRunning = True
+                
+    def loop(self):
+        '''run this on each loop iteration'''
+        self.lastTime = self.dnow
+        self.dnow = datetime.datetime.now()
+        frame = self.readFrame()  # read the frame
+        if not self.cont:
+            self.timer.stop()
+            self.signals.finished.emit()
+            return
+        self.sendNewFrame(frame) # send back to window
+        self.checkDrop(frame)   # check for dropped frames
+        # loopEnd = datetime.datetime.now()
+        # inStepTimeElapsed = (loopEnd - self.dnow).total_seconds()  # time elapsed from beginning of step to end
+        # self.sleepTime = self.mspf/1000 - inStepTimeElapsed - self.dt
+        # if self.sleepTime>0:
+        #     time.sleep(self.sleepTime)   # wait for next frame
 
             
     def readFrame(self):
@@ -144,7 +156,12 @@ class vidReader(QObject):
         try:
             self.vc.lock()     # lock camera so only this thread can read frames
             frame = self.vc.readFrame() # read frame
-            self.mspf = self.vc.mspf    # update frame rate
+            mspf = self.vc.mspf    # update frame rate
+            if not mspf==self.mspf:
+                # update frame rate
+                self.timer.stop()
+                self.mspf = mspf
+                self.timer.start(self.mspf)
             self.diag = self.vc.diag    # update logging
             self.cont = self.vc.previewing or self.vc.recording  # whether to continue
             self.vc.unlock()   # unlock camera

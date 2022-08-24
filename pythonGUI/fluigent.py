@@ -150,12 +150,7 @@ class fluChannel:
         
 ##############################  
 
-class fluSignals(QObject):
-    '''Signals connector that lets us send status updates back to the GUI from the fluPlot object'''
-    
-    finished = pyqtSignal()
-    error = pyqtSignal(str, bool)
-    progress = pyqtSignal()
+
     
 
 #########################################################
@@ -191,6 +186,13 @@ def checkPressure(channel:int) -> int:
     return pressure
 
 #------------------------------
+
+class fluSignals(QObject):
+    '''Signals connector that lets us send status updates back to the GUI from the fluPlot object'''
+    
+    finished = pyqtSignal()
+    error = pyqtSignal(str, bool)
+    progress = pyqtSignal()
             
 class plotRunnable(QRunnable):
     '''plotRunnable updates the list of times and pressures and allows us to read pressures continuously in a background thread.'''

@@ -2,12 +2,14 @@
 '''Shopbot GUI functions for handling changes of state during a print'''
 
 # external packages
+from PyQt5.QtCore import pyqtSignal, pyqtSlot, QMutex, QObject, QRunnable, QThread, QTimer
 from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget 
 import os, sys
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
 import csv
 import re
+import win32gui, win32api, win32con
 
 # local packages
 from config import cfg
@@ -136,8 +138,93 @@ class metaBox(QWidget):
             writer.writerow([key, value[1], value[0]])
         
 #----------------------------------------------------
+
+class waitSignals(QObject):
+    finished = pyqtSignal()
         
+class waitForReady(QRunnable):
+    '''waiting for the printer to be ready to print'''
+    
+    def __init__(self, dt:float, keys:QMutex):
+        super(waitForReady,self).__init__()
+        self.dt = dt # in ms
+        self.keys = keys
+        self.signals = waitSignals()
         
+    @pyqtSlot()
+    def run(self) -> None:
+        '''check the shopbot status'''
+        while True:
+            ready = self.keys.waitForSBReady()
+            time.sleep(self.dt/1000)  # loop every self.dt seconds
+            if ready:
+                self.signals.finished.emit()
+                return
+        
+#-----------------------------------------------
+
+class waitForStart(QRunnable):
+    '''waiting for the printer to start printing'''
+    
+    def __init__(self, dt:float, keys:QMutex, runFlag1:int, channelsTriggered:list):
+        super(waitForStart,self).__init__()
+        self.dt = dt
+        self.keys = keys
+        self.runFlag1 = runFlag1
+        self.channelsTriggered = channelsTriggered
+        self.signals = waitSignals()
+      
+    @pyqtSlot()
+    def run(self):
+        while True:
+            self.killSpindlePopup()
+            sbFlag = self.keys.getSBFlag()
+            cf = 2**(self.runFlag1-1) + 2**(self.channelsTriggered[0]) # the critical flag at which flow starts
+            self.updateStatus(f'Waiting to start file, Shopbot output flag = {sbFlag}, start at {cf}', False)
+            if sbFlag==cf:
+                self.signals.finished.emit()
+                return
+                self.triggerWatch()
+    
+    def killSpindlePopup(self) -> None:
+        '''if we use output flag 1 (1-indexed), the shopbot thinks we are starting the router/spindle and triggers a popup. Because we do not have a router/spindle on this instrument, this popup is irrelevant. This function automatically checks if the window is open and closes the window'''
+        hwndMain = win32gui.FindWindow(None, 'NOW STARTING ROUTER/SPINDLE !')
+        if hwndMain>0:
+            QTimer.singleShot(50, self.killSpindle) # wait 50 milliseconds, then kill the window
+            
+    def killSpindle(self) -> None:
+        '''actually kill the spindle'''
+        hwndMain = win32gui.FindWindow(None, 'NOW STARTING ROUTER/SPINDLE !')
+        if hwndMain>0:
+            # disable the spindle warning
+            try:
+                hwndChild = win32gui.GetWindow(hwndMain, win32con.GW_CHILD)
+                win32gui.SetForegroundWindow(hwndChild)
+            except Exception as e:
+                logging.error('Failed to disable spindle popup')
+            else:
+                win32api.PostMessage( hwndChild, win32con.WM_KEYDOWN, win32con.VK_RETURN, 0)
+        self.checkStopHit()
+            
+            
+    def checkStopHit(self) -> None:
+        '''this checks for a window that indicates that the stop has been hit, either on the SB3 software, or through an emergency stop. this function tells sb3 to quit printing and tells sbgui to kill this print '''
+#         hwndMain = win32gui.FindWindow(None, 'PAUSED in Movement or File Action')
+#         if hwndMain>0:
+#             # trigger the end of print
+#             hwndChild = win32gui.GetWindow(hwndMain, win32con.GW_CHILD)
+#             win32gui.SetForegroundWindow(hwndChild)
+#             win32api.PostMessage( hwndChild, win32con.WM_KEYDOWN, 0x51, 0)
+#             self.allowEnd=True
+#             self.updateStatus('SB3 Stop button pressed', True)
+#             self.triggerKill()
+        return
+    
+    
+    
+#---------------------------------------------
+    
+    
 def flagOn(sbFlag:int, flag0:int) -> bool:
     '''test if the 0-indexed flag is on'''
     binary = bin(sbFlag)   # convert to binary
@@ -145,6 +232,7 @@ def flagOn(sbFlag:int, flag0:int) -> bool:
         return False       # binary doesn't have enough digits
     else:
         return bool(int(binary[-(flag0+1)]))     # find value at index
+
         
     
         

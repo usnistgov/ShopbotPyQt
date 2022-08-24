@@ -2,7 +2,7 @@
 '''Shopbot GUI Shopbot functions for shopbot flag and registry key handling'''
 
 # external packages
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import QMutex, Qt
 from PyQt5.QtWidgets import QGridLayout, QLabel, QMainWindow
 import os, sys
 import winreg
@@ -181,11 +181,11 @@ class flagGrid(QGridLayout):
         
 ######################################
 
-class SBKeys:
+class SBKeys(QMutex):
     '''class the holds information and functions about connecting to the shopbot'''
     
     def __init__(self, sbBox:connectBox):
-        
+        super(SBKeys,self).__init__()
         self.sbBox = sbBox
         self.connected = False
         self.ready = False

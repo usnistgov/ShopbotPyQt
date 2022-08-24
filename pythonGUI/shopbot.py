@@ -502,33 +502,37 @@ class sbBox(connectBox):
         '''runFile sends a file to the shopbot and tells the GUI to wait for next steps. first, check if the shopbot is ready'''
         self.runningSBP = True
         self.updateRunButt()
-        self.triggerWaitForReady()
+        waitRunnable = waitForReady()
+        waitRunnable.signals.finished.connect(self.runFileContinue)  # continue when ready to print
+        QThreadPool.globalInstance().start(waitRunnable) 
+        # self.triggerWaitForReady()
         
-    def triggerWaitForReady(self) -> None:
-        '''start the timer that watches for the start of print'''
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.waitForReadyTimerFunc)
-        self.timer.start(self.settingsBox.getDt()) # update every 1000 ms
+        
+#     def triggerWaitForReady(self) -> None:
+#         '''start the timer that watches for the start of print'''
+#         self.timer = QTimer()
+#         self.timer.timeout.connect(self.waitForReadyTimerFunc)
+#         self.timer.start(self.settingsBox.getDt()) # update every 1000 ms
         
     
-    def waitForReadyTimerFunc(self) -> None:
-        '''Loop this when we're waiting for the extrude command. If the run has been aborted, trigger the end.'''
-        if not hasattr(self, 'keys'):
-            logging.info('No keys connected. Aborting print.')
-            self.triggerEndOfPrint()
-        # check if ready
+#     def waitForReadyTimerFunc(self) -> None:
+#         '''Loop this when we're waiting for the extrude command. If the run has been aborted, trigger the end.'''
+#         if not hasattr(self, 'keys'):
+#             logging.info('No keys connected. Aborting print.')
+#             self.triggerEndOfPrint()
+#         # check if ready
         
-        self.keys.waitForSBReady()
-        if self.keys.ready:
-            self.runFileContinue()
+#         self.keys.waitForSBReady()
+#         if self.keys.ready:
+#             self.runFileContinue()
             
     #---------------------------------------------------------
 
-    
+    @pyqtSlot()
     def runFileContinue(self) -> None:
         '''runFile sends a file to the shopbot and tells the GUI to wait for next steps. second, send the file over'''
         # check if the file exists
-        self.timer.stop()
+        # self.timer.stop()
         if not os.path.exists(self.sbpName()):
             if self.sbpName()=='BREAK':
                 self.updateStatus('Break point hit.', True)
@@ -558,81 +562,54 @@ class sbBox(connectBox):
         arg = self.sbpName() + ', ,4, ,0,0,0"'
         subprocess.Popen([appl, arg])
         
-        # wait to start videos and fluigentf
-        self.triggerWait()
+        waitRunnable = waitForStart()
+        waitForStart.signals.finished.connect(self.triggerWatch())
+        
+#         # wait to start videos and fluigent
+#         self.triggerWait()
         
     
-    ### wait to start videos and fluigent
+#     ### wait to start videos and fluigent
     
-    def triggerWait(self) -> None:
-        '''start the timer that watches for the start of print'''
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.waitForStartTimerFunc)
-        self.timer.start(self.settingsBox.getDt()) # update every _ ms
+#     def triggerWait(self) -> None:
+#         '''start the timer that watches for the start of print'''
+#         self.timer = QTimer()
+#         self.timer.timeout.connect(self.waitForStartTimerFunc)
+#         self.timer.start(self.settingsBox.getDt()) # update every _ ms
         
     
-    def waitForStartTimerFunc(self) -> None:
-        '''Loop this when we're waiting for the extrude command. If the run has been aborted, trigger the end.'''
-        if self.runningSBP and hasattr(self, 'keys') and self.keys.connected:
-            self.waitForStart()
-        else:
-            self.triggerEndOfPrint()
+#     def waitForStartTimerFunc(self) -> None:
+#         '''Loop this when we're waiting for the extrude command. If the run has been aborted, trigger the end.'''
+#         if self.runningSBP and hasattr(self, 'keys') and self.keys.connected:
+#             self.waitForStart()
+#         else:
+#             self.triggerEndOfPrint()
             
-    def killSpindlePopup(self) -> None:
-        '''if we use output flag 1 (1-indexed), the shopbot thinks we are starting the router/spindle and triggers a popup. Because we do not have a router/spindle on this instrument, this popup is irrelevant. This function automatically checks if the window is open and closes the window'''
-        hwndMain = win32gui.FindWindow(None, 'NOW STARTING ROUTER/SPINDLE !')
-        if hwndMain>0:
-            QTimer.singleShot(50, self.killSpindle) # wait 50 milliseconds, then kill the window
-            
-    def killSpindle(self) -> None:
-        hwndMain = win32gui.FindWindow(None, 'NOW STARTING ROUTER/SPINDLE !')
-        if hwndMain>0:
-            # disable the spindle warning
-            try:
-                hwndChild = win32gui.GetWindow(hwndMain, win32con.GW_CHILD)
-                win32gui.SetForegroundWindow(hwndChild)
-            except Exception as e:
-                logging.error('Failed to disable spindle popup')
-            else:
-                win32api.PostMessage( hwndChild, win32con.WM_KEYDOWN, win32con.VK_RETURN, 0)
-            
-            
-    def checkStopHit(self) -> None:
-        '''this checks for a window that indicates that the stop has been hit, either on the SB3 software, or through an emergency stop. this function tells sb3 to quit printing and tells sbgui to kill this print '''
-#         hwndMain = win32gui.FindWindow(None, 'PAUSED in Movement or File Action')
-#         if hwndMain>0:
-#             # trigger the end of print
-#             hwndChild = win32gui.GetWindow(hwndMain, win32con.GW_CHILD)
-#             win32gui.SetForegroundWindow(hwndChild)
-#             win32api.PostMessage( hwndChild, win32con.WM_KEYDOWN, 0x51, 0)
-#             self.allowEnd=True
-#             self.updateStatus('SB3 Stop button pressed', True)
-#             self.triggerKill()
-        return
+
             
     
-    def waitForStart(self) -> None:
-        '''Loop this while we're waiting for the extrude command. Checks the shopbot flags and triggers the watch for pressure triggers if the test has started'''
+#     def waitForStart(self) -> None:
+#         '''Loop this while we're waiting for the extrude command. Checks the shopbot flags and triggers the watch for pressure triggers if the test has started'''
         
-        self.killSpindlePopup()
-        # check if we hit a stop on the sb3 software or the emergency stop
-        self.checkStopHit()
+#         self.killSpindlePopup()
+#         # check if we hit a stop on the sb3 software or the emergency stop
+#         self.checkStopHit()
         
-        sbFlag = self.keys.getSBFlag()
-        cf = 2**(self.runFlag1-1) + 2**(self.channelsTriggered[0]) # the critical flag at which flow starts
-        self.updateStatus(f'Waiting to start file, Shopbot output flag = {sbFlag}, start at {cf}', False)
-        if sbFlag==cf:
-            self.triggerWatch()
+#         sbFlag = self.keys.getSBFlag()
+#         cf = 2**(self.runFlag1-1) + 2**(self.channelsTriggered[0]) # the critical flag at which flow starts
+#         self.updateStatus(f'Waiting to start file, Shopbot output flag = {sbFlag}, start at {cf}', False)
+#         if sbFlag==cf:
+#             self.triggerWatch()
 
             
             
     ### start videos and fluigent
     
-    
+    @pyqtSlot()
     def triggerWatch(self) -> None:
         '''start recording and start the timer to watch for changes in pressure'''
         # eliminate the old timer
-        self.timer.stop()
+        # self.timer.stop()
         
         # start the timer to watch for pressure triggers
         self.timer = QTimer()
