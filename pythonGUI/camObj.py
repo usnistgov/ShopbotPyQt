@@ -135,6 +135,11 @@ class camera(QObject):
             
     def setFrameRate(self, fps:float) -> int:
         '''Set the frame rate of the camera. Return 0 if value changed, 1 if not'''
+        if self.recording:
+            logging.warning('Cannot change frame rate while recording.')
+            self.guiBox.resetFPS(self.fps)
+            return
+            
         if self.fps==fps:
             return 1
         else:

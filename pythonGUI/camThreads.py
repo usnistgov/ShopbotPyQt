@@ -122,8 +122,8 @@ class vidReader(QObject):
     def run(self) -> None:
         '''Run this function when this thread is started. Collect a frame and return to the gui'''
         if self.diag>1:
-                                                   # if we're in super debug mode, print header for the table of frames
-            self.signals.progress.emit('Camera name\tFrame t\tTotal t\tRec t\tSleep t\tAdj t')
+            # if we're in super debug mode, print header for the table of frames
+            self.signals.progress.emit('Camera name\t\tFrame t\tTotal t\tRec t\tSleep t\tAdj t')
 
 #         while True:
 #             self.loop()

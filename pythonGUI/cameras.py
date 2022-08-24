@@ -145,6 +145,10 @@ class camSettingsBox(QWidget):
         if out==0:
             self.fpsStatus()
             
+    def resetFPS(self, fps:int):
+        '''reset the displayed frame rate to the given frame rate'''
+        self.fpsBox.setText(str(fps))
+            
     def fpsAuto(self):
         '''Automatically adjust the frame rate to the frame rate of the camera'''
         out = self.camObj.setFrameRateAuto()
@@ -200,6 +204,9 @@ class cameraBox(connectBox):
         self.type = cfg1.camera[self.cname].type
         self.flag1 = cfg1.camera[self.cname].flag1
         self.camObj.loadConfig(cfg1)
+        
+    def resetFPS(self, fps:int):
+        self.settingsBox.resetFPS(fps)
 
     
     def connect(self) -> None:
