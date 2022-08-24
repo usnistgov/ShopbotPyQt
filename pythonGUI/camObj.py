@@ -451,7 +451,7 @@ class camera(QObject):
             s = 'Recorded '
             log = True
         s+= f'{self.vFilename} {self.timeRec:2.2f} s, '
-        if self.vc.writing and not self.vc.recording:
+        if self.writing and not self.recording:
             s+= f'{self.fleft}/{self.totalFrames} frames left'
         else:
             s+= f'{self.framesDropped}/{self.totalFrames} frames dropped'
@@ -492,7 +492,6 @@ class camera(QObject):
                 o = getattr(self, s)
                 if not sip.isdeleted(o) and o.isRunning():
                     o.quit()
-                    o.wait(250)
         self.closeCam()
         if hasattr(self, 'timer') and not self.timer is None:
             self.timer.stop()
