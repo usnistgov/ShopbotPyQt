@@ -13,6 +13,7 @@ import os, sys
 import subprocess
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
+import pandas as pd
 
 # local packages
 from general import *
@@ -299,7 +300,6 @@ class cameraBox(connectBox):
             self.setRecButtStart()
             self.camObj.stopRecording()
         else:
-            print('stop recording button')
             self.setRecButtStop()
             self.camObj.startRecording()
         self.recording = not self.recording
@@ -471,10 +471,171 @@ class camBoxes:
         '''writes metadata to the csv writer'''
         for camBox in self.list:
             camBox.writeToTable(writer)
+            
+    def dropTest(self, times:list[float], reclist:list[list[str]], prevlist:list[list[str]]):
+        '''count dropped frames under multiple conditions'''
+        cams = []
+        for box in self.list:
+            cams.append(box.bTitle)
+
+        self.tlist = []
+        self.dropTestList = []
+        for rec in reclist:
+            for prev in prevlist:
+                for t in times:
+                    self.dropTestList.append([rec, prev, t])
+        
+        self.dropLoop()
+                    
+    def dropTestEnd(self):
+        '''finish the drop test'''
+        df = pd.DataFrame(self.tlist)
+        date = datetime.datetime.now().strftime("%y%m%d_%H%M%S")
+        fn = os.path.join(cfg.testFolder, f'dropTest_{date}.csv')
+        df.to_csv(fn, index=False)
+        logging.info(f'Exported {fn}')
+        
+    def dropLoop(self) -> None:
+        '''on each loop, add to the end'''
+        
+        if len(self.dropTestList)==0:
+            # no more tests
+            self.dropTestEnd()
+            return
+        dt = self.dropTestList.pop(0)
+        self.dti = dropTest(dt[0], dt[1], self)
+        self.dti.test(dt[2])
+        
+    def dropLoopEnd(self):
+        self.tlist.append(self.dti.result)
+        self.dropLoop()
                     
     def close(self) -> None:
         for camBox in self.list:
             camBox.close()
+            
+           
+    
+            
+            
+#-------------------
+# tests
+
+def str2strList(s):
+    '''convert the string to a list of list of strings'''
+    return [(l.split('[')[-1]).split(',') for l in list(s.split(']'))[:-1]]
+
+class dropTestDialog(QDialog):
+    '''Creates a window for running drop tests'''
+    
+    def __init__(self, sbWin):
+        '''This is called by the sbWin, which is the main SBwindow'''
+        super().__init__(sbWin)
+        self.sbWin = sbWin
+        self.layout=QFormLayout()
+        self.times = [10,30]
+        self.timeEdit = fLineEdit(self.layout, title='Times', text=str(self.times)[1:-1], tooltip='How long to run videos')
+        self.reclist = [['Basler camera'],['Basler camera', 'Nozzle camera'], ['Basler camera', 'Nozzle camera', 'Webcam 2'], ['Nozzle camera']]
+        self.prevlist = [['Basler camera'],['Basler camera', 'Nozzle camera'], ['Basler camera', 'Nozzle camera', 'Webcam 2'], ['Nozzle camera']]
+        self.go = fButton(self.layout, title='Go', tooltip='Run test', func=self.runDropTest)
+        self.setLayout(self.layout)
+        
+    def runDropTest(self):
+        '''run the drop test'''
+        self.times = [float(t) for t in list(self.timeEdit.text().replace(' ','').split(','))]
+        self.sbWin.camBoxes.dropTest(self.times, self.reclist, self.prevlist)
+        
+        
+
+class dropTest(QObject):
+    '''test the dropped frames. rec is a list of camera names to record, prev is a list of camera names to preview. camera names are in cfg.camera.name, e.g. 'Basler camera', 'Nozzle camera', 'Webcam 2' '''
+    
+    def __init__(self, rec:list, prev:list, parent:camBoxes):
+        super().__init__()
+        
+        self.parent = parent
+        self.boxList = parent.list
+        self.rec = rec
+        self.prev = prev
+        
+    
+    def triggerPrev(self, box):
+        '''start/stop previewing'''
+        box.cameraPrev()
+
+    def triggerRec(self, box):
+        '''start/stop recording'''
+        box.cameraRec()
+
+    def triggerBoxes(self, prev:bool):
+        '''start/stop recording on all boxes'''
+        for box in self.boxList:
+            cname = box.bTitle
+            if prev:
+                if cname in self.prev:
+                    self.triggerPrev(box)
+            else:
+                if cname in self.rec:
+                    self.triggerRec(box)
+
+    def triggerAll(self):
+        '''start all previewing and recording or not'''
+        self.triggerBoxes(True)
+        self.triggerBoxes(False)
+        
+    def triggerDone(self):
+        '''triggers when the loop is done'''
+        logging.info(f'Counting frames')
+        self.triggerAll()
+        dropVals = self.checkDropped()  # count frames
+        meta = self.meta()
+        self.result = {**meta, **dropVals}
+        QTimer.singleShot(1000, self.parent.dropLoopEnd) # pause 1 second to avoid thread conflict
+        
+        
+    def checkDropped(self):
+        '''check for dropped frames'''
+        
+        dropped = {}
+        for box in self.boxList:
+            cname = box.bTitle
+            if cname in self.rec or cname in self.prev:
+                dropped[f'{cname}_fps'] = box.camObj.fps
+            else:
+                dropped[f'{cname}_fps'] = None
+            if cname in self.rec:
+                dropped[f'{cname}_time'] = box.camObj.timeRec
+                dropped[f'{cname}_frames'] = box.camObj.totalFrames
+                dropped[f'{cname}_dropped'] = box.camObj.framesDropped
+                dropped[f'{cname}_pct_dropped'] = dropped[f'{cname}_dropped']/dropped[f'{cname}_frames']
+            else:
+                dropped[f'{cname}_time'] = None
+                dropped[f'{cname}_frames'] = None
+                dropped[f'{cname}_dropped'] = None
+                dropped[f'{cname}_pct_dropped'] = None
+            
+        
+        return dropped
+
+    def meta(self):
+        '''metadata for this test'''
+        meta = {}
+        for box in self.boxList:
+            cname = box.bTitle
+            meta[f'{cname}_prev'] = (cname in self.prev)
+            meta[f'{cname}_rec'] = (cname in self.rec)
+
+        return meta
+
+    def test(self, times:float):
+        '''test for dropped frames. time is in s'''
+        logging.info(f'Starting test for rec={self.rec}, prev={self.prev}, time={times}s')
+        self.triggerAll()   # start previewing and recording
+        QTimer.singleShot(times*1000, self.triggerDone) # stop previewing and recording
+
+    
+def sub_lists(l):
+    return [list(li) for li in list(chain(*map(lambda x: combinations(l, x), range(0, len(l)+1))))]
         
         
     

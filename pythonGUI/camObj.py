@@ -38,7 +38,7 @@ class vc(QMutex):
         self.connected = False
         self.previewing = False                   # is the live preview on?
         self.recording = False                    # are we collecting frames for a video?
-        self.writing = True                       # are we writing video frames to file?
+        self.writing = False                       # are we writing video frames to file?
         self.fps = fps
         self.mspf = int(round(1000./self.fps))
         
@@ -59,11 +59,12 @@ class camera(QObject):
         self.guiBox = guiBox                      # guiBox is the parent box for this camera
         self.vFilename = ''                       # name of the current video file
 
-        self.timerRunning = False                 # is the timer that controls frame collection running?
+        self.readerRunning = False                 # is the timer that controls frame collection running?
         self.previewing = False                   # is the live preview on?
         self.recording = False                    # are we collecting frames for a video?
-        self.writing = True                       # are we writing video frames to file?
-        self.timer = None                         # the timer that controls frame collection
+        self.writing = False                      # are we writing video frames to file?
+        self.reader = None                         # the reader that controls frame collection
+        self.writeWarning=False  # keep track if we've already warned about the write conflict
         self.deviceOpen = False
         self.frames = Queue()        # frame queue. appended to back, popped from front.
         self.resetVidStats()
@@ -209,18 +210,31 @@ class camera(QObject):
         self.updateFramesToPrev()
         self.previewing = True
         self.vc.previewing = True
-        self.startTimer()      # this only starts the timer if we're not already recording
+        self.startReader()      # this only starts the reader if we're not already recording
     
     def stopPreview(self) -> None:
         '''stop live preview. This freezes the last frame on the screen.'''
         self.previewing = False
         self.vc.previewing = False
-        self.stopTimer()       # this only stops the timer if we are neither recording nor previewing
+        self.stopReader()       # this only stops the reader if we are neither recording nor previewing
  
     #---------------------------------
     
     def startRecording(self) -> None:
         '''start recording a video'''
+        
+        if self.writing:
+            if not self.writeWarning:
+                logging.info('Still writing last video. Waiting.')
+                self.writeWarning=True
+            QTimer.singleShot(50, self.startRecording) # stop previewing and recording
+        else:
+            self.createWriter()
+                
+                
+    def createWriter(self) -> None:
+        '''create a videoWriter object'''
+        self.writeWarning=False
         self.recording = True
         self.writing = True
         self.vc.recording = True
@@ -250,7 +264,7 @@ class camera(QObject):
         
         self.updateStatus(f'Recording {self.vFilename} ... ', True) 
         # QThreadPool.globalInstance().start(recthread)          # start writing in a background thread
-        self.startTimer()                          # this only starts the timer if we're not already previewing
+        self.startReader()                          # this only starts the reader if we're not already previewing
 
     
     
@@ -261,7 +275,7 @@ class camera(QObject):
         self.frames.put([None,0]) # this tells the vidWriter that this is the end of the video
         self.recording = False
         self.vc.recording = False     # this helps the frame reader and the status update know we're not reading frames
-        self.stopTimer()           # only turns off the timer if we're not recording or previewing
+        self.stopReader()           # only turns off the reader if we're not recording or previewing
 
             
     
@@ -284,12 +298,12 @@ class camera(QObject):
         self.rids = []   # vidReader ids
 
         
-    def startTimer(self) -> None:
+    def startReader(self) -> None:
         '''start updating preview or recording'''
-        if not self.timerRunning:
-            self.timerRunning = True
+        if not self.readerRunning:
+            self.readerRunning = True
             # if self.diag>1:
-            #     logging.debug(f'Starting {self.cameraName} timer')
+            #     logging.debug(f'Starting {self.cameraName} reader')
             
             # https://realpython.com/python-pyqt-qthread/
             self.readThread = QThread()
@@ -307,14 +321,7 @@ class camera(QObject):
             self.readWorker.signals.progress.connect(self.printDiagnostics)
             # Step 6: Start the thread
             self.readThread.start()
-            
-            
-            
-#             runnable = vidReader(self.vc)
-#             runnable.signals.error.connect(self.updateStatus)
-#             runnable.signals.frame.connect(self.receiveFrame)
-#             runnable.signals.progress.connect(self.printDiagnostics)
-#             QThreadPool.globalInstance().start(runnable)
+
             
     @pyqtSlot(str)
     def printDiagnostics(self, s:str):
@@ -326,6 +333,7 @@ class camera(QObject):
     # def receiveFrame(self, frame:np.ndarray, frameNum:int, vrid:int, checkDrop:bool=True):
     def receiveFrame(self, frame:np.ndarray, pad:bool):
         '''receive a frame from the vidReader thread. pad indicates whether the frame is a filler frame'''
+
         self.lastFrame = [frame]       
         self.saveFrame(frame)        # save to file
         self.updatePrevFrame(frame)  # update the preview window 
@@ -334,14 +342,13 @@ class camera(QObject):
 
     #---------------------------------
     
-    def stopTimer(self) -> None:
-        '''this only stops the timer if we are neither recording nor previewing'''
+    def stopReader(self) -> None:
+        '''this only stops the reader if we are neither recording nor previewing'''
         if not self.recording and not self.previewing:
-            # self.timer.stop()
             if self.diag>1:
-                logging.info(f'Stopping {self.cameraName} timer')
-            self.timerRunning = False
-            logging.info('Timer stopped')
+                logging.info(f'Stopping {self.cameraName} reader')
+            self.readerRunning = False
+            logging.info(f'{self.cameraName} reader stopped')
     
     #---------------------------------
     
@@ -363,9 +370,6 @@ class camera(QObject):
         
         # convert frame to pixmap in separate thread and update window when done
         self.updatePrevWindow(frame)
-        # if self.diag>1:
-        #     dnow2 = datetime.datetime.now()
-        #     logging.debug(f'Showing frame {frameNum}, {(dnow2-dnow).total_seconds()}s')
         
         
     def updatePrevWindow(self, frame:np.ndarray) -> None:
@@ -383,10 +387,6 @@ class camera(QObject):
         '''save the frame to the video file. frames are in cv2 format. '''
         if not self.recording:
             return
-        
-        # if self.diag>1:
-        #     dnow = datetime.datetime.now()
-        #     logging.debug(f'Saving frame {frameNum}')
      
         try:
             self.frames.put([frame, 0])  # add the frame to the queue that videoWriter is watching
@@ -481,8 +481,9 @@ class camera(QObject):
         '''disconnect from the camera when the window is closed'''
         self.recording = False
         self.previewing = False
-        self.vc.recording = False
-        self.vc.previewing = False  
+        if hasattr(self, 'vc'):
+            self.vc.recording = False
+            self.vc.previewing = False  
             
             
     def close(self) -> None:

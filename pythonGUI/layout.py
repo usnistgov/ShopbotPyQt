@@ -219,6 +219,21 @@ class SBwindow(QMainWindow):
         self.setupLog(menubar)                  # create a log window, not open yet
         self.setupCalib(menubar)
         self.setupSettings(menubar)                  # create a log window, not open yet
+        if self.test:
+            self.setupDropTest(menubar)
+        
+    def setupDropTest(self, menubar):
+        '''create test menu for dropped frames'''
+        self.dropDialog = cameras.dropTestDialog(self)
+        self.dropButt = QAction('Dropped frame tool', self)
+        self.dropButt.triggered.connect(self.openDropTest)
+        menubar.addAction(self.dropButt)
+        
+    def openDropTest(self) -> None:
+        self.dropDialog.show()
+        self.dropDialog.raise_()
+        
+        
         
 
 
@@ -277,14 +292,20 @@ class MainProgram(QWidget):
         app = QApplication(sys.argv)
         sansFont = QFont("Arial", 9)
         app.setFont(sansFont)
-        gallery = SBwindow(meta=meta, sb=sb, flu=flu, cam=cam, file=file, test=test)
+        self.sbwin = SBwindow(meta=meta, sb=sb, flu=flu, cam=cam, file=file, test=test)
 
         
-        gallery.show()
-        gallery.setWindowIcon(icon('sfcicon.ico'))
+        self.sbwin.show()
+        self.sbwin.setWindowIcon(icon('sfcicon.ico'))
         app.setWindowIcon(icon('sfcicon.ico'))
         app.exec_()
     
         
         myappid = cfg.appid # arbitrary string
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+        
+        
+        
+
+        
+        

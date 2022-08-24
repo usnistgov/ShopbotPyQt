@@ -172,7 +172,7 @@ class vidReader(QObject):
         if self.diag>1:
             frameElapsed = ((self.dnow-self.lastTime).total_seconds())  # time elapsed between this and the last frame
             s = f'{self.cameraName}\t'
-            for si in ['%2.3f'%t for t in [frameElapsed,  self.timeElapsed, self.timeRec, self.sleepTime, self.dt]]:
+            for si in ['%2.4f'%t for t in [frameElapsed,  self.timeElapsed, self.timeRec, self.sleepTime, self.dt]]:
                 s = f'{s}{si}\t'
             self.signals.progress.emit(s)
         
@@ -187,10 +187,10 @@ class vidReader(QObject):
         
         if framesElapsed<0:
             # not pausing enough. pause more next time
-            self.dt = self.dt-0.001
+            self.dt = self.dt-0.0005
         elif framesElapsed>2:
             # if we've progressed at least 2 frames, fill that space with duplicate frames
-            self.dt = self.dt+0.001    # pause less next time
+            self.dt = self.dt+0.0005    # pause less next time
             numfill = framesElapsed-1
             for i in range(numfill):
                 self.sendFrame(frame, True)
