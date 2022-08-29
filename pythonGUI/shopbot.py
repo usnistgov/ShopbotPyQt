@@ -2,7 +2,7 @@
 '''Shopbot GUI Shopbot functions'''
 
 # external packages
-from PyQt5.QtCore import QTimer
+from PyQt5.QtCore import QRunnable, QThread, QThreadPool, QTimer
 from PyQt5.QtGui import QDoubleValidator, QIntValidator
 from PyQt5.QtWidgets import QFormLayout, QHBoxLayout, QMainWindow, QVBoxLayout, QWidget
 import os, sys
@@ -37,6 +37,15 @@ class sbSettingsBox(QWidget):
         super().__init__(sbBox)  
         self.sbBox = sbBox
         layout = QVBoxLayout()
+        
+        form = QFormLayout()
+        self.diagGroup = fRadioGroup(None, '', 
+                                          {0:'None', 1:'Just critical', 2:'All changes', 3:'All time steps'}, 
+                                          {0:0, 1:1, 2:2, 3:3},
+                                         self.sbBox.diag, col=False, headerRow=False,
+                                          func=self.changeDiag)
+        form.addRow("Log", self.diagGroup.layout)
+        layout.addLayout(form)
         
         # SBP folder
         fLabel(layout, title='.SBP file folder', style=labelStyle())
@@ -133,6 +142,11 @@ class sbSettingsBox(QWidget):
         '''save values to the config file'''
         cfg1.shopbot.dt = self.getDt()
         return cfg1
+    
+    def changeDiag(self, diagbutton):
+        '''Change the diagnostics status on the camera, so we print out the messages we want.'''
+        self.sbBox.updateDiag(self.diagGroup.value())
+        logging.info(f'Changed logging mode on shopbot.')
         
     def getDt(self) -> float:
         dt = float(self.checkFreq.text())
@@ -251,7 +265,10 @@ class sbBox(connectBox):
    
     def connect(self):
         '''connect to the SB3 software'''
-        self.keys = SBKeys(self)
+        self.keys = SBKeys(self.diag)
+        self.keys.signals.status.connect(self.updateStatus)   # connect key status to GUI
+        self.keys.signals.flag.connect(self.updateFlag)       # connect flag status to GUI
+        self.keys.signals.pos.connect(self.updateXYZ)         # connect position status to GUI
         if hasattr(self.sbWin, 'flagBox'):
             self.flagBox = self.sbWin.flagBox    # adopt the parent's flagBox for shorter function calls
         if not self.keys.connected:
@@ -271,7 +288,9 @@ class sbBox(connectBox):
             out = []
         if self.saveFlag:
             if hasattr(self, 'keys'):
+                self.keys.lock()
                 out = out + [self.keys.currentFlag]
+                self.keys.unlock()
             else:
                 out = out + ['']
         return out
@@ -291,7 +310,9 @@ class sbBox(connectBox):
     
     def getLoc(self) -> None:
         '''get the location'''
+        self.keys.lock()
         x = self.keys.getLoc()
+        self.keys.unlock()
         if len(x)>0:
             self.x = x[0]
             self.y = x[1]
@@ -318,6 +339,7 @@ class sbBox(connectBox):
         cfg1.shopbot.dt = self.checkFreq
         cfg1.shopbot.burstScale = self.burstScale
         cfg1.shopbot.burstLength = self.burstLength
+        cfg1.shopbot.diag = self.diag
         cfg1 = self.settingsBox.saveConfig(cfg1)
         cfg1 = self.sbList.saveConfig(cfg1)
         return cfg1
@@ -337,6 +359,7 @@ class sbBox(connectBox):
         self.checkFreq=cfg1.shopbot.dt
         self.burstScale = cfg1.shopbot.burstScale
         self.burstLength = cfg1.shopbot.burstLength
+        self.diag = cfg1.shopbot.diag
         
     
     def loadConfig(self, cfg1):
@@ -362,11 +385,18 @@ class sbBox(connectBox):
         if self.runningSBP:
             return
         if hasattr(self, 'keys'):
+            self.keys.lock()
             sbflag = self.keys.getSBFlag()
+            self.keys.unlock()
             self.updateFlag(sbFlag)
-       
-        
-      
+            
+    def updateDiag(self, diag:int) -> None:
+        '''update the logging mode'''
+        self.diag = diag
+        self.keys.lock()
+        self.keys.diag = diag
+        self.keys.unlock()
+
     #------------------------------
     
     # testing mode
@@ -460,11 +490,18 @@ class sbBox(connectBox):
             return self.flagBox.flagTaken(flag0)
         else:
             return False
-        
+    
+    @pyqtSlot(float,float,float)   
     def updateXYZ(self, x:float, y:float, z:float) -> None:
-        '''update the xyz display'''
+        '''update the read xyz display'''
         if hasattr(self, 'flagBox'):
             self.flagBox.updateXYZ(x,y,z)
+            
+    @pyqtSlot(float,float,float)
+    def updateXYZest(self, x:float, y:float, z:float) -> None:
+        '''update the estimated xyz display'''
+        if hasattr(self, 'flagBox'):
+            self.flagBox.updateXYZest(x,y,z)
 
     ####################            
     #### functions to start on run
@@ -485,11 +522,17 @@ class sbBox(connectBox):
         
         if not self.runFlag1-1 in self.channelsTriggered:
             # abort run: no signal to run this file
-            self.updateStatus('Missing flag in sbp file', True)
-            self.triggerKill()
+            self.updateStatus(f'Missing flag in sbp file: {self.runFlag1}', True)
+            raise ValueError('Missing flag in sbp file')
         if self.runFlag1-1 in self.channelsTriggered:
             self.channelsTriggered.remove(self.runFlag1-1)
         return 0
+    
+    def stopHit(self) -> None:
+        '''if the stop button on the shopbot was hit, this gets run'''
+        self.allowEnd=True
+        self.updateStatus('SB3 Stop button pressed', True)
+        self.triggerKill()
     
     
     ### start/stop
@@ -501,32 +544,18 @@ class sbBox(connectBox):
     def runFile(self) -> None:
         '''runFile sends a file to the shopbot and tells the GUI to wait for next steps. first, check if the shopbot is ready'''
         self.runningSBP = True
+        self.keys.lock()
+        self.keys.runningSBP = True
+        self.keys.unlock()
         self.updateRunButt()
-        waitRunnable = waitForReady()
+        waitRunnable = waitForReady(self.settingsBox.getDt(), self.keys)
         waitRunnable.signals.finished.connect(self.runFileContinue)  # continue when ready to print
         QThreadPool.globalInstance().start(waitRunnable) 
-        # self.triggerWaitForReady()
-        
-        
-#     def triggerWaitForReady(self) -> None:
-#         '''start the timer that watches for the start of print'''
-#         self.timer = QTimer()
-#         self.timer.timeout.connect(self.waitForReadyTimerFunc)
-#         self.timer.start(self.settingsBox.getDt()) # update every 1000 ms
-        
-    
-#     def waitForReadyTimerFunc(self) -> None:
-#         '''Loop this when we're waiting for the extrude command. If the run has been aborted, trigger the end.'''
-#         if not hasattr(self, 'keys'):
-#             logging.info('No keys connected. Aborting print.')
-#             self.triggerEndOfPrint()
-#         # check if ready
-        
-#         self.keys.waitForSBReady()
-#         if self.keys.ready:
-#             self.runFileContinue()
+
             
     #---------------------------------------------------------
+    
+
 
     @pyqtSlot()
     def runFileContinue(self) -> None:
@@ -539,6 +568,9 @@ class sbBox(connectBox):
             else:
                 self.updateStatus(f'SBP file does not exist: {self.sbpName()}', True)
             self.runningSBP=False
+            self.keys.lock()
+            self.keys.runningSBP = False
+            self.keys.unlock()
             self.updateRunButt()
             self.sbList.activateNext()
             return
@@ -546,7 +578,11 @@ class sbBox(connectBox):
 #         self.abortButt.setEnabled(True)
         
         ''' allowEnd is a failsafe measure because when the shopbot starts running a file that changes output flags, it asks the user to allow spindle movement to start. While it is waiting for the user to hit ok, only flag 4 would be up, giving a flag value of 8. If critFlag=8 (i.e. we want to stop running after the first extrusion step), this means the GUI will think the file is done before it even starts. We create an extra trigger to say that if we're extruding, we have to wait for extrusion to start before we can let the tracking stop'''
-        self.critFlag = self.getCritFlag()
+        try:
+            self.critFlag = self.getCritFlag()
+        except ValueError:
+            self.triggerKill()
+            return
         if self.critFlag==0:
             self.allowEnd = True
         else:
@@ -554,53 +590,28 @@ class sbBox(connectBox):
             
         self.updateStatus(f'Running SBP file {self.sbpName()}, critFlag = {self.critFlag}', True)
         
-        self.sbpTiming = SBPtimings(self.sbpName(), self.sbWin)
-                # this object updates changes in state
+        # self.sbpTiming = SBPtimings(self.sbpName(), self.sbWin, self.critTimeOn, self.zeroDist, self.critTimeOff, self.burstScale, self.burstLength)
+        #         # this object updates changes in state
+            
+        self.stopPrintThread()  # stop any existing threads
+        pSettings = {'critTimeOn':self.critTimeOn, 'zeroDist':self.zeroDist, 'critTimeOff':self.critTimeOff, 'burstScale':self.burstScale, 'burstLength':self.burstLength}
+        self.printWorker = printLoop(self.settingsBox.getDt(), self.keys, self.sbpName(), pSettings, self.sbWin, self.runFlag1)   # create a worker to track the print
+        self.printWorker.signals.aborted.connect(self.triggerKill)
+        self.printWorker.signals.finished.connect(self.triggerEndOfPrint)
+        self.printWorker.signals.estimate.connect(self.updateXYZest)
 
         # send the file to the shopbot via command line
+        self.keys.lock()
         appl = self.keys.sb3File
+        self.keys.unlock()
         arg = self.sbpName() + ', ,4, ,0,0,0"'
         subprocess.Popen([appl, arg])
         
-        waitRunnable = waitForStart()
-        waitForStart.signals.finished.connect(self.triggerWatch())
-        
-#         # wait to start videos and fluigent
-#         self.triggerWait()
-        
-    
-#     ### wait to start videos and fluigent
-    
-#     def triggerWait(self) -> None:
-#         '''start the timer that watches for the start of print'''
-#         self.timer = QTimer()
-#         self.timer.timeout.connect(self.waitForStartTimerFunc)
-#         self.timer.start(self.settingsBox.getDt()) # update every _ ms
-        
-    
-#     def waitForStartTimerFunc(self) -> None:
-#         '''Loop this when we're waiting for the extrude command. If the run has been aborted, trigger the end.'''
-#         if self.runningSBP and hasattr(self, 'keys') and self.keys.connected:
-#             self.waitForStart()
-#         else:
-#             self.triggerEndOfPrint()
-            
-
-            
-    
-#     def waitForStart(self) -> None:
-#         '''Loop this while we're waiting for the extrude command. Checks the shopbot flags and triggers the watch for pressure triggers if the test has started'''
-        
-#         self.killSpindlePopup()
-#         # check if we hit a stop on the sb3 software or the emergency stop
-#         self.checkStopHit()
-        
-#         sbFlag = self.keys.getSBFlag()
-#         cf = 2**(self.runFlag1-1) + 2**(self.channelsTriggered[0]) # the critical flag at which flow starts
-#         self.updateStatus(f'Waiting to start file, Shopbot output flag = {sbFlag}, start at {cf}', False)
-#         if sbFlag==cf:
-#             self.triggerWatch()
-
+        waitRunnable = waitForStart(self.settingsBox.getDt(), self.keys, self.runFlag1, self.channelsTriggered)
+        waitRunnable.signals.finished.connect(self.triggerWatch)
+        waitRunnable.signals.status.connect(self.updateStatus)
+        QThreadPool.globalInstance().start(waitRunnable) 
+ 
             
             
     ### start videos and fluigent
@@ -612,10 +623,10 @@ class sbBox(connectBox):
         # self.timer.stop()
         
         # start the timer to watch for pressure triggers
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.timerFunc)
-        self.timer.start(self.settingsBox.getDt()) # update every _ ms
-        
+        # self.timer = QTimer()
+        # self.timer.timeout.connect(self.timerFunc)
+        # self.timer.start(self.settingsBox.getDt()) # update every _ ms
+
         # start the cameras if any flow is triggered in the run
         if min(self.channelsTriggered)<len(self.sbWin.fluBox.pchannels):
             self.sbWin.camBoxes.startRecording()
@@ -623,45 +634,58 @@ class sbBox(connectBox):
             # only save speeds and pressures if there is extrusion or if the checkbox is marked
             self.sbWin.saveMetaData()
             self.sbWin.fluBox.startRecording()
+            
+        self.printThread = QThread()
+        self.printWorker.moveToThread(self.printThread)
+        self.printThread.started.connect(self.printWorker.run)
+        self.printWorker.signals.finished.connect(self.printThread.quit)
+        self.printWorker.signals.finished.connect(self.printWorker.deleteLater)
+        self.printThread.finished.connect(self.printThread.deleteLater)
+        print('start print thread')
+        self.printThread.start()
     
     ### wait for end
     
-    def timerFunc(self) -> None:
-        '''timerFunc runs continuously while we are printing to determine if we're done.'''
+#     def timerFunc(self) -> None:
+#         '''timerFunc runs continuously while we are printing to determine if we're done.'''
 
-        if self.runningSBP and hasattr(self, 'keys') and self.keys.connected:
-            self.watchSBFlags()
-        else:
-            # we turn off runningSBP when the file is done
-            self.triggerEndOfPrint()
+#         if self.runningSBP and hasattr(self, 'keys') and self.keys.connected:
+#             self.watchSBFlags()
+#         else:
+#             # we turn off runningSBP when the file is done
+#             self.triggerEndOfPrint()
 
 
-    def watchSBFlags(self) -> None:
-        '''Runs continuously while we're printing. Checks the Shopbot flags and changes the pressure if the flags have changed. Triggers the end if we hit the critical flag.'''
-        sbFlag = self.keys.getSBFlag()
-        self.updateLoc() # update x,y,z display
-#         self.getCommand() # read message
-        self.updateStatus(f'Running file, Shopbot output flag = {sbFlag}, end at {self.critFlag}', False)
+#     def watchSBFlags(self) -> None:
+#         '''Runs continuously while we're printing. Checks the Shopbot flags and changes the pressure if the flags have changed. Triggers the end if we hit the critical flag.'''
+#         sbFlag = self.keys.getSBFlag()
+#         self.updateLoc() # update x,y,z display
+# #         self.getCommand() # read message
+#         self.updateStatus(f'Running file, Shopbot output flag = {sbFlag}, end at {self.critFlag}', False)
         
-        if self.allowEnd and (sbFlag==self.critFlag or sbFlag==0):
-            self.triggerEndOfPrint()
-            return
+#         if self.allowEnd and (sbFlag==self.critFlag or sbFlag==0):
+#             self.triggerEndOfPrint()
+#             return
   
-        # update state of pressure channels and camera
-        self.allowEnd = self.sbpTiming.check(sbFlag, self.x, self.y, self.z) 
+#         # update state of pressure channels and camera
+#         self.allowEnd = self.sbpTiming.check(sbFlag, self.x, self.y, self.z) 
         
-        # check if we hit a stop on the sb3 software or the emergency stop
-        self.checkStopHit()
+#         # check if we hit a stop on the sb3 software or the emergency stop
+#         self.checkStopHit()
       
     def stopRunning(self) -> None:
         '''stop watching for changes in pressure, stop recording  '''
+        self.keys.lock()
+        self.keys.runningSBP = False
         self.keys.getSBFlag()  # update the flag readout
+        self.keys.unlock()
         if hasattr(self, 'sbpTiming'):
             self.sbpTiming.done()  # tell the timings to stop
         if self.runningSBP:
             if hasattr(self.sbWin, 'fluBox'):
                 self.sbWin.fluBox.resetAllChannels(-1) # turn off all channels
                 self.sbWin.fluBox.stopRecording()      # save fluigent
+            if hasattr(self.sbWin, 'camBoxes'):
                 self.sbWin.camBoxes.stopRecording()    # turn off cameras
             if hasattr(self, 'timer'):
                 try:
@@ -669,15 +693,24 @@ class sbBox(connectBox):
                 except Exception as e:
                     print(f'Error deleting shopbot timer: {e}')
                     pass
+                
+    def readyState(self):
+        '''return to the ready state'''
+        self.runningSBP = False   # we're no longer running a sbp file
+        self.keys.lock()
+        self.keys.runningSBP = False
+        self.keys.unlock()
+        self.updateRunButt()    
+        self.updateStatus('Ready', False)
         
+    @pyqtSlot()
     def triggerKill(self) -> None:
         '''the stop button was hit, so stop'''
         self.stopRunning()
 #         self.sbList.activateNext()     # activate the next sbp file in the list
-        self.runningSBP = False   # we're no longer running a sbp file
-        self.updateRunButt()    
+        self.readyState()
         
-
+    @pyqtSlot()
     def triggerEndOfPrint(self) -> None:
         '''we finished the file, so stop and move onto the next one'''
         self.stopRunning()
@@ -686,16 +719,23 @@ class sbBox(connectBox):
             self.updateStatus('Autoplay is on: Running next file.', True)
             QTimer.singleShot(2000, self.runFile) # wait 2 seconds, then call runFile
         else:
-            self.runningSBP = False # we're no longer running a sbp file
-            self.updateRunButt()
-            self.updateStatus('Ready', False)
+            self.readyState()
 
 
     #-----------------------------------------
     
+    def stopPrintThread(self):
+        '''stop the print thread'''
+        for s in ['printThread']:
+            if hasattr(self, s):
+                o = getattr(self, s)
+                if not sip.isdeleted(o) and o.isRunning():
+                    o.quit()
+    
     
     def close(self):
         '''this gets triggered when the whole window is closed'''
+        self.stopPrintThread()
         if hasattr(self, 'timer'):
             self.timer.stop()
             logging.info('Shopbot timer stopped')

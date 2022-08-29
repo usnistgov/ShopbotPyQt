@@ -47,18 +47,20 @@ class flagGrid(QGridLayout):
     def successLayout(self, tall:bool=True) -> None:
         # coords
         w = 25
-        for i,dim in enumerate(['x', 'y', 'z']):
-            dlabel = QLabel(dim)
-            dlabel.setFixedWidth(w)
-            dlabel.setFixedHeight(w)
-            dlabel.setAlignment(Qt.AlignCenter)
-            self.addWidget(dlabel, i, 0)
-            setattr(self, dim, QLabel(''))
-            self.addWidget(getattr(self, dim), i, 1)
+        for j,s in enumerate(['', 'e']):
+            for i,dim in enumerate(['x', 'y', 'z']):
+                dname = f'{dim}{s}'
+                dlabel = QLabel(dname)
+                dlabel.setFixedWidth(w)
+                dlabel.setFixedHeight(w)
+                dlabel.setAlignment(Qt.AlignCenter)
+                self.addWidget(dlabel, i, 0+j*2)
+                setattr(self, dname, QLabel(''))
+                self.addWidget(getattr(self, dname), i, 1+j*2)
         
         # flags
         row = -1
-        col = 2
+        col = 4
         for flag0 in range(self.numFlags):
             if tall:
                 row = flag0+3
@@ -94,6 +96,15 @@ class flagGrid(QGridLayout):
         self.x.setText(f'{x:0.3f}')
         self.y.setText(f'{y:0.3f}')
         self.z.setText(f'{z:0.3f}')
+        
+    def updateXYZest(self, x,y,z) -> None:
+        '''update the estimated xyz display'''
+        if not hasattr(self, 'xe') or not hasattr(self, 'ye') or not hasattr(self, 'ze'):
+            # missing attribute, can't set xyz labels
+            return
+        self.xe.setText(f'{x:0.3f}')
+        self.ye.setText(f'{y:0.3f}')
+        self.ze.setText(f'{z:0.3f}')
  
     def flagTaken(self, flag0:int) -> bool:
         '''check the dictionary to see if the flag is taken'''
@@ -181,12 +192,17 @@ class flagGrid(QGridLayout):
         
 ######################################
 
+class SBKeySignals(QObject):
+    status = pyqtSignal(str, bool) # send status message back to GUI
+    flag = pyqtSignal(int)         # send current flag status back to GUI
+    pos = pyqtSignal(float,float,float) # send current position back to GUI
+    
+
 class SBKeys(QMutex):
     '''class the holds information and functions about connecting to the shopbot'''
     
-    def __init__(self, sbBox:connectBox):
+    def __init__(self, diag:int):
         super(SBKeys,self).__init__()
-        self.sbBox = sbBox
         self.connected = False
         self.ready = False
         self.status=6
@@ -194,12 +210,14 @@ class SBKeys(QMutex):
         self.prevFlag = 0
         self.currentFlag = 0
         self.msg = ''
+        self.runningSBP = False
+        self.diag = diag
+        self.signals = SBKeySignals()
         self.connectKeys()   # connect to the keys and open SB3.exe
         
     def updateStatus(self, message:str, log:bool) -> None:
         '''send the status back to the SBbox'''
-        
-        self.sbBox.updateStatus(message, log)
+        self.signals.status.emit(message, log)
         
         
     def connectKeys(self) -> None:
@@ -283,6 +301,7 @@ class SBKeys(QMutex):
         else:
             self.updateStatus('Shopbot is ready', True)
             self.ready = True
+        return self.ready
  
     def getSBFlag(self) -> int:
         '''run this function continuously during print to watch the shopbot status'''
@@ -295,7 +314,7 @@ class SBKeys(QMutex):
         self.prevFlag = self.currentFlag
         sbFlag = int(sbFlag)
         self.currentFlag = sbFlag
-        self.sbBox.updateFlag(sbFlag)
+        self.signals.flag.emit(sbFlag)    # send flag back to gui
         return sbFlag
 
     
@@ -325,7 +344,7 @@ class SBKeys(QMutex):
             
         xlist = [float(i) for i in xlist]
     
-        self.sbBox.updateXYZ(xlist[0], xlist[1], xlist[2])
+        self.signals.pos.emit(xlist[0], xlist[1], xlist[2])   # send position back to GUI
             
         return xlist
     

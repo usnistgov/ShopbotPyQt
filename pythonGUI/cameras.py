@@ -273,9 +273,13 @@ class cameraBox(connectBox):
     #------------------------------------------------
     # functions to trigger camera actions and update the GUI
     
+    @pyqtSlot()
     def cameraPic(self) -> None:
         '''capture a single frame'''
-        self.camObj.snap()
+        if self.connected:
+            self.camObj.snap()
+        else:
+            logging.info(f'Cannot take picture: {self.bTitle} not connected')
        
     
     def cameraPrev(self) -> None:
@@ -396,6 +400,18 @@ class cameraBox(connectBox):
         self.camRec.setStyleSheet(self.clickedSheet())
         self.camRec.setIcon(icon('recordstop.png'))
         self.camRec.setToolTip('Stop recording') 
+        
+    @pyqtSlot()
+    def tempCheck(self):
+        '''set checked during run'''
+        if hasattr(self, 'camInclude'):
+            self.oldChecked = self.camInclude.isChecked()
+            self.camInclude.setChecked(True)
+        
+    @pyqtSlot()
+    def resetCheck(self):
+        if hasattr(self, 'camInclude'):
+            self.camInclude.setChecked(self.oldChecked)
 
 
     #-----------------------------------------------
@@ -442,6 +458,11 @@ class camBoxes:
         '''stop all checked cameras recording'''
         for camBox in self.list:
             camBox.stopRecording()
+            
+    def listFlags0(self) -> dict:
+        '''get a dictionary of 0-indexed flags and cameras'''
+        return dict([[camBox.flag1-1, camBox] for camBox in self.list])
+            
             
     def findFlag(self, flag0:int) -> Tuple[bool, cameraBox]:
         '''find the camBox that matches the flag. return True, camBox if we found one, otherwise return False, empty'''

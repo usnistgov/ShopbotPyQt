@@ -95,7 +95,8 @@ shopbot:
   burstScale: 1.05
   critTimeOff: -0.0001
   critTimeOn: 0.05
-  currentFile: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide\crossDoubleHoriz_0.5_0.500.sbp
+  currentFile: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/calibration/timing_calibration_2.sbp
+  diag: 3
   dt: 25.0
   flag1: 12
   flag1max: 12
@@ -104,8 +105,7 @@ shopbot:
   includePositionInTable: true
   savePicMetadata: true
   sbpFiles:
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide\crossDoubleHoriz_0.5_0.500.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide\crossDoubleHoriz_0.5_0.625.sbp
+  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/calibration/timing_calibration_2.sbp
   sbpFolder: C:\Users\lmf1\Documents\GitHub\ShopbotPyQt\SBP_files
   showFolder: false
   units: mm

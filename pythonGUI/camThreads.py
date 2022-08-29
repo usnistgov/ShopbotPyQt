@@ -213,6 +213,10 @@ class vidReader(QObject):
                 self.sendFrame(frame, True)
                 if self.diag>1:
                     self.signals.progress.emit(f'{self.cameraName}\tPAD{numfill}\t\t{self.timeRec:2.3f}\t\t{self.dt}')
+                    
+    def close(self):
+        if hasattr(self, 'timer'):
+            self.timer.stop()
         
 
 

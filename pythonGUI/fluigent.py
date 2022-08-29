@@ -23,7 +23,7 @@ from general import *
    
 #----------------------------------------------------------------------
 
-class fluChannel:
+class fluChannel(QObject):
     '''this class describes a single channel on the Fluigent
         fgt functions come from the Fluigent SDK
         each channel gets a QLayout that can be incorporated into the fluBox widget'''
@@ -31,6 +31,7 @@ class fluChannel:
     def __init__(self, chanNum0:int, fluBox:connectBox):
         '''chanNum0 is a 0-indexed channel number (e.g. 0)
         fluBox is the parent box that holds the Fluigent GUI display'''
+        super().__init__()
 
         self.chanNum0 = chanNum0  # 0-indexed
         self.bTitle = f'Channel {chanNum0}'
@@ -108,8 +109,9 @@ class fluChannel:
         fgt.fgt_set_pressure(self.chanNum0, runPressure)
         if status:
             self.fluBox.updateStatus(f'Setting channel {self.chanNum0} to {runPressure} mbar', True)
-            
-    def goToRunPressure(self, scale:float=1) -> None:
+         
+    @pyqtSlot(float)
+    def goToRunPressure(self, scale:float) -> None:
         '''set the pressure for this channel to the pressure in the constBox'''
         runPressure = int(self.constBox.text())
         self.goToPressure(runPressure*scale, False)
@@ -132,7 +134,7 @@ class fluChannel:
             # QTimer wants time in milliseconds
         self.fluBox.addRowToCalib(runPressure, runTime, self.chanNum0)
     
-    
+    @pyqtSlot(bool)
     def zeroChannel(self, status:bool=True) -> None:
         '''zero the channel pressure'''
         if status:
@@ -672,7 +674,7 @@ class fluBox(connectBox):
     
     def turnOnChannel(self, chanNum0:int) -> None:
         '''turn the pressure channel on to the run pressure'''
-        self.pchannels[chanNum0].goToRunPressure()
+        self.pchannels[chanNum0].goToRunPressure(1)
         
     def turnOffChannel(self, chanNum0:int) -> None:
         '''turn the pressure channel on to the run pressure'''

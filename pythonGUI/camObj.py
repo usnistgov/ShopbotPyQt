@@ -497,6 +497,7 @@ class camera(QObject):
             if hasattr(self, s):
                 o = getattr(self, s)
                 if not sip.isdeleted(o) and o.isRunning():
+                    o.close()
                     o.quit()
         self.closeCam()
         if hasattr(self, 'timer') and not self.timer is None:
