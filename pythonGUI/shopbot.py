@@ -37,8 +37,11 @@ class sbSettingsBox(QWidget):
         super().__init__(sbBox)  
         self.sbBox = sbBox
         layout = QVBoxLayout()
-        
         form = QFormLayout()
+        objValidator2 = QIntValidator(0, 10000)
+        w = 100
+        
+        
         self.diagGroup = fRadioGroup(None, '', 
                                           {0:'None', 1:'Just critical', 2:'All changes', 3:'All time steps'}, 
                                           {0:0, 1:1, 2:2, 3:3},
@@ -71,6 +74,13 @@ class sbSettingsBox(QWidget):
         self.saveFlagCheck = fCheckBox(layout, title='Save output flag in time series table during print', 
                                       checked=cfg.shopbot.includeFlagInTable, 
                                       func=self.updateSaveFlag)
+        
+        self.saveFreq = fLineEdit(layout, title=f'Save data frequency (ms)', 
+                                  text=str(cfg.shopbot.saveDt), 
+                                  tooltip='During prints, save data every _ ms',
+                                  validator=objValidator2,
+                                   width=w,
+                                 func = self.updateSaveFreq)
         self.savePicMetaData = fCheckBox(layout, title='Save metadata and time series for prints without pressure', 
                                       checked=cfg.shopbot.savePicMetadata, 
                                       func=self.updateSavePicMetadata)
@@ -87,7 +97,7 @@ class sbSettingsBox(QWidget):
         fLabel(layout, title='SB3 timing error correction', style=labelStyle())
         fileForm = QFormLayout()
         objValidator = QDoubleValidator(0, 10, 2)
-        w = 100
+        
         self.burstScale = fLineEdit(fileForm, title='Burst pressure scaling (default=1)',
                                     text=str(cfg.shopbot.burstScale), 
                                     tooltip='When you first turn on pressure, turn it to this value times the target value before you turn it down to the target value',
@@ -114,7 +124,7 @@ class sbSettingsBox(QWidget):
                                   In other words, margin of error or tolerance on distance measurements.',
                                  func = self.updateZeroDist,
                                    width=w)
-        objValidator2 = QIntValidator(0, 10000)
+        
         self.checkFreq = fLineEdit(fileForm, title=f'Check flag frequency (ms)', 
                                   text=str(cfg.shopbot.dt), 
                                   tooltip='Check the status of the shopbot every _ ms',
@@ -188,6 +198,19 @@ class sbSettingsBox(QWidget):
             self.sbBox.saveFlag=True
         else:
             self.sbBox.saveFlag=False
+            
+    def updateSaveFreq(self) -> float:
+        '''update how often to save data during prints'''
+        dt = float(self.saveFreq.text())
+        if dt<=0:
+            dt = 100
+            logging.error('Bad value in shopbot check flag frequency')
+            if cfg.shopbot.dt>0:
+                self.saveFreq.setText(str(cfg.shopbot.saveDt))
+            else:
+                self.saveFreq.setText(str(dt))
+        self.sbBox.saveFreq = dt
+
             
     def updateFlag1(self) -> None:
         '''update sbBox run flag'''
@@ -284,13 +307,20 @@ class sbBox(connectBox):
                 out = [self.x, self.y, self.z]
             else:
                 out = ['','','']
+            if hasattr(self, 'xe') and hasattr(self, 'ye') and hasattr(self, 'ze'):
+                out = out+[self.xe, self.ye, self.ze]
+            else:
+                out = out + ['','','']
         else:
             out = []
         if self.saveFlag:
             if hasattr(self, 'keys'):
-                self.keys.lock()
-                out = out + [self.keys.currentFlag]
-                self.keys.unlock()
+                if hasattr(self, 'sbFlag'):
+                    out = out + [self.sbFlag]
+                else:
+                    self.keys.lock()
+                    out = out + [self.keys.currentFlag]
+                    self.keys.unlock()
             else:
                 out = out + ['']
         return out
@@ -298,7 +328,7 @@ class sbBox(connectBox):
     def timeHeader(self) -> List:
         '''get a list of header values for the time table'''
         if self.savePos:
-            out = ['x(mm)', 'y(mm)', 'z(mm)']
+            out = ['x_disp(mm)', 'y_disp(mm)', 'z_disp(mm)', 'x_est(mm)', 'y_est(mm)', 'z_est(mm)']
         else:
             out = []
         if self.saveFlag:
@@ -359,6 +389,7 @@ class sbBox(connectBox):
         self.checkFreq=cfg1.shopbot.dt
         self.burstScale = cfg1.shopbot.burstScale
         self.burstLength = cfg1.shopbot.burstLength
+        self.saveFreq = cfg1.shopbot.saveDt
         self.diag = cfg1.shopbot.diag
         
     
@@ -376,6 +407,7 @@ class sbBox(connectBox):
         
     def updateFlag(self, sbFlag:int) -> None:
         '''update the flag display in the flagBox'''
+        self.sbFlag = sbFlag
         if hasattr(self, 'flagBox'):
             self.flagBox.update(sbFlag)
         else:
@@ -436,10 +468,12 @@ class sbBox(connectBox):
 
     def testTime(self) -> None:
         '''create metadata file'''
-        if hasattr(self.sbWin, 'fluBox'):
-            logging.info('Testing time series save')
-            self.sbWin.fluBox.startRecording()
-            QTimer.singleShot(2000, self.sbWin.fluBox.stopRecording)
+        # if hasattr(self.sbWin, 'fluBox'):
+        #     logging.info('Testing time series save')
+        #     self.sbWin.fluBox.startRecording()
+        #     QTimer.singleShot(2000, self.sbWin.fluBox.stopRecording)
+        self.sbWin.initSaveTable()
+        QTimer.singleShot(2000, self.sbWin.stopSaveTable())
         
     
     #----------------------------   
@@ -494,12 +528,18 @@ class sbBox(connectBox):
     @pyqtSlot(float,float,float)   
     def updateXYZ(self, x:float, y:float, z:float) -> None:
         '''update the read xyz display'''
+        self.x = x
+        self.y = y
+        self.z = z
         if hasattr(self, 'flagBox'):
             self.flagBox.updateXYZ(x,y,z)
             
     @pyqtSlot(float,float,float)
     def updateXYZest(self, x:float, y:float, z:float) -> None:
         '''update the estimated xyz display'''
+        self.xe = x
+        self.ye = y
+        self.ze = z
         if hasattr(self, 'flagBox'):
             self.flagBox.updateXYZest(x,y,z)
 
@@ -589,9 +629,7 @@ class sbBox(connectBox):
             self.allowEnd = False
             
         self.updateStatus(f'Running SBP file {self.sbpName()}, critFlag = {self.critFlag}', True)
-        
-        # self.sbpTiming = SBPtimings(self.sbpName(), self.sbWin, self.critTimeOn, self.zeroDist, self.critTimeOff, self.burstScale, self.burstLength)
-        #         # this object updates changes in state
+
             
         self.stopPrintThread()  # stop any existing threads
         pSettings = {'critTimeOn':self.critTimeOn, 'zeroDist':self.zeroDist, 'critTimeOff':self.critTimeOff, 'burstScale':self.burstScale, 'burstLength':self.burstLength}
@@ -607,6 +645,7 @@ class sbBox(connectBox):
         arg = self.sbpName() + ', ,4, ,0,0,0"'
         subprocess.Popen([appl, arg])
         
+        # create a thread that waits for the start of flow
         waitRunnable = waitForStart(self.settingsBox.getDt(), self.keys, self.runFlag1, self.channelsTriggered)
         waitRunnable.signals.finished.connect(self.triggerWatch)
         waitRunnable.signals.status.connect(self.updateStatus)
@@ -619,21 +658,16 @@ class sbBox(connectBox):
     @pyqtSlot()
     def triggerWatch(self) -> None:
         '''start recording and start the timer to watch for changes in pressure'''
-        # eliminate the old timer
-        # self.timer.stop()
         
-        # start the timer to watch for pressure triggers
-        # self.timer = QTimer()
-        # self.timer.timeout.connect(self.timerFunc)
-        # self.timer.start(self.settingsBox.getDt()) # update every _ ms
+        
 
         # start the cameras if any flow is triggered in the run
         if min(self.channelsTriggered)<len(self.sbWin.fluBox.pchannels):
             self.sbWin.camBoxes.startRecording()
         if self.savePicMetadata or (len(self.channelsTriggered)>0 and not self.channelsTriggered==[2]):
             # only save speeds and pressures if there is extrusion or if the checkbox is marked
-            self.sbWin.saveMetaData()
-            self.sbWin.fluBox.startRecording()
+            self.sbWin.saveMetaData()    # save metadata
+            self.sbWin.initSaveTable()   # save table of pressures
             
         self.printThread = QThread()
         self.printWorker.moveToThread(self.printThread)
@@ -643,35 +677,7 @@ class sbBox(connectBox):
         self.printThread.finished.connect(self.printThread.deleteLater)
         print('start print thread')
         self.printThread.start()
-    
-    ### wait for end
-    
-#     def timerFunc(self) -> None:
-#         '''timerFunc runs continuously while we are printing to determine if we're done.'''
-
-#         if self.runningSBP and hasattr(self, 'keys') and self.keys.connected:
-#             self.watchSBFlags()
-#         else:
-#             # we turn off runningSBP when the file is done
-#             self.triggerEndOfPrint()
-
-
-#     def watchSBFlags(self) -> None:
-#         '''Runs continuously while we're printing. Checks the Shopbot flags and changes the pressure if the flags have changed. Triggers the end if we hit the critical flag.'''
-#         sbFlag = self.keys.getSBFlag()
-#         self.updateLoc() # update x,y,z display
-# #         self.getCommand() # read message
-#         self.updateStatus(f'Running file, Shopbot output flag = {sbFlag}, end at {self.critFlag}', False)
         
-#         if self.allowEnd and (sbFlag==self.critFlag or sbFlag==0):
-#             self.triggerEndOfPrint()
-#             return
-  
-#         # update state of pressure channels and camera
-#         self.allowEnd = self.sbpTiming.check(sbFlag, self.x, self.y, self.z) 
-        
-#         # check if we hit a stop on the sb3 software or the emergency stop
-#         self.checkStopHit()
       
     def stopRunning(self) -> None:
         '''stop watching for changes in pressure, stop recording  '''
@@ -679,20 +685,23 @@ class sbBox(connectBox):
         self.keys.runningSBP = False
         self.keys.getSBFlag()  # update the flag readout
         self.keys.unlock()
-        if hasattr(self, 'sbpTiming'):
-            self.sbpTiming.done()  # tell the timings to stop
         if self.runningSBP:
-            if hasattr(self.sbWin, 'fluBox'):
-                self.sbWin.fluBox.resetAllChannels(-1) # turn off all channels
-                self.sbWin.fluBox.stopRecording()      # save fluigent
-            if hasattr(self.sbWin, 'camBoxes'):
-                self.sbWin.camBoxes.stopRecording()    # turn off cameras
-            if hasattr(self, 'timer'):
-                try:
-                    self.timer.stop()
-                except Exception as e:
-                    print(f'Error deleting shopbot timer: {e}')
-                    pass
+            QTimer.singleShot(1000, self.closeDevices)  # close devices after 1 second
+            
+    def closeDevices(self) -> None:
+        '''stop all recording devices'''
+        print('closing devices')
+        self.sbWin.writeSaveTable()     # save the pressure and xyz readings
+        if hasattr(self.sbWin, 'fluBox'):
+            self.sbWin.fluBox.resetAllChannels(-1) # turn off all channels
+        if hasattr(self.sbWin, 'camBoxes'):
+            self.sbWin.camBoxes.stopRecording()    # turn off cameras
+        if hasattr(self, 'timer'):
+            try:
+                self.timer.stop()
+            except Exception as e:
+                print(f'Error deleting shopbot timer: {e}')
+                pass
                 
     def readyState(self):
         '''return to the ready state'''

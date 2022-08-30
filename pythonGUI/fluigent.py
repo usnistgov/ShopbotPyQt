@@ -2,7 +2,7 @@
 '''Shopbot GUI functions for controlling fluigent mass flow controller'''
 
 # external packages
-from PyQt5.QtCore import pyqtSignal, QObject, QRunnable, Qt, QTimer, QThreadPool
+from PyQt5.QtCore import pyqtSignal, QObject, QRunnable, Qt, QThread, QTimer, QThreadPool
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtWidgets import QLabel, QColorDialog, QCheckBox, QFormLayout, QGridLayout, QLineEdit, QMainWindow, QVBoxLayout, QWidget
 import pyqtgraph as pg
@@ -19,6 +19,7 @@ import traceback
 import Fluigent.SDK as fgt
 from config import cfg
 from general import *
+from fluThreads import *
 
    
 #----------------------------------------------------------------------
@@ -149,96 +150,16 @@ class fluChannel(QObject):
         writer.writerow([f'flag1_channel_{self.chanNum0}','', self.flag1])
         
 
-        
-##############################  
-
-
-    
-
-#########################################################
-
-class plotWatch:
-    '''Holds the pressure/time list for all channels'''
-
-    def __init__(self, numChans:int, fb:connectBox):
-        self.stop = False          # tells us to stop reading pressures
-        self.numChans = numChans   # number of channels
-        self.fluBox = fb
-        self.initializePList()
-
-        
-            
-    def initializePList(self) -> None:
-        '''initialize the pressure list and time list'''
-        # initialize the time range
-        self.time = list(np.arange(-cfg.fluigent.trange*1, 0, self.fluBox.dt/1000)) 
-               
-        # initialize pressures. assume 0 before we initialized the gui    
-        self.pressures = []
-        
-        for i in range(self.numChans):
-            press = [0 for _ in range(len(self.time))]
-            self.pressures.append(press)
-
 #------------------------------
 
-def checkPressure(channel:int) -> int:
-    '''reads the pressure of a given channel, 0-indexed'''
-    pressure = int(fgt.fgt_get_pressure(channel))
-    return pressure
-
-#------------------------------
-
-class fluSignals(QObject):
-    '''Signals connector that lets us send status updates back to the GUI from the fluPlot object'''
-    
-    finished = pyqtSignal()
-    error = pyqtSignal(str, bool)
-    progress = pyqtSignal()
             
-class plotRunnable(QRunnable):
-    '''plotRunnable updates the list of times and pressures and allows us to read pressures continuously in a background thread.'''
-    
-    def __init__(self, pw, fluBox:connectBox):
-        super(plotRunnable, self).__init__()   
-        self.pw = pw                  # plotWatch object (stores pressure list)
-        self.numChans = pw.numChans   # number of channels
-        self.signals = fluSignals()   # lets us send messages and data back to the GUI
-        self.fluBox = fluBox
-        self.connected = fluBox.connected
-
-    
-    def run(self) -> None:
-        '''update the plot and displayed pressure'''
-        try:
-            newtime = self.pw.time
-            newpressures = self.pw.pressures        
-            newtime = newtime[1:]                   # Remove the first y element.
-            dnow = datetime.datetime.now()          # Finds current time relative to when the plot was created
-            tnow = (dnow-self.fluBox.d0).total_seconds()
-            newtime.append(tnow)         # Add the current time to the list
-            for i in range(self.numChans):
-                newpressures[i] = newpressures[i][1:]
-                if self.connected:
-                    pnew = checkPressure(i)
-                else:
-                    pnew = 0
-                newpressures[i].append(pnew)         # Add the current pressure to the list, for each channel
-        except Exception as e:
-            self.signals.error.emit(f'Error reading pressure', True)
-        else:
-            self.pw.time = newtime                   # Save lists to plotWatch object
-            self.pw.pressures = newpressures   
-            self.signals.progress.emit()             # Tell the GUI to update plot
-
-#------------------------------
-            
-class fluPlot:
+class fluPlot(QObject):
     '''produces a plot that can be displayed in fluBox'''
     
-    def __init__(self, pcolors:List[str], fb:connectBox):
+    def __init__(self, pcolors:List[str], fb:connectBox, pw):
         '''pcolors is a list of colors, e.g. ['#FFFFFF', '#000000']
         fb is a pointer to the fluigent box that contains this plot'''
+        super().__init__()
         self.fluBox = fb # parent box
         self.sbWin = self.fluBox.sbWin
         self.numChans = self.fluBox.numChans
@@ -254,7 +175,7 @@ class fluPlot:
         self.graphWidget.setBackground('w')         
         self.pcolors = pcolors
         
-        self.pw = plotWatch(self.numChans, fb)
+        self.pw = pw
 
         self.datalines = []
         self.updateColors()
@@ -285,74 +206,76 @@ class fluPlot:
     def startTimer(self) -> None:
         '''start updating the plot'''
         if not self.timerRunning:
-            self.fluBox.d0 = datetime.datetime.now()  # the last time when we read the pressures
-            self.timer = QTimer()
-            self.timer.timeout.connect(self.timerFunc)        # run the timerFunc every mspf milliseconds
-            self.timer.setTimerType(Qt.PreciseTimer)   # may or may not improve timer accuracy, depending on computer
-            self.timer.start(self.fluBox.dt)                       # start timer with frequency milliseconds per frame
+            # https://realpython.com/python-pyqt-qthread/
+            self.readThread = QThread()
+            # Step 3: Create a worker object
+            self.readWorker = plotUpdate(self.fluBox.pw, self.connected)       # creates a new thread to read pressures     
+            # Step 4: Move worker to the thread
+            self.readWorker.moveToThread(self.readThread)
+            # Step 5: Connect signals and slots
+            self.readThread.started.connect(self.readWorker.run)       
+            self.readThread.finished.connect(self.readThread.deleteLater)
+            self.readWorker.signals.progress.connect(self.update)   # update plot when this runnable stops
+            self.readWorker.signals.error.connect(self.fluBox.updateStatus)
+            # Step 6: Start the thread
+            self.readThread.start()
+            logging.debug('Fluigent thread started')
             self.timerRunning = True
-            
-            logging.debug('Fluigent timer started')
-
-    def stopTimer(self) -> None:
-        '''this only stops the timer if we are neither recording nor previewing'''
-        self.timer.stop()
-        self.timerRunning = False
-        logging.info('Fluigent timer stopped')
-                
-    def timerFunc(self) -> None:
-        '''on each timer hit, create a plotRunnable to update the plot and record values'''
-        plotThread = plotRunnable(self.pw, self.fluBox)
-        plotThread.signals.progress.connect(self.update)
-        QThreadPool.globalInstance().start(plotThread) 
 
         
     def updateColors(self) -> None:
         '''update pen colors'''
         self.pens = [pg.mkPen(color=c, width=2) for c in self.fluBox.colors]
 
-    
+    @pyqtSlot()
     def update(self) -> None:
         '''read the pressure and update the plot display'''
-        # add pressures to table if we're saving
-        if self.fluBox.save:
-            tlist = [self.pw.time[-1]]
-            plist = self.fluBox.timeRow()
-            if hasattr(self.sbWin, 'sbBox'):
-                xyzlist = self.sbWin.sbBox.timeRow()
-            else:
-                xyzlist = []
-            self.fluBox.saveTable.append(tlist+plist+xyzlist)
-
         # update display
         if self.connected:
             for i in range(self.numChans):
-                # update the plot
-                if len(self.pw.time) == len(self.pw.pressures[i]):
-                    self.datalines[i].setData(self.pw.time, self.pw.pressures[i], pen=self.pens[i])
-                # update the pressure reading
-                self.fluBox.updateReading(i, str(self.pw.pressures[i][-1])) 
+                # get updated values
+                self.pw.lock()
+                pressures = self.pw.pressures
+                time = self.pw.time
+                self.pw.unlock()
                 
-#         self.sbWin.sbBox.readAndUpdateFlag()  # update flags reading
+                # update the plot
+                if len(time) == len(pressures[i]):
+                    self.datalines[i].setData(time, pressures[i], pen=self.pens[i])
+                # update the pressure reading
+                self.fluBox.updateReading(i, str(pressures[i][-1])) 
+
         
     def updateRange(self) -> None:
         '''update the plot time and pressure range'''
         
-        # update time range
-        tmin = min(self.pw.time)
-        tgap = self.fluBox.trange - (max(self.pw.time)-tmin)
+        # get updated range
+        self.pw.lock()
+        pressures == self.pw.pressures
+        time = self.pw.time
+        self.pw.unlock()
+        
+        tmin = min(time)
+        tgap = self.fluBox.trange - (max(time)-tmin)
         dt = self.fluBox.dt/1000
         tsteps = int(round(tgap/dt))
         
+        # change size of lists
         if tsteps>0:
             # add tsteps points to the beginning
-            self.pw.time = [tmin+(i-tsteps)*dt for i in range(tsteps)] + self.pw.time
-            for j in range(len(self.pw.pressures)):
-                self.pw.pressures[j] = [0 for i in range(tsteps)] + self.pw.pressures[j]
+            time = [tmin+(i-tsteps)*dt for i in range(tsteps)] + time
+            for j in range(len(pressures)):
+                pressures[j] = [0 for i in range(tsteps)] + pressures[j]
         elif tsteps<0:
-            self.pw.time = self.pw.time[(-tsteps):]
-            for j in range(len(self.pw.pressures)):
-                self.pw.pressures[j] = self.pw.pressures[j][(-tsteps):]
+            time = time[(-tsteps):]
+            for j in range(len(pressures)):
+                pressures[j] = pressures[j][(-tsteps):]
+                
+        # update values
+        self.pw.lock()
+        self.pw.pressures = pressures
+        self.pw.time = time
+        self.pw.unlock()
           
         # update pressure range
         self.graphWidget.setYRange(-10, self.fluBox.pmax + 100, padding=0) 
@@ -367,13 +290,12 @@ class fluPlot:
     
     def close(self) -> None:
         '''gets triggered when the window is closed. It stops the pressure readings.'''
-        try: 
-            self.pw.stop = True
-            self.stopTimer()
-        except:
-            pass
-        else:
-            logging.info('Fluigent timer deleted')
+        for s in ['readThread']:
+            if hasattr(self, s):
+                o = getattr(self, s)
+                if not sip.isdeleted(o) and o.isRunning():
+                    o.quit()
+        logging.info('Fluigent timer deleted')
     
     
 #--------------------------------------
@@ -454,6 +376,9 @@ class fluSettingsBox(QWidget):
     def updateDt(self) -> None:
         '''update the value of dt in the parent'''
         self.fluBox.dt = int(self.dtBox.text())
+        self.fluBox.pw.lock()
+        self.fluBox.pw = self.fluBox.dt   # update plotwatch object
+        self.fluBox.pw.unlock()
         self.fluBox.updateStatus(f'Changed Fluigent plot dt to {self.fluBox.dt} ms', True)
         
     def setLabelColor(self, chanNum0:int, color:str) -> None:
@@ -578,6 +503,7 @@ class fluBox(connectBox):
         fgt.fgt_init()           # initialize fluigent
         self.numChans = fgt.fgt_get_pressureChannelCount()  # how many Fluigent channels do we have
         
+        
         if self.numChans>0:
             self.connected = True
             self.successLayout()
@@ -589,7 +515,8 @@ class fluBox(connectBox):
         '''create timers for testing other boxes'''
         self.loadConfig(cfg)
         self.pcolors = self.cfgColors()
-        self.fluPlot = fluPlot(self.pcolors, self)      # create plot
+        self.pw = plotWatch(self.numChans, self.trange, self.dt)
+        self.fluPlot = fluPlot(self.pcolors, self, self.pw)      # create plot
         
     def small(self):
         self.fluPlot.small()
@@ -634,7 +561,8 @@ class fluBox(connectBox):
             self.pchannels.append(pc)
             
         # create plot
-        self.fluPlot = fluPlot(self.pcolors, self)      # create plot
+        self.pw = plotWatch(self.numChans, self.trange, self.dt)
+        self.fluPlot = fluPlot(self.pcolors, self, self.pw)      # create plot
 
         self.layout = fVBoxLayout(self.status, self.fluButtRow(), self.fluPlot.graphWidget)
         self.setLayout(self.layout)          # put the whole layout in the box
@@ -707,51 +635,9 @@ class fluBox(connectBox):
     def addRowToCalib(self, runPressure:float, runTime:float, chanNum0:int) -> None:
         '''add pressure and time to the calibration table'''
         self.sbWin.calibDialog.addRowToCalib(runPressure, runTime, chanNum0)
-        
-        
-    #-----------------------------------------
-    
-    def getFileName(self) -> str:
-        try:
-            fullfn = self.sbWin.newFile('time', '.csv')
-        except NameError:
-            self.fileName = ''
-            return
-        self.fileName = fullfn
-    
-    def startRecording(self) -> None:
-        '''Start keeping track of pressure readings in a table to be saved to file'''
-        if self.savePressure or self.sbWin.sbBox.savePos:
-            self.saveTable = []
-            self.save = True
-            self.getFileName() # determine the current file name
 
-    def stopRecording(self) -> None:
-        '''Save the recorded pressure readings in a csv'''
-        dummy = 0
-        # get 10 more points
-        while dummy<10:
-            if not hasattr(self, 'dt'):
-                # load dt if there is none
-                self.dt = cfg.fluigent.dt
-            time.sleep(self.dt/1000) 
-            self.fluPlot.update()
-            dummy+=1
-            
-        # write the table to file
-        if (self.savePressure or self.sbWin.sbBox.savePos) and self.save:
-            self.save = False
-            with open(self.fileName, mode='w', newline='', encoding='utf-8') as c:
-                writer = csv.writer(c, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                phead = self.timeHeader()
-                xyzhead = self.sbWin.sbBox.timeHeader()
-                writer.writerow(['time(s)']+phead+xyzhead) # header
-                for row in self.saveTable:
-                    writer.writerow(row)
-            self.updateStatus(f'Saved {self.fileName}', True)
-            
-            
     #----------------------------------------
+    
     def timeRow(self) -> List:
         '''get a list of values to collect for the time table'''
         if self.savePressure and self.connected:
@@ -776,9 +662,7 @@ class fluBox(connectBox):
             channel.writeToTable(writer)
             if hasattr(self.sbWin, 'calibDialog'):
                 self.sbWin.calibDialog.writeValuesToTable(i, writer)
-            
-        
-        
+
     #-----------------------------------------
     
     
@@ -786,6 +670,10 @@ class fluBox(connectBox):
         '''this runs when the window is closed'''
         # close the fluigent
         if self.connected:   
+            if hasattr(self, 'pw'):
+                self.pw.lock()
+                self.pw.stop = True
+                self.pw.unlock()
             if hasattr(self, 'fluPlot'):
                 self.fluPlot.close()
             try:

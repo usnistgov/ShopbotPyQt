@@ -96,16 +96,18 @@ shopbot:
   critTimeOff: -0.0001
   critTimeOn: 0.05
   currentFile: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/calibration/timing_calibration_2.sbp
-  diag: 3
+  diag: 1
   dt: 25.0
   flag1: 12
   flag1max: 12
   flag1min: 1
   includeFlagInTable: true
   includePositionInTable: true
+  saveDt: 25
   savePicMetadata: true
   sbpFiles:
   - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/calibration/timing_calibration_2.sbp
+  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/calibration/speed test.sbp
   sbpFolder: C:\Users\lmf1\Documents\GitHub\ShopbotPyQt\SBP_files
   showFolder: false
   units: mm

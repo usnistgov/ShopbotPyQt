@@ -218,7 +218,6 @@ class waitForStart(QRunnable):
         '''if we use output flag 1 (1-indexed), the shopbot thinks we are starting the router/spindle and triggers a popup. Because we do not have a router/spindle on this instrument, this popup is irrelevant. This function automatically checks if the window is open and closes the window'''
         hwndMain = win32gui.FindWindow(None, 'NOW STARTING ROUTER/SPINDLE !')
         if hwndMain>0:
-            print('spindle window found')
             self.spindleFound = True
             time.sleep(self.dt/1000/2)
             self.killSpindle()
@@ -239,7 +238,6 @@ class waitForStart(QRunnable):
             else:
                 # kill the window
                 win32api.PostMessage( hwndChild, win32con.WM_KEYDOWN, win32con.VK_RETURN, 0)  
-                print('spindle killed')
                 self.spindleKilled = True
                 
 
@@ -322,8 +320,6 @@ class channelWatch(QObject):
         '''determine when to turn on, turn off'''
         before = targetPoint[f'p{self.flag0}_before']
         after = targetPoint[f'p{self.flag0}_after']
-        print(f'defining states in {self.flag0}')
-        print(targetPoint)
         
         if self.mode==2:
             # camera
@@ -355,8 +351,7 @@ class channelWatch(QObject):
             else:
                 # do nothing at point
                 self.state = 0
-                
-        # print(f'{self.flag0} state: {self.state}')
+
                 
     def forceAction(self) -> None:
         '''force the current action'''
@@ -600,11 +595,9 @@ class printLoop(QObject):
                     cw.signals.finished.connect(camBox.resetCheck)  # reset the checkbox when done
                     cw.signals.snap.connect(camBox.cameraPic)   # connect signal to snap function
        
-        print(f'len points = {len(self.points)}')
         if len(self.points)>1:  
             on = False
             # find first flag change
-            print('reading points')
             while not on and not self.tableDone:
                 self.readPoint()
                 for flag0 in self.channelWatches:
@@ -730,7 +723,6 @@ class printLoop(QObject):
             
     def defineStates(self) -> None:
         ''''determine the state of the print, i.e. what we should watch for'''
-        print('defining states')
         for flag0, cw in self.channelWatches.items():
             # for each channel, determine when to change state
             cw.defineState(self.targetPoint, self.nextPoint)
@@ -796,7 +788,7 @@ class printLoop(QObject):
                 distTraveled = float(self.targetPoint['speed'])*dt/2   # distance traveled since we hit the last point
                 # dividing speed by 2 makes this accurate, for unclear reasons
                 self.estLoc = [pt[i]+distTraveled*vec[i] for i in range(3)]  # estimated position
-                self.signals.estimate.emit(self.estLoc[0], self.estLoc[1], self.estLoc[2])
+        self.signals.estimate.emit(self.estLoc[0], self.estLoc[1], self.estLoc[2])
 
 
     def evalState(self) -> bool:

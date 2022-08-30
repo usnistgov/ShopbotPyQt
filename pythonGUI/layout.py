@@ -2,6 +2,7 @@
 '''Shopbot GUI functions for setting up the GUI window'''
 
 # external packages
+from PyQt5.QtCore import pyqtSignal, QObject, QThread, QTimer, QThreadPool
 from PyQt5.QtGui import  QFont
 from PyQt5.QtWidgets import QAction, QApplication, QGridLayout, QMainWindow, QWidget
 import os, sys
@@ -10,6 +11,7 @@ from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
 import traceback
 import csv
+import datetime
 
 
 # local packages
@@ -265,6 +267,67 @@ class SBwindow(QMainWindow):
     def flagTaken(self, flag0:int) -> bool:
         '''check if the flag is already occupied'''
         return self.sbBox.flagTaken(flag0)   
+    
+    #----------------
+    
+    def getFileName(self) -> str:
+        try:
+            fullfn = self.newFile('time', '.csv')
+        except NameError:
+            self.fileName = ''
+            return
+        self.fileName = fullfn
+    
+    def initSaveTable(self) -> None:
+        '''initialize a table that saves data during a print'''
+        if (hasattr(self, 'fluBox') and self.fluBox.savePressure) or (hasattr(self, 'sbBox') and self.sbBox.savePos):
+            self.saveTable = []
+            self.save = True
+            self.ending = False
+            self.getFileName() # determine the current file name
+            self.tStart = datetime.datetime.now()
+            self.timer = QTimer()
+            self.timer.timeout.connect(self.readValues)
+            self.timer.start(self.sbBox.saveFreq)
+            
+            
+    def readValues(self) -> None:
+        '''add values to the table'''
+        if self.save:
+            dnow = datetime.datetime.now()
+            tnow = (dnow-self.tStart).total_seconds()
+            if hasattr(self, 'fluBox'):
+                plist = self.fluBox.timeRow()
+            else:
+                plist = []
+            if hasattr(self, 'sbBox'):
+                xyzlist = self.sbBox.timeRow()
+            else:
+                xyzlist = []
+            self.saveTable.append([tnow]+plist+xyzlist)
+            
+            # check for end of loop
+            if self.ending:
+                self.endCount-=1
+                if self.endCount==0:
+                    self.writeSaveTable()
+        
+
+    def writeSaveTable(self) -> None:
+        '''save the table to csv'''
+        print('stopping save')
+        self.timer.stop()
+        self.ending = False
+        if self.save:
+            self.save = False
+            with open(self.fileName, mode='w', newline='', encoding='utf-8') as c:
+                writer = csv.writer(c, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                phead = self.fluBox.timeHeader()
+                xyzhead = self.sbBox.timeHeader()
+                writer.writerow(['time(s)']+phead+xyzhead) # header
+                for row in self.saveTable:
+                    writer.writerow(row)
+            self.sbBox.updateStatus(f'Saved {self.fileName}', True)
     
     
     #----------------
