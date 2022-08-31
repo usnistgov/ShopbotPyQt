@@ -305,20 +305,15 @@ class SBwindow(QMainWindow):
             else:
                 xyzlist = []
             self.saveTable.append([tnow]+plist+xyzlist)
-            
-            # check for end of loop
-            if self.ending:
-                self.endCount-=1
-                if self.endCount==0:
-                    self.writeSaveTable()
         
 
     def writeSaveTable(self) -> None:
         '''save the table to csv'''
-        print('stopping save')
-        self.timer.stop()
-        self.ending = False
+        
         if self.save:
+            if hasattr(self, 'timer') and self.timer.isActive():
+                self.timer.stop()
+            self.ending = False
             self.save = False
             with open(self.fileName, mode='w', newline='', encoding='utf-8') as c:
                 writer = csv.writer(c, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -336,6 +331,8 @@ class SBwindow(QMainWindow):
     def closeEvent(self, event):
         '''runs when the window is closed. Disconnects everything we connected to.'''
         logging.info('Closing boxes.')
+        if hasattr(self, 'timer') and self.timer.isActive():
+            self.timer.stop()
         for o in self.boxes():
             if hasattr(o, 'close'):
                 o.close()

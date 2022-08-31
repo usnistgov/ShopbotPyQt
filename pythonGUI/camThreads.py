@@ -49,6 +49,7 @@ QRunnables run in the background. Trying to directly modify the GUI display from
         self.vidvars = vidvars
         self.recording = True
         self.frameNum = 0
+        self.kill = False
     
     @pyqtSlot()
     def run(self) -> None:
@@ -57,6 +58,8 @@ QRunnables run in the background. Trying to directly modify the GUI display from
         printFreq = 100
         
         while True:
+            if self.kill:
+                return
             time.sleep(1) 
                 # this gives the GUI enough time to start adding frames before we start saving, otherwise we get stuck in infinite loop where it's immediately checking again and again if there are frames
             while not self.frames.empty():
@@ -77,6 +80,10 @@ QRunnables run in the background. Trying to directly modify the GUI display from
                 if size % printFreq==1:
                     # on every 100th frame, tell the GUI how many frames we still have to write
                     self.signals.progress.emit(size)
+                    
+    def close(self) -> None:
+        '''stop writing'''
+        self.kill = True
                     
     
        
@@ -138,7 +145,7 @@ class vidReader(QObject):
         self.lastTime = self.dnow
         self.dnow = datetime.datetime.now()
         frame = self.readFrame()  # read the frame
-        if not self.cont:
+        if not self.cont and self.timer.isActive():
             self.timer.stop()
             self.signals.finished.emit()
             return

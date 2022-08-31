@@ -601,7 +601,6 @@ class sbBox(connectBox):
     def runFileContinue(self) -> None:
         '''runFile sends a file to the shopbot and tells the GUI to wait for next steps. second, send the file over'''
         # check if the file exists
-        # self.timer.stop()
         if not os.path.exists(self.sbpName()):
             if self.sbpName()=='BREAK':
                 self.updateStatus('Break point hit.', True)
@@ -675,7 +674,6 @@ class sbBox(connectBox):
         self.printWorker.signals.finished.connect(self.printThread.quit)
         self.printWorker.signals.finished.connect(self.printWorker.deleteLater)
         self.printThread.finished.connect(self.printThread.deleteLater)
-        print('start print thread')
         self.printThread.start()
         
       
@@ -690,7 +688,6 @@ class sbBox(connectBox):
             
     def closeDevices(self) -> None:
         '''stop all recording devices'''
-        print('closing devices')
         self.sbWin.writeSaveTable()     # save the pressure and xyz readings
         if hasattr(self.sbWin, 'fluBox'):
             self.sbWin.fluBox.resetAllChannels(-1) # turn off all channels
@@ -716,7 +713,6 @@ class sbBox(connectBox):
     def triggerKill(self) -> None:
         '''the stop button was hit, so stop'''
         self.stopRunning()
-#         self.sbList.activateNext()     # activate the next sbp file in the list
         self.readyState()
         
     @pyqtSlot()

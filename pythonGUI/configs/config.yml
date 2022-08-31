@@ -42,7 +42,7 @@ fluigent:
         rates
       initDensity: 1
       initDiam: 0.603
-      initSpeed: 10.0
+      initSpeed: 20.0
     color: '#3f8d88'
     flag1: 1
   channel1:
@@ -93,11 +93,11 @@ shopbot:
   autoplay: true
   burstLength: 0.05
   burstScale: 1.05
-  critTimeOff: -0.0001
+  critTimeOff: -0.1
   critTimeOn: 0.05
-  currentFile: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/calibration/timing_calibration_2.sbp
-  diag: 1
-  dt: 25.0
+  currentFile: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/calibration/timing_calibration_3.sbp
+  diag: 2
+  dt: 10.0
   flag1: 12
   flag1max: 12
   flag1min: 1
@@ -106,8 +106,7 @@ shopbot:
   saveDt: 25
   savePicMetadata: true
   sbpFiles:
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/calibration/timing_calibration_2.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/calibration/speed test.sbp
+  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/calibration/timing_calibration_3.sbp
   sbpFolder: C:\Users\lmf1\Documents\GitHub\ShopbotPyQt\SBP_files
   showFolder: false
   units: mm

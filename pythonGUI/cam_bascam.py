@@ -99,7 +99,7 @@ class bascamVC(vc):
         '''get the stored exposure value from the camera'''
         return self.camDevice.ExposureTime.GetValue()/1000 # convert from microseconds to milliseconds
     
-    def setExposure(self):
+    def setExposure(self, val:float):
         '''set the exposure time of the device'''
         self.camDevice.ExposureTime.SetValue(val*1000) # convert from milliseconds to microseconds
         self.getExposure()
@@ -230,6 +230,9 @@ class bascam(camera):
                     self.updateStatus(f'Requested exposure time {val} is higher than frame rate {self.mspf} ms per frame. Exposure time not updated.', True)
                 return 1
             if hasattr(self, 'vc') and not self.vc==None:
-                self.vc.setExposure(val)                
+                self.vc.lock()
+                self.vc.setExposure(val)   
+                self.vc.unlock()
+                self.exposure = val
             return 0
                 

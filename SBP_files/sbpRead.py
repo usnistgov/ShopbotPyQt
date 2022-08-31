@@ -316,6 +316,12 @@ class SBPPoints:
                 # M2, M3, J2, J3
                 for i in range(int(spl[0][1])):
                     self.cp[i] = self.floatSC(spl[i+1])
+            elif spl[0][1] =='S':
+                # change translation speed
+                if spl[0][0]=='M':
+                    self.ms = spl[1]
+                elif spl[0][0]=='J':
+                    self.js = spl[1]
             self.addPoint(spl[0])
         elif spl[0].startswith('PAUSE'):
             self.addPoint('PAUSE')

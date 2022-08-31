@@ -320,6 +320,7 @@ class camera(QObject):
             self.readThread.started.connect(self.readWorker.run)       
             self.readWorker.signals.finished.connect(self.readThread.quit)
             self.readWorker.signals.finished.connect(self.readWorker.deleteLater)
+            self.readThread.finished.connect(self.readWorker.close)
             self.readThread.finished.connect(self.readThread.deleteLater)
             self.readWorker.signals.error.connect(self.updateStatus)
             self.readWorker.signals.frame.connect(self.receiveFrame)
@@ -359,23 +360,22 @@ class camera(QObject):
     
     def updatePrevFrame(self, frame:np.ndarray) -> None:
         '''update the live preview window'''
-                # update the preview
+        # update the preview
         if not self.previewing:
             return
             
         # downsample preview frames
         if self.framesSincePrev==self.critFramesToPrev:
             if type(frame)==np.ndarray:
-                self.framesSincePrev=0
+                self.framesSincePrev=1
+                # convert frame to pixmap in separate thread and update window when done
+                self.updatePrevWindow(frame)
             else:
                 self.updateStatus(f'Frame is empty', True)
         else:
             self.framesSincePrev+=1
             return
-        
-        # convert frame to pixmap in separate thread and update window when done
-        self.updatePrevWindow(frame)
-        
+
         
     def updatePrevWindow(self, frame:np.ndarray) -> None:
         '''update the display with the new pixmap'''
@@ -497,7 +497,6 @@ class camera(QObject):
             if hasattr(self, s):
                 o = getattr(self, s)
                 if not sip.isdeleted(o) and o.isRunning():
-                    o.close()
                     o.quit()
         self.closeCam()
         if hasattr(self, 'timer') and not self.timer is None:

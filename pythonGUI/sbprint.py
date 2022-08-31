@@ -362,7 +362,7 @@ class channelWatch(QObject):
         
                 
             
-    def assessPosition(self, trd:float, lrd:float, tld:float, ted:float, led:float, sbFlag:int, x:float, y:float, z:float) -> None:
+    def assessPosition(self, trd:float, lrd:float, tld:float, ted:float, led:float, sbFlag:int, diagStr:str) -> None:
         '''check the state and do actions if relevant
         trd distance from target to read point
         lrd distance from last to read point
@@ -383,11 +383,11 @@ class channelWatch(QObject):
             if tld<self.zeroDist or trd<self.zeroDist or led>tld:
                 if self.diag==2:
                     if tld<self.zeroDist:
-                        print('Zero move')
+                        print(f'{diagStr} Zero move')
                     if trd<self.zeroDist:
-                        print('Read point at target point')
+                        print(f'{diagStr} Read point at target point')
                     if led>tld:
-                        print('Estimated point past target')
+                        print(f'{diagStr} Estimated point past target')
                 readyForNextPoint = True
         else:
         
@@ -399,9 +399,9 @@ class channelWatch(QObject):
                         if (trd<self.zeroDist and ted<self.zeroDist) or led>tld:
                             if self.diag==2:
                                 if trd<self.zeroDist and ted<self.zeroDist:
-                                    print('Read point and estimated point at target point')
+                                    print(f'{diagStr} Read point and estimated point at target point')
                                 if led>tld:
-                                    print('Estimated point past target')
+                                    print(f'{diagStr} Estimated point past target')
                             self.turnOn()
                             readyForNextPoint = True
             elif self.mode==1:
@@ -413,11 +413,11 @@ class channelWatch(QObject):
                     if ted<self.critDistance or lrd+trd > tld+self.zeroDist or led>tld:
                         if self.diag==2:
                             if ted<self.critDistance:
-                                print('Estimated point at target')
+                                print(f'{diagStr} Estimated point at target')
                             if lrd+trd > tld+self.zeroDist:
-                                print('Read point outside path')
+                                print(f'{diagStr} Read point outside path')
                             if led>tld:
-                                print('Estimated point past target')
+                                print(f'{diagStr} Estimated point past target')
                         self.turnOn()
                         readyForNextPoint = True
                 elif self.state==5:
@@ -427,7 +427,7 @@ class channelWatch(QObject):
                         if tld<self.zeroDist:
                             # no movement during this line
                             if self.diag==2:
-                                print('Zero move')
+                                print(f'{diagStr} Zero move')
                             self.turnOff()
                             readyForNextPoint = True
                         else:
@@ -436,9 +436,9 @@ class channelWatch(QObject):
                                 if ted<-self.critDistance or led>tld:
                                     if self.diag==2:
                                         if ted<-self.critDistance:
-                                            print('Estimated point at target')
+                                            print(f'{diagStr} Estimated point at target')
                                         if led>tld:
-                                            print('Estimated point past target')
+                                            print(f'{diagStr} Estimated point past target')
                                     self.turnOff()
                                     readyForNextPoint = True
                             else:
@@ -446,9 +446,9 @@ class channelWatch(QObject):
                                 if led>tld+self.critDistance or ((lrd+trd > tld+self.zeroDist) and trd>self.critDistance):
                                     if self.diag==2:
                                         if led>tld+self.critDistance:
-                                            print('Estimated point at target')
+                                            print(f'{diagStr} Estimated point at target')
                                         if (lrd+trd > tld+self.zeroDist) and trd>self.critDistance:
-                                            print('Read point outside path and read point past crit distance')
+                                            print(f'{diagStr} Read point outside path and read point past crit distance')
                                     self.turnOff() 
                                     readyForNextPoint = True
                 
@@ -714,7 +714,7 @@ class printLoop(QObject):
                 self.nextVec = ppVec(self.targetPoint, self.nextPoint)
         else:
             self.tableDone = True
-        if self.diag>2:  
+        if self.diag>2 or (self.diag>1 and self.pointsi==1):  
             print(f'New point row {self.pointsi}')
             # print(f'flag0\ton\tmode\tstate\ttrd\tlrd\ttld\tted\tdone\tlrd+trd\ttld+0\tx\ty\tz')
             print(f'flag0\ton\tmode\tstate\tx\ty\tz\txt\tyt\tzt\tflag\txe\tye\tze')
@@ -785,8 +785,14 @@ class printLoop(QObject):
             else:
                 pt = [float(self.lastPoint['x']), float(self.lastPoint['y']), float(self.lastPoint['z'])]
                 vec = self.targetVec
-                distTraveled = float(self.targetPoint['speed'])*dt/2   # distance traveled since we hit the last point
-                # dividing speed by 2 makes this accurate, for unclear reasons
+                speed = float(self.targetPoint['speed'])
+                # if speed<=10:
+                #     speed = speed/2   
+                #     # dividing speed by 2 makes this accurate, for unclear reasons
+                # else:
+                #     speed = speed*1.5
+                distTraveled = speed*dt # distance traveled since we hit the last point
+                
                 self.estLoc = [pt[i]+distTraveled*vec[i] for i in range(3)]  # estimated position
         self.signals.estimate.emit(self.estLoc[0], self.estLoc[1], self.estLoc[2])
 
@@ -832,7 +838,7 @@ class printLoop(QObject):
         
         for flag0, cw in self.channelWatches.items():
             # determine if each channel has reached the action
-            if self.diag>2:
+            if self.diag>1:
                 # print(f'{self.flag0}\t{flagOn0}\t{self.mode}\t{self.state}\t
                 #     {trd:2.2f}\t{lrd:2.2f}\t{tld:2.2f}\t{ted:2.2f}\t{readyForNextPoint}\t
                 #     {(lrd+trd):2.2f}\t{(tld+self.zeroDist):2.2f}')
@@ -840,8 +846,12 @@ class printLoop(QObject):
                 x,y,z = toXYZ(self.readLoc)
                 xt,yt,zt = toXYZ(self.targetPoint)
                 xe,ye,ze = toXYZ(self.estLoc)
-                print(f'{cw.flag0}\t{flagOn0}\t{cw.mode}\t{cw.state}\t{x:2.2f}\t{y:2.2f}\t{z:2.2f}\t{xt:2.2f}\t{yt:2.2f}\t{zt:2.2f}\t{self.flag}\t{xe:2.2f}\t{ye:2.2f}\t{ze:2.2f}')
-            readyForNextPoint[flag0] = cw.assessPosition(trd, lrd, tld, ted, led, self.flag, self.readLoc[0],self.readLoc[1],self.readLoc[2])
+                diagStr =  f'{cw.flag0}\t{flagOn0}\t{cw.mode}\t{cw.state}\t'
+                diagStr = diagStr + f'{x:2.2f}\t{y:2.2f}\t{z:2.2f}\t{xt:2.2f}\t{yt:2.2f}\t{zt:2.2f}'
+                diagStr = diagStr + f'\t{self.flag}\t{xe:2.2f}\t{ye:2.2f}\t{ze:2.2f}'
+            else:
+                diagStr = ''
+            readyForNextPoint[flag0] = cw.assessPosition(trd, lrd, tld, ted, led, self.flag, diagStr)
             if readyForNextPoint[flag0]:
                 ready = True
                 
