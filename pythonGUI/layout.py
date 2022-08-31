@@ -51,6 +51,7 @@ class SBwindow(QMainWindow):
         self.metaBox = sbprint.metaBox(self, connect=False) 
         self.flagBox = flags.flagGrid(self, tall=False)
         self.settingsDialog = QDialog()
+        self.save = False
         
         self.meta = meta
         self.sb = sb

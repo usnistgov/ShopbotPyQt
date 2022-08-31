@@ -154,8 +154,9 @@ class waitForReady(QRunnable):
         while True:
             self.keys.lock()
             ready = self.keys.waitForSBReady()
+            running = self.keys.runningSBP
             self.keys.unlock()
-            if ready:
+            if ready or not running:
                 self.signals.finished.emit()
                 return
             else:
@@ -199,10 +200,11 @@ class waitForStart(QRunnable):
                 out = self.killSpindlePopup()
             self.keys.lock()
             sbFlag = self.keys.getSBFlag()
+            running = self.keys.runningSBP
             self.keys.unlock()
             cf = 2**(self.runFlag1-1) + 2**(self.channelsTriggered[0]) # the critical flag at which flow starts
             self.updateStatus(f'Waiting to start file, Shopbot output flag = {sbFlag}, start at {cf}', False)
-            if sbFlag==cf:
+            if sbFlag==cf or not running:
                 self.signals.finished.emit()
                 return
             else:
@@ -316,7 +318,7 @@ class channelWatch(QObject):
         '''send new extrusion speed to fluigent'''
         self.signals.updateSpeed.emit(speed)
         
-    def defineState(self, targetPoint:pd.Series, nextPoint:pd.Series) -> None:
+    def defineState(self, targetPoint:pd.Series, nextPoint:pd.Series, lastPoint:pd.Series) -> None:
         '''determine when to turn on, turn off'''
         before = targetPoint[f'p{self.flag0}_before']
         after = targetPoint[f'p{self.flag0}_after']
@@ -338,6 +340,7 @@ class channelWatch(QObject):
             elif before==1 and after==0:
                 # turn off after crit distance of point
                 self.state = 5
+                
                 if self.critTimeOff<0:
                     # turn off before crit distance of point
                     self.critDistance = -max(self.zeroDist, -self.critTimeOff*targetPoint['speed'])
@@ -348,6 +351,11 @@ class channelWatch(QObject):
                     else:
                         speed = targetPoint['speed']
                     self.critDistance = max(self.zeroDist, self.critTimeOff*speed)
+                    
+                # zero out crit distance for short moves
+                tld = ppdist(lastPoint, targetPoint)  # distance between last point and target point
+                if tld<abs(self.critDistance)*2:
+                    self.critDistance = self.zeroDist
             else:
                 # do nothing at point
                 self.state = 0
@@ -380,13 +388,16 @@ class channelWatch(QObject):
                self.turnDown(ted)
         
         if self.state==0:
-            if tld<self.zeroDist or trd<self.zeroDist or led>tld:
+            pastTarget = led>tld
+            zeroMove = tld<self.zeroDist
+            atTarget = trd<self.zeroDist
+            if zeroMove or atTarget:
                 if self.diag==2:
-                    if tld<self.zeroDist:
+                    if zeroMove:
                         print(f'{diagStr} Zero move')
-                    if trd<self.zeroDist:
+                    if atTarget:
                         print(f'{diagStr} Read point at target point')
-                    if led>tld:
+                    if pastTarget:
                         print(f'{diagStr} Estimated point past target')
                 readyForNextPoint = True
         else:
@@ -396,11 +407,13 @@ class channelWatch(QObject):
                 if self.state==4:
                     # snap camera at point
                     if flagOn0:
-                        if (trd<self.zeroDist and ted<self.zeroDist) or led>tld:
+                        atTarget = (trd<self.zeroDist and ted<self.zeroDist)
+                        pastTarget = led>tld
+                        if atTarget:
                             if self.diag==2:
                                 if trd<self.zeroDist and ted<self.zeroDist:
                                     print(f'{diagStr} Read point and estimated point at target point')
-                                if led>tld:
+                                if pastTarget:
                                     print(f'{diagStr} Estimated point past target')
                             self.turnOn()
                             readyForNextPoint = True
@@ -410,13 +423,16 @@ class channelWatch(QObject):
                 # assess state
                 if self.state==1:
                     # turn on within crit distance of point or if we've started on the next line
-                    if ted<self.critDistance or lrd+trd > tld+self.zeroDist or led>tld:
+                    pastTarget = led>tld
+                    atTarget = ted<self.critDistance
+                    outsidePath = lrd+trd > tld+self.zeroDist
+                    if atTarget or outsidePath:
                         if self.diag==2:
                             if ted<self.critDistance:
                                 print(f'{diagStr} Estimated point at target')
-                            if lrd+trd > tld+self.zeroDist:
+                            if outsidePath:
                                 print(f'{diagStr} Read point outside path')
-                            if led>tld:
+                            if pastTarget:
                                 print(f'{diagStr} Estimated point past target')
                         self.turnOn()
                         readyForNextPoint = True
@@ -433,26 +449,31 @@ class channelWatch(QObject):
                         else:
                             if self.critDistance<0:
                                 # turn off before end of line
-                                if ted<-self.critDistance or led>tld:
+                                pastTarget = led>tld
+                                atTarget = ted<-self.critDistance
+                                if atTarget:
                                     if self.diag==2:
-                                        if ted<-self.critDistance:
+                                        if atTarget:
                                             print(f'{diagStr} Estimated point at target')
-                                        if led>tld:
+                                        if pastTarget:
                                             print(f'{diagStr} Estimated point past target')
                                     self.turnOff()
                                     readyForNextPoint = True
                             else:
                                 # turn off after end of line
-                                if led>tld+self.critDistance or ((lrd+trd > tld+self.zeroDist) and trd>self.critDistance):
+                                atTarget = led>tld+self.critDistance
+                                outsidePath = ((lrd+trd > tld+self.zeroDist) and trd>self.critDistance)
+                                if atTarget or outsidePath:
                                     if self.diag==2:
-                                        if led>tld+self.critDistance:
+                                        if atTarget:
                                             print(f'{diagStr} Estimated point at target')
-                                        if (lrd+trd > tld+self.zeroDist) and trd>self.critDistance:
+                                        if outsidePath:
                                             print(f'{diagStr} Read point outside path and read point past crit distance')
                                     self.turnOff() 
                                     readyForNextPoint = True
                 
         return readyForNextPoint
+
 
         
     def close(self) -> None:
@@ -464,7 +485,7 @@ class channelWatch(QObject):
             
 #----------------------------
 
-def toXYZ(p1:Union[pd.Series, List[float]]) -> Tuple[float]:
+def toXYZ(p1:Union[pd.Series, List[float]], listOut:bool=False) -> Tuple[float]:
     '''convert the point or pandas series to x,y,z'''
     if type(p1) is list and len(p1)==3:
         x = p1[0]
@@ -485,7 +506,10 @@ def toXYZ(p1:Union[pd.Series, List[float]]) -> Tuple[float]:
             z = np.nan
     else:
         raise ValueError('Unknown type given to toXYZ')
-    return x,y,z
+    if listOut:
+        return x,y,z
+    else:
+        return [x,y,z]
 
 def dxdydz(p1:Union[pd.Series, List[float]], p2:Union[pd.Series, List[float]]) -> Tuple[float]:
     '''convert the two points to their differences'''
@@ -595,6 +619,7 @@ class printLoop(QObject):
                     cw.signals.finished.connect(camBox.resetCheck)  # reset the checkbox when done
                     cw.signals.snap.connect(camBox.cameraPic)   # connect signal to snap function
        
+        self.changePoint = self.readLoc
         if len(self.points)>1:  
             on = False
             # find first flag change
@@ -683,39 +708,41 @@ class printLoop(QObject):
             else:
                 return
 
-    def updateSpeeds(self):
+    def updateSpeeds(self, targetPoint:pd.Series):
         '''update flow speeds'''
         for flag0, cw in self.channelWatches.items():
-            if self.targetPoint[f'p{flag0}_before']<0 and self.targetPoint[f'p{flag0}_after']>0:
+            if targetPoint[f'p{flag0}_before']<0 and targetPoint[f'p{flag0}_after']>0:
                 # change speed
-                cw.updateSpeed(self.targetPoint[f'p{flag0}_after'])
+                cw.updateSpeed(targetPoint[f'p{flag0}_after'])
                     
     def readPoint(self) -> None:
         '''read the next point from the points list'''
         self.pointTime = datetime.datetime.now()
+        self.changePoint = self.readLoc
         self.timeTaken = False
         self.pointsi+=1
         if self.pointsi>=0 and self.pointsi<len(self.points):
-            self.targetPoint = self.points.iloc[self.pointsi] 
-            if pd.isna(self.targetPoint['speed']):
+            targetPoint = self.points.iloc[self.pointsi] 
+            if pd.isna(targetPoint['speed']):
                 # this is just a speed step. adjust speeds and go to the next point
-                self.updateSpeeds()
+                self.updateSpeeds(targetPoint)
                 self.readPoint()
-            else:
-                # this is a real step. determine what to watch for
-                self.defineStates()
+                return
                 
             # define last and next points
             if self.pointsi>0:
-                self.lastPoint = self.points.iloc[self.pointsi-1]
+                self.lastPoint = self.targetPoint
+            self.targetPoint = targetPoint
             self.targetVec = ppVec(self.lastPoint, self.targetPoint)
             if len(self.points)>self.pointsi+1:
                 self.nextPoint = self.points.iloc[self.pointsi+1]
                 self.nextVec = ppVec(self.targetPoint, self.nextPoint)
+            self.defineStates()
         else:
             self.tableDone = True
-        if self.diag>2 or (self.diag>1 and self.pointsi==1):  
+        if self.diag>1:  
             print(f'New point row {self.pointsi}')
+        if  (self.diag>1 and (self.pointsi==1 or self.pointsi%100==0)):
             # print(f'flag0\ton\tmode\tstate\ttrd\tlrd\ttld\tted\tdone\tlrd+trd\ttld+0\tx\ty\tz')
             print(f'flag0\ton\tmode\tstate\tx\ty\tz\txt\tyt\tzt\tflag\txe\tye\tze')
 
@@ -725,7 +752,7 @@ class printLoop(QObject):
         ''''determine the state of the print, i.e. what we should watch for'''
         for flag0, cw in self.channelWatches.items():
             # for each channel, determine when to change state
-            cw.defineState(self.targetPoint, self.nextPoint)
+            cw.defineState(self.targetPoint, self.nextPoint, self.lastPoint)
 
     @pyqtSlot()
     def run(self):
@@ -783,16 +810,10 @@ class printLoop(QObject):
             if not ('speed' in self.targetPoint and 'x' in self.lastPoint):
                 self.estLoc = self.readLoc
             else:
-                pt = [float(self.lastPoint['x']), float(self.lastPoint['y']), float(self.lastPoint['z'])]
+                pt = toXYZ(self.lastPoint, listOut=True)
                 vec = self.targetVec
                 speed = float(self.targetPoint['speed'])
-                # if speed<=10:
-                #     speed = speed/2   
-                #     # dividing speed by 2 makes this accurate, for unclear reasons
-                # else:
-                #     speed = speed*1.5
                 distTraveled = speed*dt # distance traveled since we hit the last point
-                
                 self.estLoc = [pt[i]+distTraveled*vec[i] for i in range(3)]  # estimated position
         self.signals.estimate.emit(self.estLoc[0], self.estLoc[1], self.estLoc[2])
 
@@ -850,6 +871,9 @@ class printLoop(QObject):
                 diagStr = diagStr + f'{x:2.2f}\t{y:2.2f}\t{z:2.2f}\t{xt:2.2f}\t{yt:2.2f}\t{zt:2.2f}'
                 diagStr = diagStr + f'\t{self.flag}\t{xe:2.2f}\t{ye:2.2f}\t{ze:2.2f}'
             else:
+                diagStr = ''
+            if self.diag>2:
+                print(diagStr)
                 diagStr = ''
             readyForNextPoint[flag0] = cw.assessPosition(trd, lrd, tld, ted, led, self.flag, diagStr)
             if readyForNextPoint[flag0]:

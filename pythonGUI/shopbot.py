@@ -75,12 +75,14 @@ class sbSettingsBox(QWidget):
                                       checked=cfg.shopbot.includeFlagInTable, 
                                       func=self.updateSaveFlag)
         
-        self.saveFreq = fLineEdit(layout, title=f'Save data frequency (ms)', 
+        form1 = QFormLayout()
+        self.saveFreq = fLineEdit(form1, title=f'Save data frequency (ms)', 
                                   text=str(cfg.shopbot.saveDt), 
                                   tooltip='During prints, save data every _ ms',
                                   validator=objValidator2,
                                    width=w,
                                  func = self.updateSaveFreq)
+        layout.addLayout(form1)
         self.savePicMetaData = fCheckBox(layout, title='Save metadata and time series for prints without pressure', 
                                       checked=cfg.shopbot.savePicMetadata, 
                                       func=self.updateSavePicMetadata)

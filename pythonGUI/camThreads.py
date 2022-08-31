@@ -145,8 +145,9 @@ class vidReader(QObject):
         self.lastTime = self.dnow
         self.dnow = datetime.datetime.now()
         frame = self.readFrame()  # read the frame
-        if not self.cont and self.timer.isActive():
-            self.timer.stop()
+        if not self.cont:
+            if hasattr(self, 'timer') and self.timer.isActive():
+                self.timer.stop()
             self.signals.finished.emit()
             return
         self.sendNewFrame(frame) # send back to window
