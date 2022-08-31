@@ -302,6 +302,19 @@ class SBKeys(QMutex):
             self.updateStatus('Shopbot is ready', True)
             self.ready = True
         return self.ready
+    
+    def checkStop(self) -> None:
+        '''check if stop was hit on shopbot'''
+        status = self.sbStatus()
+        inames = {0:'FileRunning', 1:'PreviewMode', 2:'KeyPadOpen', 3:'PauseinFile', 4:'StopHit', 5:'StackRunning', 6:'SBNotConnected'}
+        if status>0:
+            if not flagOn(status, 0):
+                # file is not running, stop
+                return True
+            if flagOn(status, 4):
+                # stop was hit, stop
+                return True
+        return False
  
     def getSBFlag(self) -> int:
         '''run this function continuously during print to watch the shopbot status'''

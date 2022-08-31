@@ -40,19 +40,4 @@ SO, 1, 1
 MZ, -0.5*&margin - 0.5*&slideW
 SO, 1, 0
 JY, 5*&margin/4
-JZ, &margin/4 -&slideW
-SO, 1, 1
-MZ, -0.5*&margin - 0.5*&slideW
-SO, 1, 0
-JY, 1.75*&margin
-JZ, &margin/4 -&slideW
-SO, 1, 1
-MZ, -0.5*&margin - 0.5*&slideW
-SO, 1, 0
-JY, 2.25*&margin
-JZ, &margin/4 -&slideW
-SO, 1, 1
-MZ, -0.5*&margin - 0.5*&slideW
-SO, 1, 0
-JZ, 10.000
 SO, 12, 0
