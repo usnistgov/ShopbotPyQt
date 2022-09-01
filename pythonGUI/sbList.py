@@ -120,7 +120,7 @@ class sbpNameList(QHBoxLayout):
         '''save the current settings to a config Box object'''
         cfg1.shopbot.currentFile = self.getFullPath(self.currentFile)
         l = []
-        for x in range(self.count()):
+        for x in range(self.listW.count()):
             item  = self.listW.item(x)
             if hasattr(item, 'text'):
                 l.append(self.getFullPath(item.text()))

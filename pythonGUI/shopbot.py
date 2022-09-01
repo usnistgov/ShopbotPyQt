@@ -313,6 +313,10 @@ class sbBox(connectBox):
                 out = out+[self.xe, self.ye, self.ze]
             else:
                 out = out + ['','','']
+            if hasattr(self, 'xt') and hasattr(self, 'yt') and hasattr(self, 'zt'):
+                out = out+[self.xt, self.yt, self.zt]
+            else:
+                out = out + ['','','']
         else:
             out = []
         if self.saveFlag:
@@ -330,7 +334,7 @@ class sbBox(connectBox):
     def timeHeader(self) -> List:
         '''get a list of header values for the time table'''
         if self.savePos:
-            out = ['x_disp(mm)', 'y_disp(mm)', 'z_disp(mm)', 'x_est(mm)', 'y_est(mm)', 'z_est(mm)']
+            out = ['x_disp(mm)', 'y_disp(mm)', 'z_disp(mm)', 'x_est(mm)', 'y_est(mm)', 'z_est(mm)', 'x_target(mm)', 'y_target(mm)', 'z_target(mm)']
         else:
             out = []
         if self.saveFlag:
@@ -544,6 +548,15 @@ class sbBox(connectBox):
         self.ze = z
         if hasattr(self, 'flagBox'):
             self.flagBox.updateXYZest(x,y,z)
+            
+    @pyqtSlot(float,float,float)
+    def updateXYZt(self, x:float, y:float, z:float) -> None:
+        '''update the target xyz display'''
+        self.xt = x
+        self.yt = y
+        self.zt = z
+        if hasattr(self, 'flagBox'):
+            self.flagBox.updateXYZt(x,y,z)
 
     ####################            
     #### functions to start on run
@@ -638,6 +651,7 @@ class sbBox(connectBox):
         self.printWorker.signals.aborted.connect(self.triggerKill)
         self.printWorker.signals.finished.connect(self.triggerEndOfPrint)
         self.printWorker.signals.estimate.connect(self.updateXYZest)
+        self.printWorker.signals.target.connect(self.updateXYZt)
 
         # send the file to the shopbot via command line
         self.keys.lock()

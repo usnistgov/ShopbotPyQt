@@ -135,6 +135,7 @@ class fluChannel(QObject):
             # QTimer wants time in milliseconds
         self.fluBox.addRowToCalib(runPressure, runTime, self.chanNum0)
     
+    @pyqtSlot()
     @pyqtSlot(bool)
     def zeroChannel(self, status:bool=True) -> None:
         '''zero the channel pressure'''
@@ -194,7 +195,7 @@ class fluPlot(QObject):
         
     def fullSize(self):
         '''full size plot widget'''
-        self.graphWidget.setMaximumHeight(390)
+        self.graphWidget.setMaximumHeight(350)
         self.graphWidget.setMaximumWidth(600)
         
     def small(self):
@@ -251,7 +252,7 @@ class fluPlot(QObject):
         
         # get updated range
         self.pw.lock()
-        pressures == self.pw.pressures
+        pressures = self.pw.pressures
         time = self.pw.time
         self.pw.unlock()
         
@@ -377,7 +378,7 @@ class fluSettingsBox(QWidget):
         '''update the value of dt in the parent'''
         self.fluBox.dt = int(self.dtBox.text())
         self.fluBox.pw.lock()
-        self.fluBox.pw = self.fluBox.dt   # update plotwatch object
+        self.fluBox.pw.dt = self.fluBox.dt   # update plotwatch object
         self.fluBox.pw.unlock()
         self.fluBox.updateStatus(f'Changed Fluigent plot dt to {self.fluBox.dt} ms', True)
         

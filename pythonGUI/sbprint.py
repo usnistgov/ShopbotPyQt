@@ -22,6 +22,7 @@ sys.path.append(currentdir)
 sys.path.append(parentdir)
 sys.path.append(os.path.join(parentdir, 'SBP_files'))  # add python folder
 from sbpRead import *
+from channelWatch import *
 
 printDiag = False
 
@@ -241,338 +242,16 @@ class waitForStart(QRunnable):
                 # kill the window
                 win32api.PostMessage( hwndChild, win32con.WM_KEYDOWN, win32con.VK_RETURN, 0)  
                 self.spindleKilled = True
-                
-
-
-    
-#---------------------------------------------
-    
-    
-def flagOn(sbFlag:int, flag0:int) -> bool:
-    '''test if the 0-indexed flag is on'''
-    binary = bin(sbFlag)   # convert to binary
-    if len(binary)<2+flag0+1:
-        return False       # binary doesn't have enough digits
-    else:
-        return bool(int(binary[-(flag0+1)]))     # find value at index
-
-        
-class channelWatchSignals(QObject):
-    goToPressure = pyqtSignal(float)  # send burst pressure to fluigent
-    zeroChannel = pyqtSignal(bool)    # zero fluigent channel
-    snap = pyqtSignal()       # tell camera to take a snapshot
-    updateSpeed = pyqtSignal(float)   # send new extrusion speed to fluigent
-    finished = pyqtSignal()
-    
-    
-class channelWatch(QObject):
-    '''holds functions for turning on and off pressure'''
-    
-    def __init__(self, flag0:int, pSettings:dict, diag:int):
-        super().__init__()
-        self.on = False
-        self.flag0 = flag0
-        self.mode = 1
-        self.turningDown = False
-        self.diag = diag
-        # store burstScale, burstLength, zero, critTimeOn, critTimeOff
-        for s,val in pSettings.items():
-            setattr(self, s, val)
-        self.signals = channelWatchSignals()
-    
-    def turnOn(self) -> None:
-        '''turn the pressure on to the burst pressure, or snap a picture'''
-        if self.mode == 1:
-            # turn pressure on to burst pressure
-            self.signals.goToPressure.emit(self.burstScale)
-            self.on=True
-            self.turningDown = True
-            if self.diag>1:
-                print('turn on')
-        elif self.mode == 2:
-            # snap pictures
-            self.signals.snap.emit()
-                
-                
-    def turnDown(self, l:float) -> None:
-        '''turn the pressure down, given a distance from the last point'''
-        if self.mode==1 and self.on:
-            if l>self.burstLength:
-                scale = 1
-                self.turningDown = False   # stop turning down, met burst length
-            else:
-                scale = 1 + (self.burstScale-1)*(1-l/self.burstLength)
-            self.signals.goToPressure.emit(scale)
-            if self.diag>1:
-                print(f'turn down {scale}')
-                        
-    def turnOff(self) -> None:
-        '''turn the pressure off'''
-        if self.mode == 1:
-            self.signals.zeroChannel.emit(False)
-            self.on=False
-            self.turningDown = False
-            if self.diag>1:
-                print('turn off')
-                
-    def updateSpeed(self, speed:float) -> None:
-        '''send new extrusion speed to fluigent'''
-        self.signals.updateSpeed.emit(speed)
-        
-    def defineState(self, targetPoint:pd.Series, nextPoint:pd.Series, lastPoint:pd.Series) -> None:
-        '''determine when to turn on, turn off'''
-        before = targetPoint[f'p{self.flag0}_before']
-        after = targetPoint[f'p{self.flag0}_after']
-        if f'p{self.flag0}_before' in nextPoint:
-            nbefore = nextPoint[f'p{self.flag0}_before']
-            nafter = nextPoint[f'p{self.flag0}_after']
-        else:
-            nbefore = 0
-            nafter = 0
-        if f'p{self.flag0}_before' in lastPoint:
-            lbefore = lastPoint[f'p{self.flag0}_before']
-            lafter = lastPoint[f'p{self.flag0}_after']
-        else:
-            lbefore = 0
-            nafter = 0
-        
-        if self.mode==2:
-            # camera
-            if before==0 and after==1:
-                # snap camera at point
-                self.state = 4
-            else:
-                # do nothing at point
-                self.state = 0
-        elif self.mode==1:
-            # fluigent
-            if before==0 and after==1:
-                if nbefore==1 and nafter==0 and targetPoint['x']==nextPoint['x'] and targetPoint['y']==nextPoint['y'] and targetPoint['z']==nextPoint['z']:
-                    # turn on, then turn off
-                    self.state = 0
-                else:
-                    # turn on within crit distance of point
-                    self.state=1
-                    self.critDistance = max(self.zeroDist, abs(self.critTimeOn)*targetPoint['speed'])
-            elif before==1 and after==0:
-                # turn off after crit distance of point
-                if lbefore==0 and lafter==1 and targetPoint['x']==lastPoint['x'] and targetPoint['y']==lastPoint['y'] and targetPoint['z']==lastPoint['z']:
-                    self.state = 0
-                else:
-                    self.state = 5
-
-                    if self.critTimeOff<0:
-                        # turn off before crit distance of point
-                        self.critDistance = -max(self.zeroDist, -self.critTimeOff*targetPoint['speed'])
-                    else:
-                        # turn off after crit distance of point
-                        if 'speed' in nextPoint:
-                            speed = nextPoint['speed']
-                        else:
-                            speed = targetPoint['speed']
-                        self.critDistance = max(self.zeroDist, self.critTimeOff*speed)
-
-                    # zero out crit distance for short moves
-                    tld = ppDist(lastPoint, targetPoint)  # distance between last point and target point
-                    if tld<abs(self.critDistance)*2:
-                        self.critDistance = self.zeroDist
-            else:
-                # do nothing at point
-                self.state = 0
 
                 
-    def forceAction(self) -> None:
-        '''force the current action'''
-        if self.state==4 or self.state==1:
-            self.turnOn()
-        elif self.state==5:
-            self.turnOff()            
-        
-                
-            
-    def assessPosition(self, trd:float, lrd:float, tld:float, ted:float, led:float, sbFlag:int, diagStr:str) -> None:
-        '''check the state and do actions if relevant
-        trd distance from target to read point
-        lrd distance from last to read point
-        tld distance from last to target point
-        ted distance from target to estimated point
-        led distance from last to estimated point
-        sbFlag full flag value'''
-        
-        readyForNextPoint = False
-        flagOn0 = flagOn(sbFlag, self.flag0)
-        
-        # turn down from burst
-        if self.turningDown:
-            # bring down pressure from burst pressure
-               self.turnDown(ted)
-        
-        if self.state==0:
-            pastTarget = led>tld
-            zeroMove = tld<self.zeroDist
-            atTarget = ted<self.zeroDist
-            ratTarget = trd<self.zeroDist
-            outsidePath = ((lrd+trd > tld+self.zeroDist))
-            if zeroMove or atTarget or (pastTarget and (ratTarget or outsidePath)):
-                if self.diag>=2:
-                    if zeroMove:
-                        print(f'{diagStr} Zero move')
-                    if atTarget:
-                        print(f'{diagStr} Estimated point at target point')
-                    if pastTarget and ratTarget:
-                        print(f'{diagStr} Estimated point past target and read at target')
-                readyForNextPoint = True
-        else:
-        
-            if self.mode==2:
-                # camera
-                if self.state==4:
-                    # snap camera at point
-                    if flagOn0:
-                        atTarget = (trd<self.zeroDist and ted<self.zeroDist)
-                        pastTarget = led>tld
-                        if atTarget:
-                            if self.diag>=2:
-                                if atTarget:
-                                    print(f'{diagStr} Read point and estimated point at target point')
-                                # if pastTarget:
-                                #     print(f'{diagStr} Estimated point past target')
-                            self.turnOn()
-                            readyForNextPoint = True
-            elif self.mode==1:
-                # fluigent
-                
-                # assess state
-                if self.state==1:
-                    # turn on within crit distance of point or if we've started on the next line
-                    pastTarget = led>tld
-                    atTarget = ted<self.critDistance
-                    outsidePath = lrd+trd > tld+self.zeroDist
-                    if atTarget or outsidePath:
-                        if self.diag>=2:
-                            if ted<self.critDistance:
-                                print(f'{diagStr} Estimated point at target')
-                            if outsidePath:
-                                print(f'{diagStr} Read point outside path')
-                            if pastTarget:
-                                print(f'{diagStr} Estimated point past target')
-                        self.turnOn()
-                        readyForNextPoint = True
-                elif self.state==5:
-                    # turn off at end
-
-                    if not flagOn0:
-                        if tld<self.zeroDist:
-                            # no movement during this line
-                            if self.diag>=2:
-                                print(f'{diagStr} Zero move')
-                            self.turnOff()
-                            readyForNextPoint = True
-                        else:
-                            if self.critDistance<0:
-                                # turn off before end of line
-                                pastTarget = led>tld
-                                atTarget = ted<-self.critDistance
-                                if atTarget:
-                                    if self.diag>=2:
-                                        if atTarget:
-                                            print(f'{diagStr} Estimated point at target')
-                                        if pastTarget:
-                                            print(f'{diagStr} Estimated point past target')
-                                    self.turnOff()
-                                    readyForNextPoint = True
-                            else:
-                                # turn off after end of line
-                                atTarget = led>tld+self.critDistance
-                                outsidePath = ((lrd+trd > tld+self.zeroDist) and trd>self.critDistance)
-                                if atTarget or outsidePath:
-                                    if self.diag>=2:
-                                        if atTarget:
-                                            print(f'{diagStr} Estimated point at target')
-                                        if outsidePath:
-                                            print(f'{diagStr} Read point outside path and read point past crit distance')
-                                    self.turnOff() 
-                                    readyForNextPoint = True
-                
-        return readyForNextPoint
-
-
-        
-    def close(self) -> None:
-        '''close the channel watch, send messages to object'''
-        if self.mode==2:
-            self.signals.finished.emit()
-        elif self.mode==1:
-            self.signals.zeroChannel.emit(True)
-            
 #----------------------------
 
-def toXYZ(p1:Union[pd.Series, List[float]], listOut:bool=False) -> Tuple[float]:
-    '''convert the point or pandas series to x,y,z'''
-    if type(p1) is list and len(p1)==3:
-        x = p1[0]
-        y = p1[1]
-        z = p1[2]
-    elif type(p1) is pd.Series or type(p1) is dict:
-        if 'x' in p1:
-            x = p1['x']
-        else:
-            x = np.nan
-        if 'y' in p1:
-            y = p1['y']
-        else:
-            y = np.nan
-        if 'z' in p1:
-            z = p1['z']
-        else:
-            z = np.nan
-    else:
-        raise ValueError('Unknown type given to toXYZ')
-    if listOut:
-        return x,y,z
-    else:
-        return [x,y,z]
-
-def dxdydz(p1:Union[pd.Series, List[float]], p2:Union[pd.Series, List[float]]) -> Tuple[float]:
-    '''convert the two points to their differences'''
-    p1x, p1y, p1z = toXYZ(p1)
-    p2x, p2y, p2z = toXYZ(p2)
-
-    if pd.isna(p2x) or pd.isna(p1x):
-        dx = 0
-    else:
-        dx = float(p2x)-float(p1x)
-    if pd.isna(p2y) or pd.isna(p1y):
-        dy = 0
-    else:
-        dy =  float(p2y)-float(p1y)
-    if pd.isna(p2z) or pd.isna(p1z):
-        dz = 0
-    else:
-        dz = float(p2z)-float(p1z)
-    return dx,dy,dz
-
-def ppDist(p1:Union[pd.Series, List[float]], p2:Union[pd.Series, List[float]]) -> float:
-    '''distance between two points'''
-    dx,dy,dz = dxdydz(p1, p2)
-    return np.sqrt(dx**2+dy**2+dz**2)
-    
-def ppVec(p1:pd.Series, p2:pd.Series) -> Tuple[float]:
-    '''get the normalized direction'''
-    dx,dy,dz = dxdydz(p1, p2)
-    dist =  np.sqrt(dx**2+dy**2+dz**2)
-    if dist==0:
-        return [0,0,0]
-    else:
-        return [dx/dist, dy/dist, dz/dist]
-    
-    
-    
     
 class printLoopSignals(QObject):
     finished = pyqtSignal()   # print is done
     aborted = pyqtSignal()    # print was aborted from sbp app
     estimate = pyqtSignal(float,float,float)   # new estimated position
+    target = pyqtSignal(float,float,float)      # send current target to GUI
     
     
 class printLoop(QObject):
@@ -581,7 +260,7 @@ class printLoop(QObject):
     keys is an SBKeys object
     sbpfile is the name of the sbp file '''
     
-    def __init__(self, dt:float, keys:QMutex, sbpfile:str, pSettings:dict, sbWin, sbRunFlag1):
+    def __init__(self, dt:float, keys:QMutex, sbpfile:str, pSettings:dict, sbWin, sbRunFlag1:int):
         super(printLoop,self).__init__()
         self.dt = dt
         self.keys = keys    # holds windows registry keys
@@ -593,18 +272,16 @@ class printLoop(QObject):
         self.targetPoint = {}
         self.nextPoint = {}
         self.zeroDist = pSettings['zeroDist']
-        self.trd = 10000
-        self.lrd = 10000
-        self.tld = 10000
-        self.ted = 10000
         self.timeTaken = False
         self.readKeys()   # intialize flag, loc
         self.lastPoint = {'x':self.readLoc[0], 'y':self.readLoc[1], 'z':self.readLoc[2]}
         self.readCSV(sbpfile)    # read points
-        self.assignFlags(sbWin, sbRunFlag1)
+        self.sbWin = sbWin
+        self.sbRunFlag1 = sbRunFlag1
+        self.assignFlags()
 
-
-    def assignFlags(self, sbWin, sbRunFlag1:int) -> None:
+    @pyqtSlot()
+    def assignFlags(self) -> None:
         '''for each flag in the points csv, assign behaviors using a dictionary of channelWatch objects'''
         
         # create channels
@@ -613,13 +290,14 @@ class printLoop(QObject):
                 # only take the before
                 spl = re.split('p|_', key)
                 flag0 = int(spl[1])   # 0-indexed
-                if not flag0==sbRunFlag1-1:
+                if not flag0==self.sbRunFlag1-1:
                     self.channelWatches[flag0] = channelWatch(flag0, self.pSettings, self.diag)
                    
+        self.defineHeader()
                     
         # assign behaviors to channels
-        if hasattr(sbWin, 'fluBox') and hasattr(sbWin.fluBox, 'pchannels'):
-            for channel in sbWin.fluBox.pchannels:
+        if hasattr(self.sbWin, 'fluBox') and hasattr(self.sbWin.fluBox, 'pchannels'):
+            for channel in self.sbWin.fluBox.pchannels:
                 flag0 = channel.flag1-1
                 if flag0 in self.channelWatches:
                     cw = self.channelWatches[flag0]
@@ -628,13 +306,13 @@ class printLoop(QObject):
                     self.modes.append(1)
                     cw.signals.goToPressure.connect(channel.goToRunPressure)
                     cw.signals.zeroChannel.connect(channel.zeroChannel)
-                    if hasattr(sbWin, 'calibDialog'):
-                        calibBox = sbWin.calibDialog.calibWidgets[channel.chanNum0]
+                    if hasattr(self.sbWin, 'calibDialog'):
+                        calibBox = self.sbWin.calibDialog.calibWidgets[channel.chanNum0]
                         cw.signals.updateSpeed.connect(calibBox.updateSpeedAndPressure)
 
         # assign behaviors to cameras
-        if hasattr(sbWin, 'camBoxes'):
-            fdict = sbWin.camBoxes.listFlags0()
+        if hasattr(self.sbWin, 'camBoxes'):
+            fdict = self.sbWin.camBoxes.listFlags0()
             for flag0 in fdict:
                 if flag0 in self.channelWatches:
                     cw = self.channelWatches[flag0]
@@ -645,6 +323,7 @@ class printLoop(QObject):
                     cw.signals.finished.connect(camBox.resetCheck)  # reset the checkbox when done
                     cw.signals.snap.connect(camBox.cameraPic)   # connect signal to snap function
        
+        self.pointTime = datetime.datetime.now()
         self.changePoint = self.readLoc
         if len(self.points)>1:  
             on = False
@@ -656,7 +335,18 @@ class printLoop(QObject):
                         on = True
         else:
             self.readPoint()
-
+            
+    def defineHeader(self):
+        '''define the diagnostics print header'''
+        headStr = '\t'
+        for flag0 in self.channelWatches:
+            headStr = headStr + f'flag0:on mode\tstate|\t'
+        headStr = headStr + f'x\ty\tz|\txe\tye\tze|\txt\tyt\tzt|\tflag'
+        if self.diag>2:
+             headStr = headStr + f'\ttrd\tlrd\ttld\tted\tled'
+        self.headStr = headStr
+        if self.diag>1:
+            print(self.headStr)
       
     #----------------------------------------
             
@@ -717,6 +407,7 @@ class printLoop(QObject):
             sp = pd.read_csv(csvfile, index_col=0)
         self.points = sp
         self.pointsi = -1
+        self.printi = -1
         self.fillTable()    # fill empty entries with current position
 
         
@@ -740,25 +431,32 @@ class printLoop(QObject):
             if targetPoint[f'p{flag0}_before']<0 and targetPoint[f'p{flag0}_after']>0:
                 # change speed
                 cw.updateSpeed(targetPoint[f'p{flag0}_after'])
-                    
+           
+    @pyqtSlot()
     def readPoint(self) -> None:
         '''read the next point from the points list'''
+        self.lastTime = self.pointTime    # store the time when we got the last point
         self.pointTime = datetime.datetime.now()
         self.changePoint = self.readLoc
         self.timeTaken = False
         self.pointsi+=1
+        self.printi+=1
         if self.pointsi>=0 and self.pointsi<len(self.points):
             targetPoint = self.points.iloc[self.pointsi] 
             if pd.isna(targetPoint['speed']):
                 # this is just a speed step. adjust speeds and go to the next point
                 self.updateSpeeds(targetPoint)
+                if self.diag>1:
+                    print('Update speed')
                 self.readPoint()
                 return
                 
             # define last and next points
             if self.pointsi>0:
                 self.lastPoint = self.targetPoint
-            self.targetPoint = targetPoint
+            self.targetPoint = targetPoint 
+            self.speed = float(self.targetPoint['speed'])
+            self.signals.target.emit(*toXYZ(self.targetPoint))          # update gui
             self.targetVec = ppVec(self.lastPoint, self.targetPoint)
             if len(self.points)>self.pointsi+1:
                 self.nextPoint = self.points.iloc[self.pointsi+1]
@@ -767,13 +465,17 @@ class printLoop(QObject):
         else:
             self.tableDone = True
         if self.diag>1:  
-            print(f'New point row {self.pointsi}')
-        if  (self.diag>1 and (self.pointsi%100==0)):
+            x,y,z = toXYZ(self.targetPoint)
+            diagStr = '\t'
+            for flag0, cw in self.channelWatches.items():
+                diagStr = diagStr + f'new pt {self.pointsi}|'
+            diagStr =  diagStr + f'\t \t \t |\t \t \t |'
+            diagStr = diagStr + f'\t{x:2.2f}\t{y:2.2f}\t{z:2.2f}|\t'
+            print(f'New point row {diagStr}')
+        if  (self.diag>1 and (self.printi>50)):
             # print(f'flag0\ton\tmode\tstate\ttrd\tlrd\ttld\tted\tdone\tlrd+trd\ttld+0\tx\ty\tz')
-            headStr = f'flag0\ton\tmode\tstate\tx\ty\tz|\txe\tye\tze|\txt\tyt\tzt|\tflag'
-            if self.diag>2:
-                 headStr = headStr + f'\ttrd\tlrd\ttld\tted\tled'
-            print(headStr)
+            print(self.headStr)
+            self.printi = 0
 
         
             
@@ -830,7 +532,7 @@ class printLoop(QObject):
         self.estimateLoc()
         self.readKeys()
         
-
+    @pyqtSlot()
     def estimateLoc(self) -> None:
         '''estimate the current location based on time since hitting last point and translation speed'''
         
@@ -844,8 +546,7 @@ class printLoop(QObject):
             else:
                 pt = toXYZ(self.lastPoint, listOut=True)
                 vec = self.targetVec
-                speed = float(self.targetPoint['speed'])
-                distTraveled = speed*dt # distance traveled since we hit the last point
+                distTraveled = self.speed*dt # distance traveled since we hit the last point
                 self.estLoc = [pt[i]+distTraveled*vec[i] for i in range(3)]  # estimated position
         self.signals.estimate.emit(self.estLoc[0], self.estLoc[1], self.estLoc[2])
 
@@ -853,6 +554,7 @@ class printLoop(QObject):
     def evalState(self) -> bool:
         '''determine what to do about the channels'''
         # get keys and position, new estimate position
+        diagStr = '\t'
         self.updateState()
         if not self.runningSBP:
             # stop hit, end loop
@@ -872,70 +574,72 @@ class printLoop(QObject):
          
         ted = ppDist(self.estLoc, self.targetPoint) # distance between the estimated loc and the target point
         led = ppDist(self.estLoc, self.lastPoint) # distance between estimated loc and last point
+
         
-        self.trd = trd
-        self.lrd = lrd
-        self.tld = tld
-        self.ted = ted
-        self.led = led
-        
-        if not self.timeTaken and self.lrd>self.zeroDist:
+        if not self.timeTaken and lrd>self.zeroDist:
             # reset the time when the stage actually starts moving
             self.pointTime = datetime.datetime.now()
             self.timeTaken = True
+            
+        if self.diag>1:
+            
+            for flag0, cw in self.channelWatches.items():
+                flagOn0 = flagOn(self.flag, flag0)
+                diagStr = diagStr + f'{flag0}:{flagOn0}\t{cw.mode}\t{cw.state}|'
+            x,y,z = toXYZ(self.readLoc)
+            xt,yt,zt = toXYZ(self.targetPoint)
+            xe,ye,ze = toXYZ(self.estLoc)
+            diagStr =  diagStr + f''
+            diagStr = diagStr + f'\t{x:2.2f}\t{y:2.2f}\t{z:2.2f}|'
+            diagStr = diagStr + f'\t{xe:2.2f}\t{ye:2.2f}\t{ze:2.2f}|'
+            diagStr = diagStr + f'\t{xt:2.2f}\t{yt:2.2f}\t{zt:2.2f}|'
+            diagStr = diagStr + f'\t{self.flag}'
+        else:
+            diagStr = ''
+        if self.diag>2:
+            diagStr = diagStr + f'\t{trd:2.2f}\t{lrd:2.2f}\t{tld:2.2f}\t{ted:2.2f}\t{led:2.2f}'
+            print(diagStr)
+            self.printi+=1
+            
+                
+        if led>lrd:
+            # estimate has gone past read point: slow down estimate
+            self.speed = 0.95*self.speed  
+            if self.diag>2:
+                diagStr = diagStr + f'Reduce speed to {self.speed:2.2f}'
 
         readyForNextPoint = {}
         ready = False
         
-        if not 2 in self.modes:
-            # determine if we've changed direction. don't do this for camera runs
-            if ppDist(self.oldReadLoc, self.readLoc)>self.zeroDist:
+        if self.timeTaken and not 2 in self.modes:
+            # determine if we've changed direction. don't do this for camera runs or if we haven't started moving yet
+            if ppDist(self.oldReadLoc, self.readLoc)>self.zeroDist and lrd>self.zeroDist:
                 vec = ppVec(self.oldReadLoc, self.readLoc)
                 angle = np.arccos(np.dot(vec, self.targetVec))
+                nextAngle = np.arccos(np.dot(vec, self.nextVec))
             else:
                 angle = 0
         else:
             angle = 0
-            
-            
-        if angle>np.pi/8:
-            # changed direction
+
+        if angle>np.pi/4 and angle<np.pi*3/4 and nextAngle<np.pi/16:
+            # changed direction to next direction
             ready = True
             for flag0 in self.channelWatches:
                 readyForNextPoint[flag0] = False
         else:
-        
+            # still going in the same direction
             for flag0, cw in self.channelWatches.items():
                 # determine if each channel has reached the action
-                if self.diag>1:
-                    # print(f'{self.flag0}\t{flagOn0}\t{self.mode}\t{self.state}\t
-                    #     {trd:2.2f}\t{lrd:2.2f}\t{tld:2.2f}\t{ted:2.2f}\t{readyForNextPoint}\t
-                    #     {(lrd+trd):2.2f}\t{(tld+self.zeroDist):2.2f}')
-                    flagOn0 = flagOn(self.flag, cw.flag0)
-                    x,y,z = toXYZ(self.readLoc)
-                    xt,yt,zt = toXYZ(self.targetPoint)
-                    xe,ye,ze = toXYZ(self.estLoc)
-                    diagStr =  f'{cw.flag0}\t{flagOn0}\t{cw.mode}\t{cw.state}|'
-                    diagStr = diagStr + f'\t{x:2.2f}\t{y:2.2f}\t{z:2.2f}|'
-                    diagStr = diagStr + f'\t{xe:2.2f}\t{ye:2.2f}\t{ze:2.2f}|'
-                    diagStr = diagStr + f'\t{xt:2.2f}\t{yt:2.2f}\t{zt:2.2f}|'
-                    diagStr = diagStr + f'\t{self.flag}'
-                else:
-                    diagStr = ''
-                if self.diag>2:
-                    diagStr = diagStr + f'\t{trd:2.2f}\t{lrd:2.2f}\t{tld:2.2f}\t{ted:2.2f}\t{led:2.2f}'
-                    print(diagStr)
-                    diagStr = ''
                 readyForNextPoint[flag0] = cw.assessPosition(trd, lrd, tld, ted, led, self.flag, diagStr)
                 if readyForNextPoint[flag0]:
                     ready = True
-                
                 
         if ready:
             # if only some of the channels have moved on, force the action for the rest of them
             for flag0, r0 in readyForNextPoint.items():
                 if not r0:
-                    self.channelWatches[flag0].forceAction()
+                    self.channelWatches[flag0].forceAction(diagStr, angle)
             # move onto the next point
             self.readPoint()
             if self.tableDone:
