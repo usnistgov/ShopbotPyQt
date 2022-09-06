@@ -95,8 +95,14 @@ shopbot:
   burstScale: 1.05
   critTimeOff: -0.0001
   critTimeOn: 0.05
+<<<<<<< Updated upstream
   currentFile: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+y_0.500.sbp
   dt: 25.0
+=======
+  currentFile: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleHorizPics2.sbp
+  diag: 2
+  dt: 10.0
+>>>>>>> Stashed changes
   flag1: 12
   flag1max: 12
   flag1min: 1
@@ -104,7 +110,15 @@ shopbot:
   includePositionInTable: true
   savePicMetadata: true
   sbpFiles:
+<<<<<<< Updated upstream
   - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+y_0.500.sbp
+=======
+  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleHorizPics2.sbp
+  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleVertPics2.sbp
+  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesHorizPics.sbp
+  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesVertPics.sbp
+  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXSPics.sbp
+>>>>>>> Stashed changes
   sbpFolder: C:\Users\lmf1\Documents\GitHub\ShopbotPyQt\SBP_files
   showFolder: false
   units: mm
