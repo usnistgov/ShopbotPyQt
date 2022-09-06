@@ -26,7 +26,7 @@ crossDoubleVert_0_0.875.sbp
 crossDoubleVert_0_1.000.sbp
 crossDoubleVert_0_1.250.sbp
 BREAK
-crossDoubleVertPics.sbp
+crossDoubleVertPics2.sbp
 BREAK
 tripleLinesHoriz_0.500.sbp
 tripleLinesHoriz_0.625.sbp

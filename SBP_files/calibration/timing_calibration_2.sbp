@@ -12,19 +12,19 @@ VU, 157.480315, 157.480315, -157.480315
 MS, 10, 10
 JS, 20, 20
 VR,10.06, 10.06, , , 10.06, 10.06, , , 5.08, 5.08, 100, 3.81, 65, , , 5.08
-SO, 4, 1
+SO, 12, 1
 JX, &slideW/2
 JY, &spacing
 MS, 5, 5
 J2, &slideW/2, &spacing
-JZ, -&slideW + 0.5*&spacing
+JZ, -&slideW
 SO, 1, 1
-MY, &spacing + 12.0
+MY, &spacing + 24
 SO, 1, 0
-JZ, -&slideW + 0.75*&spacing
+JZ, -&slideW - 5
 SO, 1, 1
 MY, &spacing
 SO, 1, 0
 JZ, -&slideW + &spacing
-SO, 4, 0
+SO, 12, 0
 MZ, 10.000

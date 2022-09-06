@@ -253,8 +253,12 @@ class SBPPoints:
         self.file = file
         self.channels = channelsTriggered(file)
         self.cp = ['','','']
-        self.points = []   # list of dictionary points
+        self.points = [{'x':'', 'y':'', 'z':''}]   # list of dictionary points
         self.pressures = dict([[i,0] for i in self.channels])   
+        for channel in self.channels:
+            self.points[0][f'p{channel}_before'] = 0
+            self.points[0][f'p{channel}_after'] = 0
+        self.points[0]['speed'] = 0
         self.scrapeFile()
         
         
@@ -266,8 +270,9 @@ class SBPPoints:
                 f.readline()
             l = f.readline()
             while len(l)>0:
-                self.readLine(l)
-                l = f.readline()
+                self.readLine(l)    # interpret the line
+                self.lastLine = l   # store the line
+                l = f.readline()    # get a new line
                 
                 
     def floatSC(self, vi:Union[str, float]) -> float:
@@ -280,11 +285,13 @@ class SBPPoints:
         for c in self.channels:
             for s in ['before', 'after']:
                 p1[f'p{c}_{s}'] = self.pressures[c]
-        if command[0]=='M':
+        if command.startswith('M'):
             p1['speed'] = self.ms
-        elif command[0]=='J':
+        elif command.startswith('J'):
             p1['speed'] = self.js
         elif command.startswith('PAUSE'):
+            p1['speed'] = 0
+        else:
             p1['speed'] = 0
         self.points.append(p1)
         
@@ -300,14 +307,16 @@ class SBPPoints:
         '''read a line into the list of points'''
         spl = splitStrip(l)
         if spl[0]=='SO':
+            if hasattr(self, 'lastLine'):
+                if self.lastLine.startswith('SO'):
+                    # turned off/on
+                    self.addPoint('')
             channel = spl[1]-1 # shopbot flags are 1-indexed, but we store 0-indexed
-            if channel<3:
-                if spl[2]==1:
-                    self.pressures[channel] = 1
-                else:
-                    self.pressures[channel] = 0
-                if len(self.points)>0:
-                    self.points[-1][f'p{int(channel)}_after'] = self.pressures[channel]   # 0-indexed
+            if spl[2]==1:
+                self.pressures[channel] = 1
+            else:
+                self.pressures[channel] = 0
+            self.points[-1][f'p{int(channel)}_after'] = self.pressures[channel]   # 0-indexed
         elif spl[0][0] in ['M', 'J']:
             if spl[0][1] in ['X', 'Y', 'Z']:
                 # MX, MY, MZ, JX, JY, JZ
@@ -316,6 +325,12 @@ class SBPPoints:
                 # M2, M3, J2, J3
                 for i in range(int(spl[0][1])):
                     self.cp[i] = self.floatSC(spl[i+1])
+            elif spl[0][1] =='S':
+                # change translation speed
+                if spl[0][0]=='M':
+                    self.ms = spl[1]
+                elif spl[0][0]=='J':
+                    self.js = spl[1]
             self.addPoint(spl[0])
         elif spl[0].startswith('PAUSE'):
             self.addPoint('PAUSE')

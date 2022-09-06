@@ -2,11 +2,11 @@
 '''Shopbot GUI. '''
 
 # local packages
-import sbgui_layout
+import layout
 
     
 ##################################################  
         
 '''Run the program'''
 if __name__ == "__main__":
-    sbgui_layout.MainProgram()
+    layout.MainProgram()

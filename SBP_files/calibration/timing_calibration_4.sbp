@@ -1,0 +1,108 @@
+&slideW = 25.000
+&slideH = 75.000
+&margin = 5.000
+&spacing = 5.000
+&nid = 0.603
+&nd = 0.907
+&downdisp = 0.000
+&wait1 = 1.000
+&wait2 = 0.500
+VD , , 1
+VU, 157.480315, 157.480315, -157.480315
+MS, 10, 10
+JS, 20, 20
+VR,10.06, 10.06, , , 10.06, 10.06, , , 5.08, 5.08, 100, 3.81, 65, , , 5.08
+SO, 12, 1
+JX, &slideW/2
+JZ, -&slideW + 5*&spacing
+JY, 5*&spacing + 36
+'ink_speed_0=5
+MS, 5, 5
+J2, &slideW/2, 5*&spacing + 36
+'ink_speed_0=20
+MS, 20, 20
+J2, &slideW/2, 5*&spacing + 36
+JZ, -&slideW + 3.5*&spacing
+SO, 1, 1
+MY, 5*&spacing + 40.0
+SO, 1, 0
+JZ, -&slideW + 3.75*&spacing
+SO, 1, 1
+MY, 5*&spacing + 36
+SO, 1, 0
+JZ, -&slideW + 4*&spacing
+'ink_speed_0=40
+MS, 40, 40
+J2, &slideW/2, 5*&spacing + 36
+JZ, -&slideW + 4.5*&spacing
+SO, 1, 1
+MY, 5*&spacing + 40.0
+SO, 1, 0
+JZ, -&slideW + 4.75*&spacing
+SO, 1, 1
+MY, 5*&spacing + 36
+SO, 1, 0
+JZ, -&slideW + 5*&spacing
+JY, 6*&spacing + 40
+'ink_speed_0=5
+MS, 5, 5
+J2, &slideW/2, 6*&spacing + 40
+JZ, -&slideW + 0.5*&spacing
+SO, 1, 1
+MY, 6*&spacing + 42.0
+SO, 1, 0
+JZ, -&slideW + 0.75*&spacing
+SO, 1, 1
+MY, 6*&spacing + 40
+SO, 1, 0
+JZ, -&slideW + &spacing
+'ink_speed_0=10
+MS, 10, 10
+J2, &slideW/2, 6*&spacing + 40
+JZ, -&slideW + 1.5*&spacing
+SO, 1, 1
+MY, 6*&spacing + 42.0
+SO, 1, 0
+JZ, -&slideW + 1.75*&spacing
+SO, 1, 1
+MY, 6*&spacing + 40
+SO, 1, 0
+JZ, -&slideW + 2*&spacing
+'ink_speed_0=15
+MS, 15, 15
+J2, &slideW/2, 6*&spacing + 40
+JZ, -&slideW + 2.5*&spacing
+SO, 1, 1
+MY, 6*&spacing + 42.0
+SO, 1, 0
+JZ, -&slideW + 2.75*&spacing
+SO, 1, 1
+MY, 6*&spacing + 40
+SO, 1, 0
+JZ, -&slideW + 3*&spacing
+'ink_speed_0=20
+MS, 20, 20
+J2, &slideW/2, 6*&spacing + 40
+JZ, -&slideW + 3.5*&spacing
+SO, 1, 1
+MY, 6*&spacing + 42.0
+SO, 1, 0
+JZ, -&slideW + 3.75*&spacing
+SO, 1, 1
+MY, 6*&spacing + 40
+SO, 1, 0
+JZ, -&slideW + 4*&spacing
+'ink_speed_0=40
+MS, 40, 40
+J2, &slideW/2, 6*&spacing + 40
+JZ, -&slideW + 4.5*&spacing
+SO, 1, 1
+MY, 6*&spacing + 42.0
+SO, 1, 0
+JZ, -&slideW + 4.75*&spacing
+SO, 1, 1
+MY, 6*&spacing + 40
+SO, 1, 0
+JZ, -&slideW + 5*&spacing
+SO, 4, 0
+MZ, 10.000

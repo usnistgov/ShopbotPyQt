@@ -17,9 +17,9 @@ currentdir = os.path.dirname(os.path.realpath(__file__))
 parentdir = os.path.dirname(currentdir)
 sys.path.append(currentdir)
 sys.path.append(parentdir)
-from sbgui_general import *
-import sbgui_sbList
-import sbgui_shopbot
+from general import *
+import sbList
+import shopbot
 
 from config import cfg
 
@@ -50,9 +50,9 @@ class SBlistwindow(QMainWindow):
         
     def createGrid(self):
         '''Create boxes that go inside of window'''
-        self.sbBox = sbgui_shopbot.sbBox(self, connect=True)   
+        self.sbBox = shopbot.sbBox(self, connect=True)   
         
-        self.fullLayout = sbgui_sbList.sbpNameList(self.sbBox, width=500)
+        self.fullLayout = sbList.sbpNameList(self.sbBox, width=500)
 
         self.central_widget.setLayout(self.fullLayout)
 
