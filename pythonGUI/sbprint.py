@@ -269,6 +269,7 @@ class printLoop(QObject):
         self.modes = []
         self.pSettings = pSettings
         self.tableDone = False
+        self.printStarted = False
         self.targetPoint = {}
         self.nextPoint = {}
         self.zeroDist = pSettings['zeroDist']
@@ -503,9 +504,16 @@ class printLoop(QObject):
             
             killed = self.stopHitPoint()
             if killed:
-                # stop hit on shopbot
-                self.close()
-                self.signals.aborted.emit()
+                # if self.pointsi==len(self.points)-1:
+                if self.targetPoint['z']>0:
+                    # final withdrawal
+                    time.sleep(1) # wait 1 second before stopping videos
+                    self.close()
+                    self.signals.finished.emit()
+                else:
+                    # stop hit on shopbot
+                    self.close()
+                    self.signals.aborted.emit()
                 return
             
             # evaluate status
@@ -571,11 +579,12 @@ class printLoop(QObject):
             self.killSBP()
             return True
         
-        if self.pointsi<self.starti:
+        if not self.printStarted:
             return False
 
         if float(self.readLoc[2])>(self.zmax):
             # stop hit. retracting
+            print(f'z above max, {self.readLoc[2]}, {self.zmax}, {self.pointsi}, {self.starti}')
             return True
         else:
             return False
@@ -585,6 +594,12 @@ class printLoop(QObject):
         '''determine what to do about the channels'''
         # get keys and position, new estimate position
         diagStr = '\t'
+        
+        if not self.printStarted:
+            # once we go below z=0, we've started printing
+            if self.readLoc[2]<self.zmax:
+                self.printStarted = True
+        
         self.updateState()
         if self.flag==0:
             # print finished, end loop

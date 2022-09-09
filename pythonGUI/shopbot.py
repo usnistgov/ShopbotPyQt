@@ -713,10 +713,7 @@ class sbBox(connectBox):
         if hasattr(self.sbWin, 'camBoxes'):
             self.sbWin.camBoxes.stopRecording()    # turn off cameras
             
-        if self.saveFiles:
-            self.sbWin.writeSaveTable()     # save the pressure and xyz readings    
-        else:
-            self.sbWin.discardSaveTable()
+        self.sbWin.writeSaveTable()     # save the pressure and xyz readings    
             
         if hasattr(self, 'timer'):
             try:
@@ -738,7 +735,6 @@ class sbBox(connectBox):
     def triggerKill(self) -> None:
         '''the stop button was hit, so stop'''
         logging.info('Stop hit')
-        self.saveFiles = False
         self.stopRunning()
         self.readyState()
         
@@ -746,7 +742,6 @@ class sbBox(connectBox):
     def triggerEndOfPrint(self) -> None:
         '''we finished the file, so stop and move onto the next one'''
         logging.info('File completed')
-        self.saveFiles = True
         self.stopRunning()
         self.sbList.activateNext() # activate the next sbp file in the list
         if self.autoPlay and self.sbList.sbpNumber()>0: # if we're in autoplay and we're not at the beginning of the list, play the next file
