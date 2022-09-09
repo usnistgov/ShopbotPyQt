@@ -457,6 +457,7 @@ class sbBox(connectBox):
     def saveMeta(self) -> None:
         '''create a csv file that describes the run speeds'''
         self.sbWin.saveMetaData()
+        
        
     def writeToTable(self, writer) -> None:
         '''write metadata values to the table'''
@@ -673,14 +674,20 @@ class sbBox(connectBox):
     @pyqtSlot()
     def triggerWatch(self) -> None:
         '''start recording and start the timer to watch for changes in pressure'''
+        
+        if not self.runningSBP:
+            return
 
         # start the cameras if any flow is triggered in the run
         if min(self.channelsTriggered)<len(self.sbWin.fluBox.pchannels):
+            print('start recording')
             self.sbWin.camBoxes.startRecording()
         if self.savePicMetadata or (len(self.channelsTriggered)>0 and not self.channelsTriggered==[2]):
             # only save speeds and pressures if there is extrusion or if the checkbox is marked
+            print('start saving')
             self.sbWin.saveMetaData()    # save metadata
             self.sbWin.initSaveTable()   # save table of pressures
+            
             
         self.printThread = QThread()
         self.printWorker.moveToThread(self.printThread)
@@ -705,10 +712,11 @@ class sbBox(connectBox):
         if hasattr(self.sbWin, 'fluBox'):
             self.sbWin.fluBox.resetAllChannels(-1) # turn off all channels
             
+        if hasattr(self.sbWin, 'camBoxes'):
+            self.sbWin.camBoxes.stopRecording()    # turn off cameras
+            
         if self.saveFiles:
             self.sbWin.writeSaveTable()     # save the pressure and xyz readings    
-            if hasattr(self.sbWin, 'camBoxes'):
-                self.sbWin.camBoxes.stopRecording()    # turn off cameras
         else:
             self.sbWin.discardSaveTable()
             

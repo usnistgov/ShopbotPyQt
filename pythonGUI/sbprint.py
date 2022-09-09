@@ -497,12 +497,14 @@ class printLoop(QObject):
             self.keys.unlock()
             if abort:
                 # stop hit on shopbot
+                print('kill 1')
                 self.close()
                 self.signals.aborted.emit()
                 return
             
             killed = self.stopHitPoint()
             if killed:
+                print('kill 2')
                 # stop hit on shopbot
                 self.close()
                 self.signals.aborted.emit()
@@ -511,6 +513,7 @@ class printLoop(QObject):
             # evaluate status
             done = self.evalState()
             if done:
+                print('finished')
                 time.sleep(1) # wait 1 second before stopping videos
                 self.close()
                 self.signals.finished.emit()

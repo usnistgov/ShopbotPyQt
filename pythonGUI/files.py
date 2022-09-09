@@ -412,12 +412,14 @@ class fileBox(connectBox):
             return ''
         if not self.sbWin.sbBox.runningSBP and not demoMode:
             # if we're not running a shopbot file, return empty
+            print('not running')
             return ''
         # get the path name
         sbpPath = self.sbWin.sbBox.sbpName()
         if os.path.exists(sbpPath):
             return os.path.splitext(os.path.basename(sbpPath))[0]
         else:
+            print('sbp path does not exist')
             return ''
         
     def sample(self, file:bool) -> str:
