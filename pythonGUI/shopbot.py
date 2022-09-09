@@ -673,8 +673,6 @@ class sbBox(connectBox):
     @pyqtSlot()
     def triggerWatch(self) -> None:
         '''start recording and start the timer to watch for changes in pressure'''
-        
-        
 
         # start the cameras if any flow is triggered in the run
         if min(self.channelsTriggered)<len(self.sbWin.fluBox.pchannels):
@@ -704,11 +702,16 @@ class sbBox(connectBox):
             
     def closeDevices(self) -> None:
         '''stop all recording devices'''
-        self.sbWin.writeSaveTable()     # save the pressure and xyz readings
         if hasattr(self.sbWin, 'fluBox'):
             self.sbWin.fluBox.resetAllChannels(-1) # turn off all channels
-        if hasattr(self.sbWin, 'camBoxes'):
-            self.sbWin.camBoxes.stopRecording()    # turn off cameras
+            
+        if self.saveFiles:
+            self.sbWin.writeSaveTable()     # save the pressure and xyz readings    
+            if hasattr(self.sbWin, 'camBoxes'):
+                self.sbWin.camBoxes.stopRecording()    # turn off cameras
+        else:
+            self.sbWin.discardSaveTable()
+            
         if hasattr(self, 'timer'):
             try:
                 self.timer.stop()
@@ -729,6 +732,7 @@ class sbBox(connectBox):
     def triggerKill(self) -> None:
         '''the stop button was hit, so stop'''
         logging.info('Stop hit')
+        self.saveFiles = False
         self.stopRunning()
         self.readyState()
         
@@ -736,6 +740,7 @@ class sbBox(connectBox):
     def triggerEndOfPrint(self) -> None:
         '''we finished the file, so stop and move onto the next one'''
         logging.info('File completed')
+        self.saveFiles = True
         self.stopRunning()
         self.sbList.activateNext() # activate the next sbp file in the list
         if self.autoPlay and self.sbList.sbpNumber()>0: # if we're in autoplay and we're not at the beginning of the list, play the next file

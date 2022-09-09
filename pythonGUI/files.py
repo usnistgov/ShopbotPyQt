@@ -492,7 +492,6 @@ class fileBox(connectBox):
         '''Get a filename and folder for a new file. First return is the sample name. Second is the folder name. If subfolder creation is off, just return the save folder. If it is on, create subfolders and return the subfolder. The device name indicates what device is generating data for this file. ext is the extension'''
         
         folder = self.makeSubFolders(demoMode=demoMode)
-        
 
         # entries for files
         sbBase = self.sbBase(True, demoMode=demoMode)

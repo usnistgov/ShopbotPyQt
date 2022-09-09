@@ -1,6 +1,7 @@
 appid: leanfried.sbgui.v1.0.5
 camera:
   cam0:
+    checked: true
     diag: 1
     flag1: 3
     fps: 100
@@ -8,6 +9,7 @@ camera:
     previewFPS: 15
     type: bascam
   cam1:
+    checked: false
     diag: 1
     flag1: 5
     fps: 15
@@ -15,6 +17,7 @@ camera:
     previewFPS: 15
     type: webcam
   cam2:
+    checked: false
     diag: 1
     flag1: 6
     fps: 15

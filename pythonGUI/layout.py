@@ -306,7 +306,13 @@ class SBwindow(QMainWindow):
             else:
                 xyzlist = []
             self.saveTable.append([tnow]+plist+xyzlist)
-        
+            
+    def discardSaveTable(self) -> None:
+        '''throw out the table and stop recording'''
+        if hasattr(self, 'timer') and self.timer.isActive():
+            self.timer.stop()
+        self.ending = False
+        self.save = False
 
     def writeSaveTable(self) -> None:
         '''save the table to csv'''

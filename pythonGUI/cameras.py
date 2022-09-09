@@ -195,6 +195,7 @@ class cameraBox(connectBox):
         cfg1.camera[self.cname].name = self.bTitle
         cfg1.camera[self.cname].type = self.type
         cfg1.camera[self.cname].flag1 = self.flag1
+        cfg1.camera[self.cname].checked = self.camInclude.isChecked()
         self.camObj.saveConfig(cfg1)
         return cfg1
     
@@ -204,6 +205,8 @@ class cameraBox(connectBox):
         self.type = cfg1.camera[self.cname].type
         self.flag1 = cfg1.camera[self.cname].flag1
         self.camObj.loadConfig(cfg1)
+        self.camInclude.setChecked(cfg1.camera[self.cname].checked)
+        self.updateCamInclude()
         
     def resetFPS(self, fps:int):
         self.settingsBox.resetFPS(fps)
@@ -250,6 +253,7 @@ class cameraBox(connectBox):
         
         self.camInclude = fToolButton(None, func=self.updateCamInclude, checkable=True)
         self.camInclude.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.camInclude.setChecked(cfg.camera[self.cname].checked)
         self.updateCamInclude() 
         self.camButts = fToolBar(vertical=False)
 
