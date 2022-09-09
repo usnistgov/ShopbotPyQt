@@ -85,7 +85,9 @@ class sbpNameList(QHBoxLayout):
         self.sbButts = fToolBar(vertical=True)
         self.loadButt = fToolButton(self.sbButts, tooltip='Load shopbot file(s)', icon='open.png', func=self.loadFile)
         self.deleteButt = fToolButton(self.sbButts, tooltip='Remove selected file(s)', icon='delete.png', func=self.removeFiles)
+        self.deleteAllButt = fToolButton(self.sbButts, tooltip='Remove all files(s)', icon='deleteAll.png', func=self.removeAllFiles)
         self.breakButt = fToolButton(self.sbButts, tooltip='Add a breakpoint to the list', icon='breakpoint.png', func=self.addBreakPoint)
+        
         
         self.listW = QListWidget()
         
@@ -248,8 +250,9 @@ class sbpNameList(QHBoxLayout):
         return True
 
     
-    def addFile(self, fn) -> None:
-        '''Add this file to the list of files, and remove the original placeholder if it's still there.'''
+    def addFile(self, fn, position:int=-1) -> None:
+        '''Add this file to the list of files, and remove the original placeholder if it's still there.
+        position>=0 to insert at a specific position in the list, otherwise add to end'''
         
         islist = self.addFileList(fn) 
         if islist:
@@ -268,7 +271,10 @@ class sbpNameList(QHBoxLayout):
         else:
             item = QListWidgetItem(short) # create an item with basename
         item.setData(Qt.UserRole, False)
-        self.listW.addItem(item) # add it to the list
+        if position>=0:
+            self.listW.insertItem(position, item)
+        else:
+            self.listW.addItem(item) # add it to the list
         if self.listW.count()>1: # if there was already an item in the list
             item0 = self.listW.item(0) # take the first item
             if not os.path.exists(self.getFullPath(item0.text())) and not item0.text()=='BREAK': # if the original item isn't a real file
@@ -301,6 +307,23 @@ class sbpNameList(QHBoxLayout):
             # if we've deleted all the files, go back to placeholder text
             self.currentFile = 'No file selected'
             self.addFile(self.currentFile)
+            
+    def removeAllFiles(self) -> None:
+        '''Remove all files from the list'''
+        items = []
+        for i in range(self.listW.count()):
+            items.append(self.listW.item(i))
+        
+        for item in items:
+            logging.info(f'Removing file from queue: {item.text()}')
+            self.sbpRealList.remove(self.getFullPath(item.text())) # remove the file from the list of full paths
+            row = self.listW.row(item)
+            self.listW.takeItem(row)
+            
+        if self.listW.count()==0:
+            # if we've deleted all the files, go back to placeholder text
+            self.currentFile = 'No file selected'
+            self.addFile(self.currentFile)
         
         
     def loadFile(self) -> None:
@@ -323,7 +346,10 @@ class sbpNameList(QHBoxLayout):
                 
     def addBreakPoint(self) -> None:
         '''add a stop point to the list of files, where autoplay will stop'''
-        self.addFile('BREAK')
+        i = -1
+        for item in self.listW.selectedItems():
+            i = self.listW.row(item) + 1
+        self.addFile('BREAK', position=i)
         self.updateStatus('Added break point', False)
         
         

@@ -408,6 +408,7 @@ class printLoop(QObject):
         self.points = sp
         self.pointsi = -1
         self.printi = -1
+        self.zmax = self.points[self.points.z<0].z.max() + 1
         self.fillTable()    # fill empty entries with current position
 
         
@@ -417,11 +418,13 @@ class printLoop(QObject):
 
     def fillTable(self) -> None:
         '''go through the top of the table and fill empty entries with the current position'''
+        self.starti = 0
         for i,row in self.points.iterrows():
             if self.naPoint(self.points.loc[i]):
                 for j,var in {0:'x', 1:'y', 2:'z'}.items():
                     if pd.isna(self.points.loc[i, var]):
                         self.points.loc[i, var] = self.readLoc[j]   # fill empty value
+                        self.starti = i+2
             else:
                 return
 
@@ -498,6 +501,13 @@ class printLoop(QObject):
                 self.signals.aborted.emit()
                 return
             
+            killed = self.stopHitPoint()
+            if killed:
+                # stop hit on shopbot
+                self.close()
+                self.signals.aborted.emit()
+                return
+            
             # evaluate status
             done = self.evalState()
             if done:
@@ -549,6 +559,26 @@ class printLoop(QObject):
                 distTraveled = self.speed*dt # distance traveled since we hit the last point
                 self.estLoc = [pt[i]+distTraveled*vec[i] for i in range(3)]  # estimated position
         self.signals.estimate.emit(self.estLoc[0], self.estLoc[1], self.estLoc[2])
+        
+        
+    def stopHitPoint(self) -> bool:
+        '''check if the stop was hit via the read point'''
+        if not hasattr(self, 'readLoc'):
+            return False
+        
+        if not self.runningSBP:
+            # stop hit, end loop
+            self.killSBP()
+            return True
+        
+        if self.pointsi<self.starti:
+            return False
+
+        if float(self.readLoc[2])>(self.zmax):
+            # stop hit. retracting
+            return True
+        else:
+            return False
 
 
     def evalState(self) -> bool:
@@ -556,14 +586,10 @@ class printLoop(QObject):
         # get keys and position, new estimate position
         diagStr = '\t'
         self.updateState()
-        if not self.runningSBP:
-            # stop hit, end loop
-            self.killSBP()
-            return True
         if self.flag==0:
             # print finished, end loop
             return True
-        
+
         trd = ppDist(self.readLoc, self.targetPoint)   # distance between the read loc and the target point
         if 'x' in self.lastPoint:
             lrd = ppDist(self.readLoc, self.lastPoint)   # distance between the read loc and the last point

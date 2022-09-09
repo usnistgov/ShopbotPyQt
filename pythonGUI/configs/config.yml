@@ -31,9 +31,9 @@ files:
   includeSampleInFile: true
   includeSampleInFolder: true
   includeTimeInFile: true
-  save: C:\Users\lmf1\Documents\Shopbot videos\test
+  save: C:\Users\lmf1\Documents\Shopbot videos\mineral laprd visc
   separator: _
-  tag: test
+  tag: I_M9_S_4.00
   timeFormat: '%y%m%d_%H%M%S_%f'
 fluigent:
   channel0:
@@ -42,7 +42,7 @@ fluigent:
         rates
       initDensity: 1
       initDiam: 0.603
-      initSpeed: 5.0
+      initSpeed: 10.0
     color: '#5a8171'
     flag1: 1
   channel1:
@@ -55,7 +55,7 @@ fluigent:
     color: '#b0401e'
     flag1: 2
   dt: 100
-  pmax: 2000
+  pmax: 3000
   savePressure: true
   trange: 60
 layout:
@@ -90,13 +90,13 @@ meta:
     value: PTFE
 savePressure: true
 shopbot:
-  autoplay: false
-  burstLength: 0.05
-  burstScale: 1.0
+  autoplay: true
+  burstLength: 0.1
+  burstScale: 1.1
   critTimeOff: 0.05
   critTimeOn: 0.05
-  currentFile: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleHoriz_0_0.875.sbp
-  diag: 3
+  currentFile: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleHoriz_0.5_0.500.sbp
+  diag: 1
   dt: 10.0
   flag1: 12
   flag1max: 12
@@ -106,12 +106,8 @@ shopbot:
   saveDt: 25
   savePicMetadata: true
   sbpFiles:
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleHoriz_0_0.500.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleHoriz_0_0.625.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleHoriz_0_0.750.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleHoriz_0_0.875.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleHoriz_0_1.000.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleHoriz_0_1.250.sbp
+  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleHoriz_0.5_0.500.sbp
+  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleHoriz_0.5_0.625.sbp
   sbpFolder: C:\Users\lmf1\Documents\GitHub\ShopbotPyQt\SBP_files
   showFolder: false
   units: mm

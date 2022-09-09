@@ -728,12 +728,14 @@ class sbBox(connectBox):
     @pyqtSlot()
     def triggerKill(self) -> None:
         '''the stop button was hit, so stop'''
+        logging.info('Stop hit')
         self.stopRunning()
         self.readyState()
         
     @pyqtSlot()
     def triggerEndOfPrint(self) -> None:
         '''we finished the file, so stop and move onto the next one'''
+        logging.info('File completed')
         self.stopRunning()
         self.sbList.activateNext() # activate the next sbp file in the list
         if self.autoPlay and self.sbList.sbpNumber()>0: # if we're in autoplay and we're not at the beginning of the list, play the next file
