@@ -51,7 +51,11 @@ class SBwindow(QMainWindow):
         self.metaBox = sbprint.metaBox(self, connect=False) 
         self.flagBox = flags.flagGrid(self, tall=False)
         self.settingsDialog = QDialog()
+<<<<<<< Updated upstream:pythonGUI/layout.py
         self.save = False
+=======
+   '''     self.convertDialog = None    '''
+>>>>>>> Stashed changes:pythonGUI/sbgui_layout.py
         
         self.meta = meta
         self.sb = sb
@@ -214,6 +218,22 @@ class SBwindow(QMainWindow):
         self.calibDialog.raise_()
         
     #----------------
+    # Convert
+   ''' 
+    def setupConvert(self, menubar) -> None:
+        '''Create the convert dialog'''
+        self.convertlog = convertDialog(self)
+        self.convertButt = QAction('Convert', self)
+        self.convertButt.setStatusTip('Convert .stl file to .sbp')
+        self.convertButt.triggered.connect(self.openConvert)
+        menubar.addAction(self.convertButt) # add button to open convertion window
+        
+    def openConvert(self) -> None:
+        '''Open the convertion window'''
+        self.convertDialog.show()
+        self.convertDialog.raise_()
+    '''
+    #----------------
     # top menu
         
     def createMenu(self):
@@ -221,6 +241,7 @@ class SBwindow(QMainWindow):
         menubar = self.menuBar()
         self.setupLog(menubar)                  # create a log window, not open yet
         self.setupCalib(menubar)
+   #     self.setupConvert(menubar)
         self.setupSettings(menubar)                  # create a log window, not open yet
         if self.test:
             self.setupDropTest(menubar)
