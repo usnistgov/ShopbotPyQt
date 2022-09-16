@@ -2,9 +2,10 @@
 '''Shopbot GUI functions for setting up the convert window'''
 
 # local packages
-from sbgui_general import *
+from general import *
 import re
 import numpy
+import copy
 
 ######################## Convert window
 
@@ -15,41 +16,40 @@ class convert:
     
     def __init__(self, fileName) :
         self.fileName = fileName
-        X_Coord, Y_Coord, Z_Coord = 0
+
     
     def readInFile(self) :
         
-        wordsList = [] 
-        
         # If the file isn't GCODE, display error and break out of method
         if ".gcode" not in self.fileName:
-                print("File must be GCODE")      
-   
-        fileObject = open(self.fileName, 'r')
+                print("File must be GCODE")  
+        file = copy.copy(self.fileName)
+        txtFile = open(file.replace(".gcode", ".txt"), 'w+')
         
-       # Creating list of each line in file 
-        linesArray = fileObject.readlines() #have a list with lines for each element
-        fileObject.close()
-           
-        for i in linesArray : #for each element in list
-            lines = i.strip('\n') #strip the newline
-            wordsList.append(lines)
+        with open(self.fileName, 'r') as scan:
+            txtFile.write(scan.read())
+        txtFile.close()
         
-        array1 = numpy.array(wordsList)
         
-        commandsArray = array1.reshape(len(array1), -1) 
+        #fileObject = open(self.fileName, 'r')
+        commandsArray = numpy.genfromtxt(file, dtype=str, encoding=None, delimiter=" ")
         
-       # print(commandsArray)
+        print(commandsArray)
         self.conversion(commandsArray)
 
         
     def conversion(self, commandsArray) :
-        numPattern = re.compile("[0-9]")
+        numPattern = re.compile("[0-9]+")
         
         switcher = {
             "F" : "MS",
-            "G0": "JS",
+            ("X" + str(numPattern)) : "",
+            ("Y" + str(numPattern)) : "",
+            ("Z" + str(numPattern)) : "",
+            "G0": "JS"
         }
+        old = switcher.keys()
+        new = switcher.values()
         SBPArray = numpy.copy(commandsArray)
         
         for ir, row in enumerate(commandsArray) :
@@ -58,11 +58,13 @@ class convert:
                 if ((command.startswith("X") or command.startswith("Y") or command.startswith("Z")) and command.endswith(numPattern)) :
                     coord = commandsArray[ir][ic].charAt(0)
                     self.changeCoord(command, coord)
+              
                 for key, value in switcher.items() :
-                    SBPArray[commandsArray == key] = value
-                                                        
-        print(SBPArray)
-        print(X_Coord)
+                     if (command.__contains__(key)) :
+                        SBPArray[ir][ic].replace(key, value)
+       # print(commandsArray[0][0])                                               
+       # print(SBPArray)
+        print(self.X_Coord)
             
     
     # To change the placeholder coordinates between the two file types
@@ -77,6 +79,10 @@ class convert:
             
         if coord == "Z" :
             self.Z_Coord = int(coord)
+            
+            
+    def map_func(value, dictionary) :
+        return dictionary[value] if value in dictionary else value
                                
 
     def writeSBPFile(self, wordsList) :
@@ -91,5 +97,4 @@ class convert:
     
         
 object = convert("Test.gcode")
-
 object.readInFile()
