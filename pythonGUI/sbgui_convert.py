@@ -19,80 +19,60 @@ class convert:
 
     
     def readInFile(self) :
+        isFlowing = false
+        
         
         # If the file isn't GCODE, display error and break out of method
         if ".gcode" not in self.fileName:
-                print("File must be GCODE")  
+                print("File must be GCODE") 
+                
+        GCodeFile = open(self.fileName, 'r')
         file = copy.copy(self.fileName)
-        txtFile = open(file.replace(".gcode", ".txt"), 'w+')
+        SBPFile = open(file.replace(".gcode", ".txt"), 'w+')
         
-        with open(self.fileName, 'r') as scan:
-            txtFile.write(scan.read())
-        txtFile.close()
-        
-        
-        #fileObject = open(self.fileName, 'r')
-        commandsArray = numpy.genfromtxt(file, dtype=str, encoding=None, delimiter=" ")
-        
-        print(commandsArray)
-        self.conversion(commandsArray)
+        with GCodeFile as scan :
+            line = GCodeFile.readline()
+            while line :
+                if [(line.contains('E') and re.search(r'\d', line)) and isFlowing == false] :
+                    SBPFile.writeline("S0, 1, 1")                   
+                if [not (line.contains('E') and re.search(r'\d', line)) and isFlowing == true] :
+                    SBPFile.writeline("S0, 1, 0")
+               
+                if line.contains('G0') :
+                    self.getCoord(line)
+                if line.contains('G1') :
+                    self.getCoord(line)
+                    
+        SBPFile.close()        
 
-        
-    def conversion(self, commandsArray) :
-        numPattern = re.compile("[0-9]+")
-        
-        switcher = {
-            "F" : "MS",
-            ("X" + str(numPattern)) : "",
-            ("Y" + str(numPattern)) : "",
-            ("Z" + str(numPattern)) : "",
-            "G0": "JS"
-        }
-        old = switcher.keys()
-        new = switcher.values()
-        SBPArray = numpy.copy(commandsArray)
-        
-        for ir, row in enumerate(commandsArray) :
-            for ic, column in enumerate(row) :
-                command = commandsArray[ir][ic]
-                if ((command.startswith("X") or command.startswith("Y") or command.startswith("Z")) and command.endswith(numPattern)) :
-                    coord = commandsArray[ir][ic].charAt(0)
-                    self.changeCoord(command, coord)
-              
-                for key, value in switcher.items() :
-                     if (command.__contains__(key)) :
-                        SBPArray[ir][ic].replace(key, value)
-       # print(commandsArray[0][0])                                               
-       # print(SBPArray)
-        print(self.X_Coord)
-            
+                    
+    def getCoords(self, line) :
+        if line.contains('X' + re.search(r'\d', line) + ' ') :
+            self.getNums(line, 'X', ' ')
+        elif line.contains('X' + re.search(r'\d', line) + '\n') :
+            self.getNums(line, 'X', '\n')
+                    
+        if line.contains('Y' + re.search(r'\d', line) + ' ') :
+            self.getNums(line, 'Y', ' ')
+        elif line.contains('Y' + re.search(r'\d', line) + '\n') :
+            self.getNums(line, 'Y', '\n')
+                    
+        if line.contains('Z' + re.search(r'\d', line) + ' ') :
+            self.getNums(line, 'Z', ' ')   
+        elif line.contains('Z' + re.search(r'\d', line) + '\n') :
+            self.getNums(line, 'Z', '\n')
+                    
+    def getNums(self, line, char, space) :
+        if char == 'X' :
+            self.X_Coord = float(line[line.find(char)+1 : line.find(space)]
+        if char == 'Y' :
+            self.Y_Coord = float(line[line.find(char)+1 : line.find(space)]
+        if char == 'Z' :
+            self.Z_Coord = float(line[line.find(char)+1 : line.find(space)]
+                            
+   
     
-    # To change the placeholder coordinates between the two file types
-    def changeCoord(self, command, coord) :
-        temp = coord
-        command.replace(temp, "")
-        if coord == "X" :
-            self.X_Coord = int(coord)
             
-        if coord == "Y" :
-            self.Y_Coord = int(coord)
-            
-        if coord == "Z" :
-            self.Z_Coord = int(coord)
-            
-            
-    def map_func(value, dictionary) :
-        return dictionary[value] if value in dictionary else value
-                               
-
-    def writeSBPFile(self, wordsList) :
-        # Creating new file and writing conversion
-      fileObject = open(self.fileName + "_SBP", 'w')
-      fileObject.writelines(wordsList)
-      fileObject.close()
-        
-     
-    
  ##################################################### testing output below   
     
         
