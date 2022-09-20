@@ -32,12 +32,17 @@ class convert:
         SBPFile = open(file.replace(".gcode", ".txt"), 'w+')
         
         with GCodeFile as scan :
+            numPattern = re.compile("[0-9]+[.]")
             line = GCodeFile.readline()
+        
             while line :
-                if [(line.__contains__("E" + str(numPattern))) and isFlowing == False] :
+                ECommand = re.search(("E" + str(numPattern)), line)
+                print(numPattern)
+                
+                if [line.__contains__(ECommand.group()) and isFlowing == False] :
                     isFlowing = True
                     SBPFile.writeline("S0, 1, 1")                   
-                if [not (line.__contains__("E" + str(numPattern))) and isFlowing == True] :
+                if [(not line.__contains__(ECommand.group())) and isFlowing == True] :
                     isFlowing = False
                     SBPFile.writeline("S0, 1, 0")
                
@@ -50,19 +55,27 @@ class convert:
 
                     
     def getCoords(self, line) :
-        if line.__contains__("X" + str(numPattern) + " ") :
+        numPattern = re.compile("[0-9]+[.]")
+        
+        if line.__contains__((re.search("X" + str(numPattern)), line).group()
+ + " ") :
             self.getNums(line, 'X', ' ')
-        elif line.contains("X" + str(NumPattern) + "\n") :
+        elif line.contains((re.search("X" + str(numPattern)), line).group()
+ + "\n") :
             self.getNums(line, 'X', '\n')
                     
-        if line.__contains__("Y" + str(NumPattern) + " ") :
+        if line.__contains__((re.search("Y" + str(numPattern)), line).group()
+ + " ") :
             self.getNums(line, 'Y', ' ')
-        elif line.__contains__('Y' + str(NumPattern) + "\n") :
+        elif line.__contains__((re.search("Y" + str(numPattern)), line).group()
+ + "\n") :
             self.getNums(line, 'Y', '\n')
                     
-        if line.__contains__("Z" + str(NumPattern) + " ") :
+        if line.__contains__((re.search("Z" + str(numPattern)), line).group()
+ + "\n") :
             self.getNums(line, 'Z', ' ')   
-        elif line.__contains__("Z" + str(NumPattern) + "\n") :
+        elif line.__contains__((re.search("Z" + str(numPattern)), line).group()
+ + "\n") :
             self.getNums(line, 'Z', '\n')
                     
     def getNums(self, line, char, space) :
