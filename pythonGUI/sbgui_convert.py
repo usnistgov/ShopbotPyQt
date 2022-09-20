@@ -13,15 +13,13 @@ class convert:
     X_Coord = 0
     Y_Coord = 0
     Z_Coord = 0
-    numPattern = re.compile("[0-9]+[.]")
+    isFlowing = False
     
     def __init__(self, fileName) :
         self.fileName = fileName
 
     
     def readInFile(self) :
-        isFlowing = False
-        
         
         # If the file isn't GCODE, display error and break out of method
         if ".gcode" not in self.fileName:
@@ -29,62 +27,81 @@ class convert:
                 
         GCodeFile = open(self.fileName, 'r')
         file = copy.copy(self.fileName)
-        SBPFile = open(file.replace(".gcode", ".txt"), 'w+')
+        SBPFile = open(file.replace(".gcode", ".sbp"), 'w+')
         
-        with GCodeFile as scan :
-            numPattern = re.compile("[0-9]+[.]")
+        line = GCodeFile.readline()
+          #  print (line)
+            
+        while line :
+            if line.__contains__(";") :
+                SBPFile.writeline("#" + line)
+                line = line.readline()
+
+            commandList = list(line.split(" "))
+            print (commandList)
+
+            if commandList[-1].__contains__("E") and self.isFlowing is False :
+                isFlowing = True
+                SBPFile.write("S0, 1, 1")    
+            if [not commandList[-1].__contains__("E")] and self.isFlowing is True :
+                isFlowing = False
+                SBPFile.write("S0, 1, 0")
+
+            for command in commandList :
+                if command.__contains__('G0') :
+                    self.getCoord(command)
+                    SBPFile.write("J3, " + str(self.X_Coord) + ", " + str(self.Y_Coord) + ", " + str(self.Z_Coord))
+                if command.__contains__('G1') :
+                    self.getCoord(command)
+                    SBPFile.write("M3, " + str(self.X_Coord) + ", " + str(self.Y_Coord) + ", " + str(self.Z_Coord))
+            
             line = GCodeFile.readline()
+           
+        GCodeFile.close()
         
-            while line :
-                ECommand = re.search(("E" + str(numPattern)), line)
-                print(numPattern)
-                
-                if [line.__contains__(ECommand.group()) and isFlowing == False] :
-                    isFlowing = True
-                    SBPFile.writeline("S0, 1, 1")                   
-                if [(not line.__contains__(ECommand.group())) and isFlowing == True] :
-                    isFlowing = False
-                    SBPFile.writeline("S0, 1, 0")
-               
-                if line.__contains__('G0') :
-                    self.getCoord(line)
-                if line.__contains__('G1') :
-                    self.getCoord(line)
-                    
+        print(SBPFile.readline())
         SBPFile.close()        
 
                     
-    def getCoords(self, line) :
-        numPattern = re.compile("[0-9]+[.]")
+    def getCoord(self, command) :
         
-        if line.__contains__((re.search("X" + str(numPattern)), line).group()
- + " ") :
-            self.getNums(line, 'X', ' ')
-        elif line.contains((re.search("X" + str(numPattern)), line).group()
- + "\n") :
-            self.getNums(line, 'X', '\n')
+        if command.__contains__("X") :
+            if command.__contains__("\n") :
+                self.getNums(command, 'X', '\n')
+            else :
+                self.getNums(command, 'X')
+        if command.__contains__("Y") :
+            if command.__contains__("\n") :
+                self.getNums(command, 'Y', '\n')
+            else :
+                self.getNums(command, 'Y')
+        if command.__contains__("Z") :
+            if command.__contains__("\n") :
+                self.getNums(command, 'Z', '\n')
+            else :
+                self.getNums(command, 'Z')
                     
-        if line.__contains__((re.search("Y" + str(numPattern)), line).group()
- + " ") :
-            self.getNums(line, 'Y', ' ')
-        elif line.__contains__((re.search("Y" + str(numPattern)), line).group()
- + "\n") :
-            self.getNums(line, 'Y', '\n')
-                    
-        if line.__contains__((re.search("Z" + str(numPattern)), line).group()
- + "\n") :
-            self.getNums(line, 'Z', ' ')   
-        elif line.__contains__((re.search("Z" + str(numPattern)), line).group()
- + "\n") :
-            self.getNums(line, 'Z', '\n')
-                    
-    def getNums(self, line, char, space) :
+                
+    #Method of getting numbers with newline in sequence            
+    def getNums(self, command, char, space) :
+            
         if char == 'X' :
-            X_Coord = float(line[line.find(char)+1 : line.find(space)])
+            X_Coord = float(command[1:-1])
         if char == 'Y' :
-            Y_Coord = float(line[line.find(char)+1 : line.find(space)])
+            Y_Coord = float(command[1:-1])
         if char == 'Z' :
-            Z_Coord = float(line[line.find(char)+1 : line.find(space)])
+            Z_Coord = float(command[1:-1])
+    
+    
+    #Method of getting numbers from string
+    def getNums(self, command, char) :
+        
+        if char == 'X' :
+            X_Coord = float(command[1:])
+        if char == 'Y' :
+            Y_Coord = float(command[1:])
+        if char == 'Z' :
+            Z_Coord = float(command[1:])
                             
    
     
