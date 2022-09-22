@@ -342,9 +342,7 @@ class printLoop(QObject):
         headStr = '\t'
         for flag0 in self.channelWatches:
             headStr = headStr + f'flag0:on mode\tstate|\t'
-        headStr = headStr + f'x\ty\tz|\txe\tye\tze|\txt\tyt\tzt|\tflag'
-        if self.diag>2:
-             headStr = headStr + f'\ttrd\tlrd\ttld\tted\tled'
+        headStr = headStr + f'x\ty\tz|\txe\tye\tze|\txt\tyt\tzt|\tflag\ttrd\tlrd\ttld\tted\tled'
         self.headStr = headStr
         if self.diag>1:
             print(self.headStr)
@@ -409,7 +407,7 @@ class printLoop(QObject):
         self.points = sp
         self.pointsi = -1
         self.printi = -1
-        self.zmax = self.points[self.points.z<0].z.max() + 1
+        self.zmax = self.points[self.points.z<=0].z.max() + 1
         self.fillTable()    # fill empty entries with current position
 
         
@@ -635,10 +633,10 @@ class printLoop(QObject):
             diagStr = diagStr + f'\t{xe:2.2f}\t{ye:2.2f}\t{ze:2.2f}|'
             diagStr = diagStr + f'\t{xt:2.2f}\t{yt:2.2f}\t{zt:2.2f}|'
             diagStr = diagStr + f'\t{self.flag}'
+            diagStr = diagStr + f'\t{trd:2.2f}\t{lrd:2.2f}\t{tld:2.2f}\t{ted:2.2f}\t{led:2.2f}'
         else:
             diagStr = ''
         if self.diag>2:
-            diagStr = diagStr + f'\t{trd:2.2f}\t{lrd:2.2f}\t{tld:2.2f}\t{ted:2.2f}\t{led:2.2f}'
             print(diagStr)
             self.printi+=1
             
@@ -647,7 +645,7 @@ class printLoop(QObject):
             # estimate has gone past read point: slow down estimate
             self.speed = 0.95*self.speed  
             if self.diag>2:
-                diagStr = diagStr + f'Reduce speed to {self.speed:2.2f}'
+                diagStr = diagStr + f' Reduce speed to {self.speed:2.2f}'
 
         readyForNextPoint = {}
         ready = False

@@ -215,7 +215,7 @@ class channelWatch(QObject):
 
                     # zero out crit distance for short moves
                     tld = ppDist(lastPoint, targetPoint)  # distance between last point and target point
-                    if tld<abs(self.critDistance)*2:
+                    if tld<abs(self.critDistance):
                         self.critDistance = self.zeroDist
             else:
                 # do nothing at point
@@ -312,7 +312,6 @@ class channelWatch(QObject):
                         readyForNextPoint = True
                 elif self.state==5:
                     # turn off at end
-
                     if not flagOn0:
                         if tld<self.zeroDist:
                             # no movement during this line
@@ -324,7 +323,9 @@ class channelWatch(QObject):
                             if self.critDistance<0:
                                 # turn off before end of line
                                 pastTarget = led>tld
-                                atTarget = ted<-self.critDistance
+                                atTarget = ted<abs(self.critDistance)
+                                if ted<self.zeroDist:
+                                    readyForNextPoint = True
                                 if atTarget:
                                     if self.diag>=2:
                                         if atTarget:
@@ -332,7 +333,6 @@ class channelWatch(QObject):
                                         # if pastTarget:
                                         #     print(f'{diagStr} Estimated point past target')
                                     self.turnOff()
-                                    readyForNextPoint = True
                             else:
                                 # turn off after end of line
                                 atTarget = led>tld+self.critDistance
