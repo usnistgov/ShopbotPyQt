@@ -27,15 +27,18 @@ class convert:
         if ".gcode" not in self.fileName:
                 print("File must be GCODE") 
                 
-        GCodeFile = open(self.fileName, 'r')
         file = copy.copy(self.fileName)
         SBPFile = open(file.replace(".gcode", ".txt"), 'w+')
         
-        with GCodeFile as scan :
+        with open(self.fileName, 'r') as scan :
             numPattern = re.compile("[0-9]+[.]")
-            line = GCodeFile.readline()
-        
-            while line :
+            
+            while True :
+                line = GCodeFile.readline()
+                
+                if not line:
+                    break
+                
                 ECommand = re.search(("E" + str(numPattern)), line)
                 print(numPattern)
                 
@@ -51,7 +54,7 @@ class convert:
                 if line.__contains__('G1') :
                     self.getCoord(line)
                     
-        SBPFile.close()        
+        SBPFile.close()
 
                     
     def getCoords(self, line) :
