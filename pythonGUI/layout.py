@@ -239,7 +239,6 @@ class SBwindow(QMainWindow):
         menubar = self.menuBar()
         self.setupLog(menubar)                  # create a log window, not open yet
         self.setupCalib(menubar)
-   #     self.setupConvert(menubar)
         self.setupSettings(menubar)                  # create a log window, not open yet
         if self.test:
             self.setupDropTest(menubar)
