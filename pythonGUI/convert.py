@@ -9,6 +9,8 @@ import copy
 
    ######################## Convert window
 
+   # Note: GCODE commands that are ignored: M104, M105, M107, M109, M140, 190
+
 class convert:
 
     
@@ -19,10 +21,10 @@ class convert:
         self.ERate = self.moveRate = "0"
 
         self.minX = self.maxX = self.minY = self.maxY = self.minZ = self.maxZ = "0"
+        self.checkMinX = self.checkMinY = self.checkMinZ = self.checkMaxX = self.checkMaxY = self.checkMaxZ = False
       
     
     def readInFile(self) :
-        checkMinX = checkMinY = checkMinZ = checkMaxX = checkMaxY = checkMaxZ = False
         isFlowing = False
         isWritten = False
         
@@ -46,10 +48,7 @@ class convert:
                         break
                     
    ##################################################### Setting Variables
-                    if ((checkMinX and checkMinY and checkMinZ and checkMaxX and checkMaxY and checkMaxZ) and not isWritten) :
-                        SBPFile.write("VL, " + self.minX + ", " + self.maxX + ", " + self.minY + ", " + self.maxY + ", " + self.minZ + ", " + self.maxZ + ", , , , , \n")
-                        isWritten = True
-                
+                   
                     if line.__contains__(";") :
                         semiSpot = line.find(";")  #if comment in middle of code, get rid of comment
                         if semiSpot != 0 :
@@ -57,6 +56,10 @@ class convert:
                             
                         if line.__contains__("MIN") or line.__contains__("MAX") :
                             self.getCoord(line)
+                            
+                    if ((self.checkMinX and self.checkMinY and self.checkMinZ and self.checkMaxX and self.checkMaxY and self.checkMaxZ) and not isWritten) :
+                            SBPFile.write("VL, " + self.minX + ", " + self.maxX + ", " + self.minY + ", " + self.maxY + ", " + self.minZ + ", " + self.maxZ + ", , , , , \n")
+                            isWritten = True
                                                
                                             
    ################################################## E command switch to S0, 1, 1/0                          
@@ -144,7 +147,7 @@ class convert:
                 ZCommand = line.partition("Z")[2]
                 specChar = ZCommand.find(" ")
                 self.Z_Coord = (ZCommand[0 : specChar])
-                
+ 
             ZCommand = line.partition(":")[2]
             specChar = ZCommand.find(" ")
             if line.__contains__("MAX") :
@@ -178,5 +181,5 @@ class convert:
    ################################################### testing output below   
     
         
-object = convert("STARTTest.gcode")
+object = convert("Test.gcode")
 object.readInFile()
