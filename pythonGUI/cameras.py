@@ -195,7 +195,8 @@ class cameraBox(connectBox):
         cfg1.camera[self.cname].name = self.bTitle
         cfg1.camera[self.cname].type = self.type
         cfg1.camera[self.cname].flag1 = self.flag1
-        cfg1.camera[self.cname].checked = self.camInclude.isChecked()
+        if hasattr(self, 'camInclude'):
+            cfg1.camera[self.cname].checked = self.camInclude.isChecked()
         self.camObj.saveConfig(cfg1)
         return cfg1
     
@@ -504,7 +505,7 @@ class camBoxes:
         for camBox in self.list:
             camBox.writeToTable(writer)
             
-    def dropTest(self, times:list[float], reclist:list[list[str]], prevlist:list[list[str]]):
+    def dropTest(self, times:List[float], reclist:List[List[str]], prevlist:List[List[str]]):
         '''count dropped frames under multiple conditions'''
         cams = []
         for box in self.list:

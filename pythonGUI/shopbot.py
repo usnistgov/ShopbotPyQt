@@ -376,8 +376,10 @@ class sbBox(connectBox):
         cfg1.shopbot.burstScale = self.burstScale
         cfg1.shopbot.burstLength = self.burstLength
         cfg1.shopbot.diag = self.diag
-        cfg1 = self.settingsBox.saveConfig(cfg1)
-        cfg1 = self.sbList.saveConfig(cfg1)
+        if hasattr(self, 'settingsBox'):
+            cfg1 = self.settingsBox.saveConfig(cfg1)
+        if hasattr(self, 'sbList'):
+            cfg1 = self.sbList.saveConfig(cfg1)
         return cfg1
     
     def loadConfigMain(self, cfg1):

@@ -34,7 +34,7 @@ files:
   includeSampleInFile: true
   includeSampleInFolder: true
   includeTimeInFile: true
-  save: C:\Users\lmf1\Documents\Shopbot videos\test
+  save: C:\\
   separator: _
   tag: test
   timeFormat: '%y%m%d_%H%M%S_%f'
