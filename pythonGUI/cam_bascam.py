@@ -54,7 +54,7 @@ class bascamVC(vc):
             self.grabError(e, 1, False)
             self.connected = False
             return
-        
+
         # open camera
         try:
             self.camDevice.Open()
