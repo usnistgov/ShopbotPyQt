@@ -10,6 +10,7 @@ import copy
    ######################## Convert window
 
 class convert:
+
     
     def __init__(self, fileName) :
         self.fileName = fileName
@@ -17,13 +18,13 @@ class convert:
         
         self.ERate = self.moveRate = "0"
 
-        self.minX = self.maxX = self.minY = self.maxY = self.minZ = self.maxZ = ""
+        self.minX = self.maxX = self.minY = self.maxY = self.minZ = self.maxZ = "0"
       
     
     def readInFile(self) :
+        checkMinX = checkMinY = checkMinZ = checkMaxX = checkMaxY = checkMaxZ = False
         isFlowing = False
         isWritten = False
-        checkMinX = checkMinY = checkMinZ = checkMaxX = checkMaxY = checkMaxZ = False
         
         # If the file isn't GCODE, display error and break out of method
         if ".gcode" not in self.fileName:
@@ -40,11 +41,13 @@ class convert:
                 while True :
                     line = GCodeFile.readline()
                     if not line:
+                        SBPFile.write("SO, 12, 0\n")
+                        SBPFile.write("SO, 2, 0\n")
                         break
                     
    ##################################################### Setting Variables
-                    if checkMinX is True and checkMinY is True and checkMin Z is True and checkMaxX is True and checkMaxY is True and checkMaxZ is True and isWritten is False :
-                        SBPFile.write("")
+                    if ((checkMinX and checkMinY and checkMinZ and checkMaxX and checkMaxY and checkMaxZ) and not isWritten) :
+                        SBPFile.write("VL, " + self.minX + ", " + self.maxX + ", " + self.minY + ", " + self.maxY + ", " + self.minZ + ", " + self.maxZ + ", , , , , \n")
                         isWritten = True
                 
                     if line.__contains__(";") :
@@ -52,27 +55,8 @@ class convert:
                         if semiSpot != 0 :
                             line = line.partition(";")[0]
                             
-                        if line.__contains__("MIN") :
-                            if line.__contains__("Y") :
-                                self.minY = line.partition(":")[2]
-                                checkMinY = True
-                            elif line.__contains__("Z") :
-                                self.minZ = line.partition(":")[2]
-                                checkMinZ = True
-                            else :
-                                self.minX = line.partition(":")[2]
-                                checkMinX = True
-                                
-                        if line.__contains__("MAX") :
-                            if line.__contains__("Y") :
-                                self.maxY = line.partition(":")[2]
-                                checkMaxY = True
-                            elif line.__contains__("Z") :
-                                self.maxZ = line.partition(":")[2]
-                                checkMaxZ = True
-                            else :
-                                self.maxX = line.partition(":")[2]
-                                checkMaxX = True
+                        if line.__contains__("MIN") or line.__contains__("MAX") :
+                            self.getCoord(line)
                                                
                                             
    ################################################## E command switch to S0, 1, 1/0                          
@@ -115,9 +99,6 @@ class convert:
 
                     if line.__contains__("G28") :
                         SBPFile.write("MH\n")  
-        
-        SBPFile.write("SO, 12, 0")
-        SBPFile.write("SO, 2, 0")
          
         
    ###################################################
@@ -129,19 +110,49 @@ class convert:
     def getCoord(self, line) :  # Retrieving values after key characters
         
         if line.__contains__("X") :
-            XCommand = line.partition("X")[2]
+            if line.__contains__("G0") or line.__contains__("G1") :
+                XCommand = line.partition("X")[2]
+                specChar = XCommand.find(" ")
+                self.X_Coord = (XCommand[0 : specChar])
+                
+            XCommand = line.partition(":")[2]
             specChar = XCommand.find(" ")
-            self.X_Coord = (XCommand[0 : specChar])
+            if line.__contains__("MAX") :
+                self.maxX = (XCommand[0 : specChar])
+                self.checkMaxX = True
+            if line.__contains__("MIN") :
+                self.minX = (XCommand[0 : specChar])
+                self.checkMinX = True
                     
         if line.__contains__("Y") :
-            YCommand = line.partition("Y")[2]
+            if line.__contains__("G0") or line.__contains__("G1") :
+                YCommand = line.partition("Y")[2]
+                specChar = YCommand.find(" ")
+                self.Y_Coord = (YCommand[0 : specChar])
+                
+            YCommand = line.partition(":")[2]
             specChar = YCommand.find(" ")
-            self.Y_Coord = (YCommand[0 : specChar])            
+            if line.__contains__("MAX") :
+                self.maxY = (YCommand[0 : specChar])
+                self.checkMaxY = True
+            if line.__contains__("MIN") :
+                self.minY = (YCommand[0 : specChar])
+                self.checkMinY = True
             
         if line.__contains__("Z") :
-            ZCommand = line.partition("Z")[2]
+            if line.__contains__("G0") or line.__contains__("G1") :
+                ZCommand = line.partition("Z")[2]
+                specChar = ZCommand.find(" ")
+                self.Z_Coord = (ZCommand[0 : specChar])
+                
+            ZCommand = line.partition(":")[2]
             specChar = ZCommand.find(" ")
-            self.Z_Coord = (ZCommand[0 : specChar])            
+            if line.__contains__("MAX") :
+                self.maxZ = (ZCommand[0 : specChar])
+                self.checkMaxZ = True
+            if line.__contains__("MIN") :
+                self.minZ = (ZCommand[0 : specChar])
+                self.checkMinZ = True
             
         if line.__contains__("E") :
             ECommand = line.partition("E")[2]
