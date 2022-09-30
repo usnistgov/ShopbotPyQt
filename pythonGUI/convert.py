@@ -6,14 +6,15 @@ from general import *
 import re
 import numpy
 import copy
+import sbList
+from PyQt5.QtWidgets import QMainWindow, QDialog, QVBoxLayout, QWidget, QApplication, QAction, QLabel, QCheckBox, QGridLayout, QFileDialog
 
-   ######################## Convert window
+   ######################## Conversion program
 
    # Note: GCODE commands that are ignored: M104, M105, M107, M109, M140, 190
 
 class convert:
 
-    
     def __init__(self, fileName) :
         self.fileName = fileName
         self.X_Coord = self.Y_Coord = self.Z_Coord = "0"
@@ -21,8 +22,7 @@ class convert:
         self.ERate = self.moveRate = "0"
 
         self.minX = self.maxX = self.minY = self.maxY = self.minZ = self.maxZ = "0"
-        self.checkMinX = self.checkMinY = self.checkMinZ = self.checkMaxX = self.checkMaxY = self.checkMaxZ = False
-      
+        self.checkMinX = self.checkMinY = self.checkMinZ = self.checkMaxX = self.checkMaxY = self.checkMaxZ = False   
     
     def readInFile(self) :
         isFlowing = False
@@ -60,8 +60,7 @@ class convert:
                     if ((self.checkMinX and self.checkMinY and self.checkMinZ and self.checkMaxX and self.checkMaxY and self.checkMaxZ) and not isWritten) :
                             SBPFile.write("VL, " + self.minX + ", " + self.maxX + ", " + self.minY + ", " + self.maxY + ", " + self.minZ + ", " + self.maxZ + ", , , , , \n")
                             isWritten = True
-                                               
-                                            
+                                                                                
    ################################################## E command switch to S0, 1, 1/0                          
                     isE = False
                     if line.__contains__("E") and not line.__contains__(";") :
@@ -77,8 +76,7 @@ class convert:
                             if isE is False and isFlowing is True :
                                 isFlowing = False
                                 SBPFile.write("S0, 1, 0\n")
-
-                                
+                          
    ################################################### G0/G1 command switch to J3/M3 & setting move rate
     
                     if line.__contains__("G0") and not line.__contains__(";") :
@@ -102,13 +100,7 @@ class convert:
 
                     if line.__contains__("G28") :
                         SBPFile.write("MH\n")  
-         
-        
-   ###################################################
-                            
-                            
-
-
+          
    ######################################################################                    
     def getCoord(self, line) :  # Retrieving values after key characters
         
@@ -177,9 +169,74 @@ class convert:
         convertedSpeed = speed / 60
         self.moveRate = str(round(convertedSpeed, 2))
                                             
-   
-   ################################################### testing output below   
+   ###############################################  Conversion Window
     
+class convertDialog(QDialog) :
+    
+    def __init__(self, sbWin) :
+        super().__init__(sbWin)
+        self.sbWin = sbWin
         
-object = convert("Test.gcode")
-object.readInFile()
+        self.file = ""
+        self.pathway = ""
+        self.setWindowTitle("File Conversion")
+        
+        layout = QGridLayout()
+        
+        self.GFileLabel = fLabel(layout, title = 'File: ')
+        self.pathLabel = fLabel(layout, title = 'Pathway to save: ')
+        layout.addWidget(self.GFileLabel, 0,0)
+        layout.addWidget(self.pathLabel, 2, 0)
+        
+        
+        self.pathBox = fCheckBox(layout, title = 'Save to same folder as original', checked = False, func = self.temp)
+        queueBox = fCheckBox(layout, title = 'load to queue after conversion', checked = False, func = self.temp)
+        #will be sbList.py.addFile(file)
+        layout.addWidget(self.pathBox, 2, 1)
+        layout.addWidget(queueBox, 0, 1)
+        
+       
+        layout.addWidget(fButton(layout, title = 'Choose Save Location',
+                tooltip = 'Choose Location to save .sbp file'), 3, 0)
+        
+        layout.addWidget(fButton(layout, title = 'Load File',
+                tooltip = 'Load gcode file to convert to sbp',
+                func = self.loadFile), 1, 0)
+        
+        layout.addWidget( fButton(layout, title = 'Convert File',
+                tooltip = 'convert .gcode file to .sbp'), 4, 0)
+        #will be convert.readInFile(file)
+        
+        
+        self.setLayout(layout)
+        self.resize(500, 500)
+        
+        self.updateFile()
+        
+        
+        
+    def loadFile(self) -> None :
+        openFolder = r'C:\\'
+        self.file = QtGui.QFileDialog.getOpenFileName(self, "Open File", openFolder, 'Gcode file (*.gcode)')
+        self.updateFile()
+    
+    def updateFile(self) -> None :
+        self.GFileLabel.setText('File:  ' + self.file)
+        
+    def updatePathway(self) -> None :
+        self.samePath = self.pathBox.isChecked()
+        
+    def temp(self) -> None :
+        None
+        
+   
+                
+    def close(self) :
+        self.done(0)
+
+
+
+
+
+
+   ################################################### testing output below   
