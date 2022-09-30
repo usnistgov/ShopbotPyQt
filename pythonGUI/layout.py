@@ -25,6 +25,7 @@ import cameras
 import calibration
 import sbprint
 import flags
+import convert
 from config import cfg
 
 currentdir = os.path.dirname(os.path.realpath(__file__))
@@ -52,8 +53,7 @@ class SBwindow(QMainWindow):
         self.flagBox = flags.flagGrid(self, tall=False)
         self.settingsDialog = QDialog()
         self.save = False
-# =======
-           #  self.convertDialog = None    
+        self.convertDialog = QDialog()    
         
         self.meta = meta
         self.sb = sb
@@ -84,7 +84,8 @@ class SBwindow(QMainWindow):
         
     def boxes(self) -> List:
         b = []
-        for s in ['settingsDialog', 'logDialog','fileBox', 'sbBox', 'fluBox', 'calibDialog', 'metaBox']:
+
+        for s in ['settingsDialog', 'logDialog', 'convertDialog', 'fileBox', 'sbBox', 'fluBox', 'calibDialog', 'metaBox']:
             if hasattr(self, s):
                 b.append(getattr(self, s))
         if hasattr(self, 'camBoxes'):
@@ -217,20 +218,21 @@ class SBwindow(QMainWindow):
         
     #----------------
     # Convert
-    '''
+
     def setupConvert(self, menubar) -> None:
-        Create the convert dialog
-        self.convertlog = convertDialog(self)
+        '''Create the convert dialog'''
+        self.convertDialog = convert.convertDialog(self)
         self.convertButt = QAction('Convert', self)
         self.convertButt.setStatusTip('Convert .gcode file to .sbp')
         self.convertButt.triggered.connect(self.openConvert)
         menubar.addAction(self.convertButt) # add button to open convertion window
         
     def openConvert(self) -> None:
-        Open the conversion window
+        '''Open the conversion window'''
         self.convertDialog.show()
         self.convertDialog.raise_()
-    '''
+    
+    
     #----------------
     # top menu
         
@@ -239,6 +241,7 @@ class SBwindow(QMainWindow):
         menubar = self.menuBar()
         self.setupLog(menubar)                  # create a log window, not open yet
         self.setupCalib(menubar)
+        self.setupConvert(menubar)
         self.setupSettings(menubar)                  # create a log window, not open yet
         if self.test:
             self.setupDropTest(menubar)
