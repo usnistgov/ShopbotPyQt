@@ -293,6 +293,18 @@ class SBPPoints:
             p1['speed'] = 0
         else:
             p1['speed'] = 0
+        # if p1['speed']==0 and len(self.points)>1:
+        #     # only add this point if we're changing channels
+        #     add = False
+        #     for c in self.channels:
+        #         if not p1[f'p{c}_before'] == p1[f'p{c}_after']:
+        #             add = True
+        #     if add:
+        #         self.points.append(p1)
+        #     else:
+        #         print(self.points)
+        # else:
+        #     self.points.append(p1)
         self.points.append(p1)
         
     def changeInkSpeed(self, command:str) -> None:
@@ -300,8 +312,7 @@ class SBPPoints:
         spl = re.split('=', command)
         channel = spl[0][-1]
         val = float(spl[1])
-        self.points.append({f'p{channel}_before':-1000, f'p{channel}_after':val})  # -1000 is code for "change speed"
-        
+        self.points.append({f'p{channel}_before':-1000, f'p{channel}_after':val})  # -1000 is code for "change speed"        
             
     def readLine(self, l:str) -> None:
         '''read a line into the list of points'''
@@ -316,7 +327,8 @@ class SBPPoints:
                 self.pressures[channel] = 1
             else:
                 self.pressures[channel] = 0
-            self.points[-1][f'p{int(channel)}_after'] = self.pressures[channel]   # 0-indexed
+            if self.points[-1][f'p{int(channel)}_after'] in [0,1]:
+                self.points[-1][f'p{int(channel)}_after'] = self.pressures[channel]   # 0-indexed
         elif spl[0][0] in ['M', 'J']:
             if spl[0][1] in ['X', 'Y', 'Z']:
                 # MX, MY, MZ, JX, JY, JZ

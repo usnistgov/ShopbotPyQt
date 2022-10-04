@@ -141,7 +141,7 @@ class calibPlot:
             if d>0:
                 p = (-b+np.sqrt(d))/(2*a)
             else:
-                logging.warning('Speed cannot be reached')
+                logging.warning(f'Speed cannot be reached: {s}')
                 p = 0
         elif abs(b)>0:
             p = (s-c)/b
