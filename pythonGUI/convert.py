@@ -19,25 +19,34 @@ class convert:
 
     def __init__(self, fileName) :
         self.fileName = fileName
-        self.X_Coord = self.Y_Coord = self.Z_Coord = "0"
+        self.shared = sharedConvert()
         
+        self.X_Coord = self.Y_Coord = self.Z_Coord = "0"
         self.ERate = self.moveRate = "0"
 
         self.minX = self.maxX = self.minY = self.maxY = self.minZ = self.maxZ = "0"
-        self.checkMinX = self.checkMinY = self.checkMinZ = self.checkMaxX = self.checkMaxY = self.checkMaxZ = False   
+        self.checkMinX = self.checkMinY = self.checkMinZ = self.checkMaxX = self.checkMaxY = self.checkMaxZ = False
+    
     
     def readInFile(self) :
         isFlowing = False
         isWritten = False
         
         # If the file isn't GCODE, display error and break out of method
-        if ".gcode" not in self.fileName:
-                print("File must be GCODE") 
+        if (".gcode" or ".stl") not in self.fileName:
+                print("File must be GCODE or STL") 
                 
         file = copy.copy(self.fileName)
+        print("Copy : " + file)
         renameFile = file.replace(".gcode", ".sbp")
-       
+        print("gcode/sbp : " + renameFile)
         
+        if self.shared.samePath is False :
+            print("dir : " + os.path.dirname(file))
+            print("pathway : " + self.shared.pathway)
+            renameFile = file.replace(os.path.dirname(file), self.shared.pathway)
+            print("dir/path replace : " + renameFile)
+       
         with open(self.fileName, 'r') as GCodeFile :
             with open(renameFile, 'w+') as SBPFile :
                 SBPFile.write("SO, 12, 1\n")
@@ -102,7 +111,7 @@ class convert:
 
                     if line.__contains__("G28") :
                         SBPFile.write("MH\n")  
-          
+        self.shared.finished = True
    ######################################################################                    
     def getCoord(self, line) :  # Retrieving values after key characters
         
@@ -179,9 +188,11 @@ class convertDialog(QDialog) :
         super().__init__(sbWin)
         self.sbWin = sbWin
         
+        self.shared = sharedConvert()
+        self.addQueue = False
+        
         self.filePath = ""
         self.fileName = ""
-        self.pathway = ""
         self.setWindowTitle("File Conversion")
         
         layout = QGridLayout()
@@ -191,56 +202,78 @@ class convertDialog(QDialog) :
         layout.addWidget(self.GFileLabel, 0,0)
         layout.addWidget(self.pathLabel, 2, 0)
         
-        
-        self.pathBox = fCheckBox(layout, title = 'Save to same folder as original', checked = False, func = self.temp)
-        queueBox = fCheckBox(layout, title = 'load to queue after conversion', checked = False, func = self.temp)
-        #will be sbList.py.addFile(file)
+        self.pathBox = fCheckBox(layout, title = 'Save to same folder as original', checked = self.shared.samePath, func = self.updatePathway)
+        queueBox = fCheckBox(layout, title = 'load to queue after conversion', checked = self.addQueue, func = self.updateQueue)
         layout.addWidget(self.pathBox, 2, 1)
         layout.addWidget(queueBox, 0, 1)
         
        
         layout.addWidget(fButton(layout, title = 'Choose Save Location',
-                tooltip = 'Choose Location to save .sbp file'), 3, 0)
+                tooltip = 'Choose Location to save .sbp file',
+                func = self.loadDir), 3, 0)
         
         layout.addWidget(fButton(layout, title = 'Load File',
-                tooltip = 'Load gcode file to convert to sbp',
+                tooltip = 'Load file to convert to sbp',
                 func = self.loadFile), 1, 0)
         
         layout.addWidget( fButton(layout, title = 'Convert File',
-                tooltip = 'convert .gcode file to .sbp'), 4, 0)
-        #will be convert.readInFile(file)
-        
+                tooltip = 'convert file to .sbp', func = self.conversion), 4, 0)
         
         self.setLayout(layout)
         self.resize(500, 500)
         
         self.updateFile()
         
+        if self.shared.finished is True:
+            self.close()
         
         
     def loadFile(self) -> None :
         openFolder = r'C:\\'
-        self.filePath = QFileDialog.getOpenFileName(self, "Open File", openFolder, 'Gcode file (*.gcode)')
+        self.filePath = QFileDialog.getOpenFileName(self, "Open File", openFolder, 'Gcode file (*.gcode *.stl)')
         self.fileName = os.path.basename(self.filePath[0])
         self.updateFile()
+        
+    def loadDir(self) -> None :
+        if self.shared.samePath is False:
+            openFolder = r'C:\\'
+            self.shared.pathway = QFileDialog.getExistingDirectory(self, "Choose Directory", openFolder)
+            self.pathLabel.setText('Pathway to save : ' + self.shared.pathway)
+            
+    def loadToQueue(self) -> None :
+        #will be sbList.py.addFile(file)
+        self.temp = None
     
     def updateFile(self) -> None :
         self.GFileLabel.setText('File:  ' + self.fileName)
         
     def updatePathway(self) -> None :
-        self.samePath = self.pathBox.isChecked()
+        self.shared.samePath = self.pathBox.isChecked()
         
-    def temp(self) -> None :
-        None
+        if self.shared.samePath is True :
+            self.shared.pathway = os.path.dirname(self.filePath[0])
+            self.pathLabel.setText('Pathway to save : ' + self.shared.pathway)
+        else :
+            self.pathLabel.setText('Pathway to save : ')
         
-   
-                
+    def updateQueue(self) -> None :
+        self.addQueue = self.pathBox.isChecked()
+        
+    def conversion(self) -> None :
+        print(type(self.shared.pathway))
+        print("Before called into convert : " + self.shared.pathway)
+        fileObject = convert(self.filePath[0])
+        fileObject.readInFile()
+        
     def close(self) :
         self.done(0)
 
-
-
-
-
-
+   #################################################### Shared class for convert & convertDialog
+class sharedConvert :
+    
+    def __init__(self) :
+        self.samePath = False
+        self.pathway = ""
+        self.finished = False
+        
    ################################################### testing output below   
