@@ -17,9 +17,9 @@ from PyQt5.QtWidgets import QMainWindow, QDialog, QVBoxLayout, QWidget, QApplica
 
 class convert:
 
-    def __init__(self, fileName) :
+    def __init__(self, fileName, convertShare) :
         self.fileName = fileName
-        self.shared = sharedConvert()
+        self.shared = convertShare
         
         self.X_Coord = self.Y_Coord = self.Z_Coord = "0"
         self.ERate = self.moveRate = "0"
@@ -37,15 +37,10 @@ class convert:
                 print("File must be GCODE or STL") 
                 
         file = copy.copy(self.fileName)
-        print("Copy : " + file)
         renameFile = file.replace(".gcode", ".sbp")
-        print("gcode/sbp : " + renameFile)
         
         if self.shared.samePath is False :
-            print("dir : " + os.path.dirname(file))
-            print("pathway : " + self.shared.pathway)
             renameFile = file.replace(os.path.dirname(file), self.shared.pathway)
-            print("dir/path replace : " + renameFile)
        
         with open(self.fileName, 'r') as GCodeFile :
             with open(renameFile, 'w+') as SBPFile :
@@ -110,7 +105,8 @@ class convert:
                         SBPFile.write("SA\n")
 
                     if line.__contains__("G28") :
-                        SBPFile.write("MH\n")  
+                        SBPFile.write("MH\n")
+                        
         self.shared.finished = True
    ######################################################################                    
     def getCoord(self, line) :  # Retrieving values after key characters
@@ -172,7 +168,7 @@ class convert:
             specChar = FCommand.find(" ")
             speed = FCommand[0 : specChar]
             if speed[0].isdigit() is True :
-                speedInt = int(speed)
+                speedInt = int(float(speed))
                 self.getRate(speedInt)
                
 
@@ -262,7 +258,7 @@ class convertDialog(QDialog) :
     def conversion(self) -> None :
         print(type(self.shared.pathway))
         print("Before called into convert : " + self.shared.pathway)
-        fileObject = convert(self.filePath[0])
+        fileObject = convert(self.filePath[0], self.shared)
         fileObject.readInFile()
         
     def close(self) :
