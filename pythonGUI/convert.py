@@ -4,9 +4,11 @@
 # local packages
 from general import *
 import re
+import os
 import numpy
 import copy
 import sbList
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow, QDialog, QVBoxLayout, QWidget, QApplication, QAction, QLabel, QCheckBox, QGridLayout, QFileDialog
 
    ######################## Conversion program
@@ -177,7 +179,8 @@ class convertDialog(QDialog) :
         super().__init__(sbWin)
         self.sbWin = sbWin
         
-        self.file = ""
+        self.filePath = ""
+        self.fileName = ""
         self.pathway = ""
         self.setWindowTitle("File Conversion")
         
@@ -217,11 +220,12 @@ class convertDialog(QDialog) :
         
     def loadFile(self) -> None :
         openFolder = r'C:\\'
-        self.file = QtGui.QFileDialog.getOpenFileName(self, "Open File", openFolder, 'Gcode file (*.gcode)')
+        self.filePath = QFileDialog.getOpenFileName(self, "Open File", openFolder, 'Gcode file (*.gcode)')
+        self.fileName = os.path.basename(self.filePath[0])
         self.updateFile()
     
     def updateFile(self) -> None :
-        self.GFileLabel.setText('File:  ' + self.file)
+        self.GFileLabel.setText('File:  ' + self.fileName)
         
     def updatePathway(self) -> None :
         self.samePath = self.pathBox.isChecked()
