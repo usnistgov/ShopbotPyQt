@@ -108,6 +108,7 @@ class convert:
                         SBPFile.write("MH\n")
                         
         self.shared.finished = True
+        return renameFile
    ######################################################################                    
     def getCoord(self, line) :  # Retrieving values after key characters
         
@@ -189,6 +190,7 @@ class convertDialog(QDialog) :
         
         self.filePath = ""
         self.fileName = ""
+        self.custFolder = ""
         self.setWindowTitle("File Conversion")
         
         layout = QGridLayout()
@@ -198,15 +200,15 @@ class convertDialog(QDialog) :
         layout.addWidget(self.GFileLabel, 0,0)
         layout.addWidget(self.pathLabel, 2, 0)
         
-        self.pathBox = fCheckBox(layout, title = 'Save to same folder as original', checked = self.shared.samePath, func = self.updatePathway)
+        self.pathBox = fCheckBox(layout, title = 'Save to file folder', checked = self.shared.samePath, func = self.updatePathway)
         queueBox = fCheckBox(layout, title = 'load to queue after conversion', checked = self.addQueue, func = self.updateQueue)
         layout.addWidget(self.pathBox, 2, 1)
         layout.addWidget(queueBox, 0, 1)
         
-       
-        layout.addWidget(fButton(layout, title = 'Choose Save Location',
+        self.locButt = fButton(layout, title = 'Choose Save Location',
                 tooltip = 'Choose Location to save .sbp file',
-                func = self.loadDir), 3, 0)
+                func = self.loadDir)
+        layout.addWidget(self.locButt, 3, 0)
         
         layout.addWidget(fButton(layout, title = 'Load File',
                 tooltip = 'Load file to convert to sbp',
@@ -233,12 +235,9 @@ class convertDialog(QDialog) :
     def loadDir(self) -> None :
         if self.shared.samePath is False:
             openFolder = r'C:\\'
-            self.shared.pathway = QFileDialog.getExistingDirectory(self, "Choose Directory", openFolder)
+            self.custFolder = QFileDialog.getExistingDirectory(self, "Choose Directory", openFolder)
+            self.shared.pathway = self.custFolder
             self.pathLabel.setText('Pathway to save : ' + self.shared.pathway)
-            
-    def loadToQueue(self) -> None :
-        #will be sbList.py.addFile(file)
-        self.temp = None
     
     def updateFile(self) -> None :
         self.GFileLabel.setText('File:  ' + self.fileName)
@@ -247,19 +246,27 @@ class convertDialog(QDialog) :
         self.shared.samePath = self.pathBox.isChecked()
         
         if self.shared.samePath is True :
+            self.locButt.setEnabled(False)
             self.shared.pathway = os.path.dirname(self.filePath[0])
             self.pathLabel.setText('Pathway to save : ' + self.shared.pathway)
         else :
-            self.pathLabel.setText('Pathway to save : ')
+            self.locButt.setEnabled(True)
+            if not self.custFolder :
+                self.pathLabel.setText('Pathway to save : ' + self.shared.pathway)
+            else :
+                self.pathLabel.setText('Pathway to save : ' + self.custFolder)
         
     def updateQueue(self) -> None :
         self.addQueue = self.pathBox.isChecked()
         
     def conversion(self) -> None :
-        print(type(self.shared.pathway))
-        print("Before called into convert : " + self.shared.pathway)
         fileObject = convert(self.filePath[0], self.shared)
-        fileObject.readInFile()
+        newFile = fileObject.readInFile()
+        
+        # if self.addQueue is True :
+            #sbl.py.addFile(newFile)
+        
+        self.close()
         
     def close(self) :
         self.done(0)
