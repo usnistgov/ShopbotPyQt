@@ -3,13 +3,19 @@
 
 # local packages
 from general import *
+import sbList
+
 import re
 import os
+import subprocess
+import winreg
+
 import numpy
+import logging
 import copy
-import sbList
+
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QMainWindow, QDialog, QVBoxLayout, QWidget, QApplication, QAction, QLabel, QCheckBox, QGridLayout, QFileDialog
+from PyQt5.QtWidgets import QMainWindow, QDialog, QVBoxLayout, QWidget, QApplication, QAction, QLabel, QCheckBox, QGridLayout, QFileDialog, QPushButton
 
    ######################## Conversion program
 
@@ -37,13 +43,15 @@ class convert:
                 print("File must be GCODE or STL") 
                 
         file = copy.copy(self.fileName)
-        renameFile = file.replace(".gcode", ".sbp")
         
         if self.shared.samePath is False :
-            renameFile = file.replace(os.path.dirname(file), self.shared.pathway)
-       
+            file = file.replace(os.path.dirname(file), self.shared.pathway)
+        
+        file = file.replace(".gcode", ".sbp")
+    
+        print(file)
         with open(self.fileName, 'r') as GCodeFile :
-            with open(renameFile, 'w+') as SBPFile :
+            with open(file, 'w+') as SBPFile :
                 SBPFile.write("SO, 12, 1\n")
                 SBPFile.write("SO, 2, 1\n")
                 while True :
@@ -108,7 +116,9 @@ class convert:
                         SBPFile.write("MH\n")
                         
         self.shared.finished = True
-        return renameFile
+        print ("before return: " + file)
+        
+        return file
    ######################################################################                    
     def getCoord(self, line) :  # Retrieving values after key characters
         
@@ -188,42 +198,56 @@ class convertDialog(QDialog) :
         self.shared = sharedConvert()
         self.addQueue = False
         
+        self.newFile = ""
         self.filePath = ""
         self.fileName = ""
         self.custFolder = ""
         self.setWindowTitle("File Conversion")
         
-        layout = QGridLayout()
+        self.convertLayout = QGridLayout()
         
-        self.GFileLabel = fLabel(layout, title = 'File: ')
-        self.pathLabel = fLabel(layout, title = 'Pathway to save: ')
-        layout.addWidget(self.GFileLabel, 0,0)
-        layout.addWidget(self.pathLabel, 2, 0)
+        self.loadLabel()
+        self.loadBox()
+        self.loadButt()
         
-        self.pathBox = fCheckBox(layout, title = 'Save to file folder', checked = self.shared.samePath, func = self.updatePathway)
-        queueBox = fCheckBox(layout, title = 'load to queue after conversion', checked = self.addQueue, func = self.updateQueue)
-        layout.addWidget(self.pathBox, 2, 1)
-        layout.addWidget(queueBox, 0, 1)
-        
-        self.locButt = fButton(layout, title = 'Choose Save Location',
-                tooltip = 'Choose Location to save .sbp file',
-                func = self.loadDir)
-        layout.addWidget(self.locButt, 3, 0)
-        
-        layout.addWidget(fButton(layout, title = 'Load File',
-                tooltip = 'Load file to convert to sbp',
-                func = self.loadFile), 1, 0)
-        
-        layout.addWidget( fButton(layout, title = 'Convert File',
-                tooltip = 'convert file to .sbp', func = self.conversion), 4, 0)
-        
-        self.setLayout(layout)
-        self.resize(500, 500)
+        self.setLayout(self.convertLayout)
+        self.resize(900, 500)
         
         self.updateFile()
         
         if self.shared.finished is True:
             self.close()
+        
+    def loadLabel(self) :
+        self.GFileLabel = QLabel('File: ')
+        self.pathLabel = QLabel('Pathway to Save: ')
+        
+        self.convertLayout.addWidget(self.GFileLabel, 0,0)
+        self.convertLayout.addWidget(self.pathLabel, 2, 0)
+        
+    def loadBox(self) :
+        self.pathBox = QCheckBox('Save to file folder')
+        self.pathBox.stateChanged.connect(self.updatePathway)
+        
+        self.queueBox = QCheckBox('load to queue after conversion')
+        self.queueBox.stateChanged.connect(self.updateQueue)
+        
+        self.convertLayout.addWidget(self.queueBox, 0, 1)
+        self.convertLayout.addWidget(self.pathBox, 2, 1)
+        
+    def loadButt(self) :
+        self.locButt = QPushButton('Choose Save Location')
+        self.locButt.clicked.connect(self.loadDir)
+        
+        self.loadButt = QPushButton('Load File')
+        self.loadButt.clicked.connect(self.loadFile)
+        
+        self.convertButt = QPushButton('Convert File')
+        self.convertButt.clicked.connect(self.conversion)
+        
+        self.convertLayout.addWidget(self.loadButt, 1, 0)
+        self.convertLayout.addWidget(self.locButt, 3, 0)
+        self.convertLayout.addWidget(self.convertButt, 4, 0)
         
         
     def loadFile(self) -> None :
@@ -257,14 +281,22 @@ class convertDialog(QDialog) :
                 self.pathLabel.setText('Pathway to save : ' + self.custFolder)
         
     def updateQueue(self) -> None :
-        self.addQueue = self.pathBox.isChecked()
+        self.addQueue = self.queueBox.isChecked()
         
     def conversion(self) -> None :
-        fileObject = convert(self.filePath[0], self.shared)
-        newFile = fileObject.readInFile()
+        if '.gcode' in self.fileName :
+            fileObject = convert(self.filePath[0], self.shared)
+            self.newFile = fileObject.readInFile()
+            
+        elif '.stl' in self.fileName :
+            fileObject = slicerBox(self.filePath[0], self.shared)
+            temp = fileObject.findSlicer()
         
-        # if self.addQueue is True :
-            #sbl.py.addFile(newFile)
+        if self.addQueue is True :
+            self.sbWin.sbBox.enableRunButt()
+            self.sbWin.sbBox.sbList.addFile(self.newFile)
+            logging.debug(f'Added file to queue: {self.newFile}')
+            self.sbWin.sbBox.updateStatus('Ready ... ', False)
         
         self.close()
         
@@ -279,4 +311,33 @@ class sharedConvert :
         self.pathway = ""
         self.finished = False
         
-   ################################################### testing output below   
+   ################################################### Class for opening Slicer  
+class slicerBox :
+    
+    def __init__(self, file, convertShare) :
+        self.shared = convertShare
+        stlFile = file
+        
+        self.foundFolder = False
+        
+        self.slicerPath = ""
+        self.slicerFile = "Ultimaker-Cura.exe"
+        self.slicerFolder = "Ultimaker Cura"
+        self.startDir = "\Program Files"
+        
+    
+    def findSlicer(self) :
+        dir_list = os.listdir(self.startDir)
+        
+        for folder in dir_list :
+            if folder.__contains__(self.slicerFolder) :
+                self.foundFolder = True
+                self.slicerFolder = folder
+                self.slicerPath = os.path.join(self.startDir, self.slicerFolder, self.slicerFile)
+                
+        if self.foundFolder is True :
+            self.openSlicer()
+        
+    
+    def openSlicer(self) :
+            subprocess.Popen([self.slicerPath])
