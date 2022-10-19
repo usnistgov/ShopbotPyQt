@@ -376,8 +376,10 @@ class sbBox(connectBox):
         cfg1.shopbot.burstScale = self.burstScale
         cfg1.shopbot.burstLength = self.burstLength
         cfg1.shopbot.diag = self.diag
-        cfg1 = self.settingsBox.saveConfig(cfg1)
-        cfg1 = self.sbList.saveConfig(cfg1)
+        if hasattr(self, 'settingsBox'):
+            cfg1 = self.settingsBox.saveConfig(cfg1)
+        if hasattr(self, 'sbList'):
+            cfg1 = self.sbList.saveConfig(cfg1)
         return cfg1
     
     def loadConfigMain(self, cfg1):
@@ -457,6 +459,7 @@ class sbBox(connectBox):
     def saveMeta(self) -> None:
         '''create a csv file that describes the run speeds'''
         self.sbWin.saveMetaData()
+        
        
     def writeToTable(self, writer) -> None:
         '''write metadata values to the table'''
@@ -674,7 +677,8 @@ class sbBox(connectBox):
     def triggerWatch(self) -> None:
         '''start recording and start the timer to watch for changes in pressure'''
         
-        
+        if not self.runningSBP:
+            return
 
         # start the cameras if any flow is triggered in the run
         if min(self.channelsTriggered)<len(self.sbWin.fluBox.pchannels):
@@ -683,6 +687,7 @@ class sbBox(connectBox):
             # only save speeds and pressures if there is extrusion or if the checkbox is marked
             self.sbWin.saveMetaData()    # save metadata
             self.sbWin.initSaveTable()   # save table of pressures
+            
             
         self.printThread = QThread()
         self.printWorker.moveToThread(self.printThread)
@@ -704,11 +709,14 @@ class sbBox(connectBox):
             
     def closeDevices(self) -> None:
         '''stop all recording devices'''
-        self.sbWin.writeSaveTable()     # save the pressure and xyz readings
         if hasattr(self.sbWin, 'fluBox'):
             self.sbWin.fluBox.resetAllChannels(-1) # turn off all channels
+            
         if hasattr(self.sbWin, 'camBoxes'):
             self.sbWin.camBoxes.stopRecording()    # turn off cameras
+            
+        self.sbWin.writeSaveTable()     # save the pressure and xyz readings    
+            
         if hasattr(self, 'timer'):
             try:
                 self.timer.stop()
@@ -728,12 +736,14 @@ class sbBox(connectBox):
     @pyqtSlot()
     def triggerKill(self) -> None:
         '''the stop button was hit, so stop'''
+        logging.info('Stop hit')
         self.stopRunning()
         self.readyState()
         
     @pyqtSlot()
     def triggerEndOfPrint(self) -> None:
         '''we finished the file, so stop and move onto the next one'''
+        logging.info('File completed')
         self.stopRunning()
         self.sbList.activateNext() # activate the next sbp file in the list
         if self.autoPlay and self.sbList.sbpNumber()>0: # if we're in autoplay and we're not at the beginning of the list, play the next file

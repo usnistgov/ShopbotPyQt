@@ -44,7 +44,7 @@ class vc(QMutex):
         
     def updateStatus(self, msg:str, log:bool):
         '''update the status bar by sending a signal'''
-        self.signals.status.emit(msg, log)
+        self.signals.status.emit(str(msg), log)
 
 
 

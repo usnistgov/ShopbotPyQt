@@ -1,13 +1,15 @@
 appid: leanfried.sbgui.v1.0.5
 camera:
   cam0:
+    checked: false
     diag: 1
     flag1: 3
-    fps: 100
+    fps: 30
     name: Basler camera
     previewFPS: 15
     type: bascam
   cam1:
+    checked: false
     diag: 1
     flag1: 5
     fps: 15
@@ -15,6 +17,7 @@ camera:
     previewFPS: 15
     type: webcam
   cam2:
+    checked: false
     diag: 1
     flag1: 6
     fps: 15
@@ -42,7 +45,7 @@ fluigent:
         rates
       initDensity: 1
       initDiam: 0.603
-      initSpeed: 5.0
+      initSpeed: 10.0
     color: '#5a8171'
     flag1: 1
   channel1:
@@ -92,11 +95,11 @@ meta:
 savePressure: true
 shopbot:
   autoplay: true
-  burstLength: 0.05
+  burstLength: 0.01
   burstScale: 1.0
-  critTimeOff: 0.05
-  critTimeOn: 0.05
-  currentFile: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+z_1.250.sbp
+  critTimeOff: -0.2
+  critTimeOn: 0.2
+  currentFile: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleHorizPics2.sbp
   diag: 2
   dt: 10.0
   flag1: 12
@@ -107,18 +110,7 @@ shopbot:
   saveDt: 25
   savePicMetadata: true
   sbpFiles:
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+y_0.500.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+y_0.625.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+y_0.750.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+y_0.875.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+y_1.000.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+y_1.250.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+z_0.500.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+z_0.625.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+z_0.750.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+z_0.875.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+z_1.000.sbp
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/tripleLinesXS_+z_1.250.sbp
+  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleHorizPics2.sbp
   sbpFolder: C:\Users\lmf1\Documents\GitHub\ShopbotPyQt\SBP_files
   showFolder: false
   units: mm

@@ -89,9 +89,10 @@ class webcamVC(vc):
             rval, frame = self.camDevice.read()
         except:
             self.updateStatus('Error reading frame', True)
-            raise Exception
+            raise ValueError('Error reading frame')
         if not rval:
-            raise Exception
+            self.updateStatus('Error reading frame', True)
+            raise ValueError('Error reading frame')
         else:
             return frame
         
@@ -125,7 +126,11 @@ class webcam(camera):
             self.connected = True
             self.vc.signals.status.connect(self.updateStatus)   # send status messages back to window
             self.deviceOpen = True
-            self.vc.readFrame()
+            try:
+                self.vc.readFrame()
+            except ValueError:
+                self.connected = False
+                return
             if self.fps==0:
                 self.setFrameRateAuto()
             self.imw = int(self.vc.camDevice.get(3))               # image width (px)

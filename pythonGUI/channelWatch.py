@@ -100,6 +100,7 @@ class channelWatchSignals(QObject):
     zeroChannel = pyqtSignal(bool)    # zero fluigent channel
     snap = pyqtSignal()       # tell camera to take a snapshot
     updateSpeed = pyqtSignal(float)   # send new extrusion speed to fluigent
+    printStatus = pyqtSignal(str)
     finished = pyqtSignal()
     
     
@@ -215,36 +216,132 @@ class channelWatch(QObject):
 
                     # zero out crit distance for short moves
                     tld = ppDist(lastPoint, targetPoint)  # distance between last point and target point
-                    if tld<abs(self.critDistance)*2:
+                    if tld<abs(self.critDistance):
                         self.critDistance = self.zeroDist
             else:
                 # do nothing at point
                 self.state = 0
 
-                
+    @pyqtSlot(str, float, float)          
     def forceAction(self, diagStr:str, angle:float) -> None:
         '''force the current action'''
-
+        sadd = ''
         if self.state==4 or self.state==1:
             self.turnOn()
-            diagStr = diagStr + ' ON'
+            sadd = sadd + 'ON'
         elif self.state==5:
             self.turnOff() 
-            diagStr = diagStr + ' OFF'
-        diagStr = diagStr + f' Force action: {angle:1.2f}'
+            sadd = sadd + 'OFF'
+        else:
+            sadd = sadd + 'NONE'
+        sadd = sadd + f' Force action: {angle:1.2f}'
+        self.signals.printStatus.emit(sadd)
+        diagStr = diagStr+' '+sadd
         if self.diag>=2:
             print(diagStr)
         
-                
+    @pyqtSlot(str, str)
+    def emitStatus(self, diagStr:str, sadd:str) -> None:
+        '''print the status and emit it to the channel'''
+        self.signals.printStatus.emit(sadd)
+        if self.diag>=2:   
+            print(f'{diagStr} {sadd}')
             
-    def assessPosition(self, trd:float, lrd:float, tld:float, ted:float, led:float, sbFlag:int, diagStr:str) -> None:
+    def getSadd(self, change:str, d:dict, diagStr:str) -> None:
+        '''get a status string based on a dictionary of bools. change is a string to put at the front'''
+        s = change
+        for key,val in d.items():
+            if val:
+                s = s + ' ' + key
+        self.emitStatus(diagStr, s)
+            
+        
+    def assessNoChange(self, d:dict, diagStr:str) -> bool:
+        '''assess status when there is no change in channels at the end of the move
+        led distance from last to estimated point
+        tld distance from last to target point
+        '''
+        pastTarget = d['led']>d['tld']
+        zeroMove = d['tld']<self.zeroDist
+        atTarget = d['ted']<self.zeroDist
+        ratTarget = self.hitRead
+        if zeroMove or atTarget or (pastTarget and ratTarget):
+            self.getSadd('NONE', {'Zero move':zeroMove, 'Est at target':atTarget, 'Est past target and read at target':(pastTarget and ratTarget)}, diagStr)
+            return True
+        else:
+            return False
+        
+    def assessSnap(self, flagOn0:bool, d:dict, diagStr:str) -> bool:
+        '''snap camera at the point'''
+        if flagOn0:
+            atTarget = (d['trd']<self.zeroDist and d['ted']<self.zeroDist)
+            pastTarget = d['led']>d['tld']
+            if atTarget:
+                self.getSadd('SNAP', {'Read and est at target':atTarget}, diagStr)
+                self.turnOn()
+                return True
+            else:
+                return False
+        else:
+            return False
+        
+    def assessTurnOn(self, d:dict, diagStr:str) -> bool:
+        '''turn on fluigent at the point'''
+        pastTarget = d['led']>d['tld']
+        atTarget = d['ted']<self.critDistance
+        ratTarget = self.hitRead
+        if atTarget or (pastTarget and ratTarget):
+            self.getSadd('ON', {'Est at crit':atTarget, 'Est past target and read at target':(pastTarget and ratTarget)}, diagStr)
+            self.turnOn()
+            return True
+        else:
+            return False
+        
+    def assessTurnOff(self, flagOn0:bool, d:dict, diagStr:str) -> bool:
+        '''turn off fluigent at point'''
+        if flagOn0:
+            return False
+    
+        zeroMove = d['tld']<self.zeroDist
+        if zeroMove:
+            # no movement during this line
+            self.getSadd('OFF', {'zero move':zeroMove}, diagStr)
+            self.turnOff()
+            return True
+        
+        if self.critDistance<0:
+            # turn off before end of line
+            pastTarget = d['led']>d['tld']
+            atCrit = d['ted']<abs(self.critDistance)
+            if atCrit and self.on:
+                self.getSadd('OFF', {'est at crit':atCrit}, diagStr)
+                self.turnOff()
+            else:
+                atTarget = d['ted']<self.zeroDist
+                if atTarget:
+                    self.getSadd('NONE', {'est at target':atTarget}, diagStr)
+            return d['ted']<self.zeroDist
+        else:
+            # turn off after end of line
+            atTarget = d['led']>d['tld']+self.critDistance
+            radTarget = self.hitRead
+            outsidePath = ((d['lrd']+d['trd'] > d['tld']+self.zeroDist) and d['trd']>self.critDistance and d['lrd']>self.zeroDist)
+            if (atTarget and radTarget) or outsidePath:
+                self.getSadd('OFF', {'est at target and hit read':(atTarget and radTarget), 'read outside path and read past crit':outsidePath}, diagStr)
+                self.turnOff() 
+                return True
+            else:
+                return False
+        
+    def assessPosition(self, d:dict, sbFlag:int, diagStr:str) -> None:
         '''check the state and do actions if relevant
         trd distance from target to read point
         lrd distance from last to read point
         tld distance from last to target point
         ted distance from target to estimated point
         led distance from last to estimated point
-        sbFlag full flag value'''
+        sbFlag full flag value
+        possible states are 0,1,4,5'''
         
         readyForNextPoint = False
         flagOn0 = flagOn(sbFlag, self.flag0)
@@ -252,100 +349,28 @@ class channelWatch(QObject):
         # turn down from burst
         if self.turningDown:
             # bring down pressure from burst pressure
-               self.turnDown(ted)
+            self.turnDown(d['ted'])
+            self.signals.printStatus.emit('turning down')
                 
         if not self.hitRead:
-            if trd<self.zeroDist or lrd+trd > tld+self.zeroDist:
+            if d['trd']<self.zeroDist or d['lrd']+d['trd'] > d['tld']+self.zeroDist:
                 self.hitRead = True    # indicate we've hit the read point and are ready to move on
+                self.signals.printStatus.emit('hit read')
 
         if self.state==0:
-            pastTarget = led>tld
-            zeroMove = tld<self.zeroDist
-            atTarget = ted<self.zeroDist
-            ratTarget = self.hitRead
-            if zeroMove or atTarget or (pastTarget and ratTarget):
-                if self.diag>=2:
-                    if zeroMove:
-                        print(f'{diagStr} NONE Zero move')
-                    if atTarget:
-                        print(f'{diagStr} NONE Estimated point at target point')
-                    if (pastTarget and ratTarget):
-                        print(f'{diagStr} NONE Estimated point past target and read at target')
-                readyForNextPoint = True
+            # no change
+            return self.assessNoChange(d, diagStr)
         else:
-        
-            if self.mode==2:
-                # camera
-                if self.state==4:
-                    # snap camera at point
-                    if flagOn0:
-                        atTarget = (trd<self.zeroDist and ted<self.zeroDist)
-                        pastTarget = led>tld
-                        if atTarget:
-                            if self.diag>=2:
-                                if atTarget:
-                                    print(f'{diagStr} SNAP Read point and estimated point at target point')
-                                # if pastTarget:
-                                #     print(f'{diagStr} Estimated point past target')
-                            self.turnOn()
-                            readyForNextPoint = True
-            elif self.mode==1:
-                # fluigent
-                
-                # assess state
-                if self.state==1:
-                    # turn on within crit distance of point or if we've started on the next line
-                    pastTarget = led>tld
-                    atTarget = ted<self.critDistance
-                    ratTarget = self.hitRead
-                    if atTarget or (pastTarget and ratTarget):
-                        if self.diag>=2:
-                            if atTarget:
-                                print(f'{diagStr} ON Estimated point at target on')
-                            if (pastTarget and (ratTarget or outsidePath)):
-                                print(f'{diagStr} ON Estimated point past target and read at target on')
-                            # if outsidePath:
-                            #     print(f'{diagStr} Read point outside path')
-                            # if pastTarget:
-                            #     print(f'{diagStr} Estimated point past target')
-                        self.turnOn()
-                        readyForNextPoint = True
-                elif self.state==5:
-                    # turn off at end
-
-                    if not flagOn0:
-                        if tld<self.zeroDist:
-                            # no movement during this line
-                            if self.diag>=2:
-                                print(f'{diagStr} Zero move')
-                            self.turnOff()
-                            readyForNextPoint = True
-                        else:
-                            if self.critDistance<0:
-                                # turn off before end of line
-                                pastTarget = led>tld
-                                atTarget = ted<-self.critDistance
-                                if atTarget:
-                                    if self.diag>=2:
-                                        if atTarget:
-                                            print(f'{diagStr} OFF Estimated point at target off-')
-                                        # if pastTarget:
-                                        #     print(f'{diagStr} Estimated point past target')
-                                    self.turnOff()
-                                    readyForNextPoint = True
-                            else:
-                                # turn off after end of line
-                                atTarget = led>tld+self.critDistance
-                                radTarget = self.hitRead
-                                outsidePath = ((lrd+trd > tld+self.zeroDist) and trd>self.critDistance and lrd>self.zeroDist)
-                                if (atTarget and radTarget) or outsidePath:
-                                    if self.diag>=2:
-                                        if atTarget and radTarget:
-                                            print(f'{diagStr} OFF Estimated point at target and hit read')
-                                        if outsidePath:
-                                            print(f'{diagStr} OFF Read point outside path and read point past crit distance')
-                                    self.turnOff() 
-                                    readyForNextPoint = True
+            # change
+            if self.state==4:
+                # snap camera at point
+                return self.assessSnap(flagOn0, d, diagStr)
+            elif self.state==1:
+                # turn on within crit distance of point or if we've started on the next line
+                return self.assessTurnOn(d, diagStr)
+            elif self.state==5:
+                # turn off at end
+                return self.assessTurnOff(flagOn0, d, diagStr)
                 
         return readyForNextPoint
 

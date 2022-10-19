@@ -59,6 +59,7 @@ class sbpCreator:
         self.time = 0 # total time in print, in s
         self.MS = 0
         self.JS = 0
+        self.pOn = False
         self.created=False
         if 'lastPt' in kwargs:
             self.takeLastPt(kwargs['lastPt'])
@@ -180,7 +181,7 @@ class sbpCreator:
             val = self.cp[idx]
         return val
         
-    def updatePts(self, pOn:bool=False, ms:str='m', **kwargs):
+    def updatePts(self, ms:str='m', **kwargs):
         '''Add point to list of points. e.g. if you are going to z=5, input z=5. If you are going to x=5,y=4, then input x=5,y=4.
         pOn if extrusion pressure is on
         ms = m for a move, j for a jog'''
@@ -206,7 +207,7 @@ class sbpCreator:
             pass
         else:
             self.time = self.time + distance/s # time traveled
-        if pOn:
+        if self.pOn:
             # update total extruded
             self.volume = self.volume + distance*np.pi*(self.diam/2)**2 # total volume
             self.written.append([self.cp, [x,y,z]])
@@ -345,12 +346,14 @@ class sbpCreator:
         '''Turn on an output flag. Input is 0-indexed, but SBP is 1-indexed.'''
         s = f'SO, {flag0+1}, 1\n'
         self.file+=s
+        self.pOn = True
         return s
     
     def turnOff(self, flag0:int) -> str:
         '''Turn off an output flag. Input is 0-indexed, but SBP is 1-indexed.'''
         s = f'SO, {flag0+1}, 0\n'
         self.file+=s
+        self.pOn = False
         return s
     
     #------------
