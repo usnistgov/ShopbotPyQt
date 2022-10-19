@@ -14,6 +14,7 @@ import traceback
 # local packages
 from general import *
 from config import *
+from fluThreads import convertPressure
 
 
 ################################################
@@ -77,7 +78,7 @@ class calibPlot:
         self.graph = pg.PlotWidget()
         self.graph.setBackground('w')
         self.graph.setLabel('left', 'Flow speed (mm/s)')
-        self.graph.setLabel('bottom', 'Pressure (mBar)')
+        self.updateUnits()
         self.horizPen =  pg.mkPen(color='#888888', width=2)
         self.prange = [0,10]
         self.horizLine = self.graph.plot(self.prange, [self.pCalibTab.targetSpeed(), self.pCalibTab.targetSpeed()], pen=self.horizPen)
@@ -99,6 +100,11 @@ class calibPlot:
         self.layout = QVBoxLayout()
         self.eqLabel = fLabel(self.layout, title='')
         self.layout.addWidget(self.graph)
+        
+    def updateUnits(self) -> None:
+        '''update the display units'''
+        self.graph.setLabel('bottom', f'Pressure ({self.pCalibTab.units})')
+        self.update()
         
     def updateTargetSpeed(self) -> None:
         '''update the target speed line on the plot'''
@@ -265,6 +271,7 @@ class pCalibrationTab(QWidget):
         self.diamBox.setText(str(cfg1.fluigent[self.cname].calibration.initDiam))
         self.densityBox.setText(str(cfg1.fluigent[self.cname].calibration.initDensity))
         self.flowRateFolder = cfg1.fluigent[self.cname].calibration.flowRateFolder
+        self.units = cfg1.fluigent.units
         
     def successLayout(self) -> None:
         '''Create the layout'''
@@ -299,7 +306,7 @@ class pCalibrationTab(QWidget):
                                   , func=self.updateTargetSpeed)
         self.loadConfig(cfg)
         self.pressureLabel = QLabel('0')
-        form.addRow('Pressure (mBar)', self.pressureLabel)
+        form.addRow(f'Pressure ({self.units})', self.pressureLabel)
         leftcol.addLayout(form)
         fButton(leftcol, title='Use this pressure'
                 , tooltip=f'Copy this pressure to the channel {self.channel} \
@@ -315,9 +322,10 @@ class pCalibrationTab(QWidget):
     
     def initTable(self, size:int=50) -> None:
         self.columns = ['initwt', 'finalwt', 'pressure', 'time', 'speed']
-        self.headerDict = {'initwt':'init wt (g)', 'finalwt':'final wt (g)', 'pressure':'pressure (mBar)', 'time':'time (s)', 'speed':'speed (mm/s)'}
+        self.headerDict = {'initwt':'init wt (g)', 'finalwt':'final wt (g)', 'pressure':f'pressure ({self.units})', 'time':'time (s)', 'speed':'speed (mm/s)'}
         blank = ['' for i in range(size)]
         self.data = dict([[s, blank.copy()] for s in self.columns])
+    
         
     def numCols(self) -> int:
         '''number of cols in the table'''
@@ -371,6 +379,18 @@ class pCalibrationTab(QWidget):
         '''update grid'''
         self.notSaved()
         self.updateTable([])
+        
+    def updateUnits(self, units:str) -> None:
+        '''convert units'''
+        oldUnits = self.units
+        self.units = units
+        
+        # convert data table
+        for i,p in self.data['pressure']:
+            self.data['pressure'][i] = convertPressure(p, oldUnits, self.units)
+
+        self.updateGrid()
+        self.plot.updateUnits(self.units)
         
     #--------------------------
     
@@ -433,7 +453,7 @@ class pCalibrationTab(QWidget):
                 sample = self.sample()
                 speed = self.targetSpeed()
                 pressure = self.pressure()
-                moreret = {'sample':[sample, ''], 'target speed':[speed, 'mm/s'], 'target pressure':[pressure, 'mBar']}
+                moreret = {'sample':[sample, ''], 'target speed':[speed, 'mm/s'], 'target pressure':[pressure, self.units]}
                 ret = {**shortret, **moreret}
             else:
                 ret = shortret
@@ -520,8 +540,8 @@ class pCalibrationTab(QWidget):
             # metadata
             for key,val in consts.items():
                 writer.writerow([key, val[1], val[0]])
-            writer.writerow(['a', 'mm/s/mbar^2', self.plot.a])
-            writer.writerow(['b', 'mm/s/mbar', self.plot.b])
+            writer.writerow(['a', f'mm/s/{self.units}^2', self.plot.a])
+            writer.writerow(['b', f'mm/s/{self.units}', self.plot.b])
             writer.writerow(['c', 'mm/s', self.plot.c])
                 
             writer.writerow([''])
@@ -644,7 +664,7 @@ class pCalibrationTab(QWidget):
         densityDict = loadConfigFile(self.densityFile())
         self.densityDropdown.addItem('Load density', ['',0])
         for sample, density in densityDict.items():
-            title = str(sample)+': '+str(density)+' g/mL'
+            title = f'{sample}: {density} g/mL'
             self.densityDropdown.addItem(title, [sample, density])
         self.densityDropdown.currentIndexChanged.connect(self.loadDensity)
             
@@ -667,7 +687,7 @@ class pCalibrationTab(QWidget):
         densityDict = loadConfigFile(self.densityFile())
         for isample, density in densityDict.items():
             if not isample in kept and sample.lower() in isample.lower():
-                title = str(isample)+': '+str(density)+' g/mL'
+                title = f'{isample}: {density} g/mL'
                 self.densityDropdown.addItem(title, [isample, density])
         self.notSaved()
         self.densityDropdown.blockSignals(False)
@@ -728,9 +748,9 @@ class pCalibrationTab(QWidget):
         inkspeed = self.speedBox.text()
         writer.writerow([f'ink_speed_channel_{self.channel}', 'mm/s', inkspeed])
         caliba = self.plot.a
-        writer.writerow([f'caliba_channel_{self.channel}', 'mm/s/mbar^2', caliba])
+        writer.writerow([f'caliba_channel_{self.channel}', f'mm/s/{self.units}^2', caliba])
         calibb = self.plot.b
-        writer.writerow([f'calibb_channel_{self.channel}', 'mm/s/mbar', calibb])
+        writer.writerow([f'calibb_channel_{self.channel}', f'mm/s/{self.units}', calibb])
         calibc = self.plot.c
         writer.writerow([f'calibc_channel_{self.channel}', 'mm/s', calibc])
         ndiam = self.diamBox.text()
@@ -790,6 +810,12 @@ class pCalibration(QDialog):
         '''write metadata values to the table'''
         if chanNum in self.calibWidgets:
             self.calibWidgets[chanNum].writeToTable(writer)
+            
+    def updateUnits(self, units:str):
+        '''update the pressure units'''
+        self.units = units
+        for i,tab in self.calibWidgets.items():
+            tab.updateUnits(units)
         
         
         

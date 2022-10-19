@@ -271,7 +271,8 @@ class fRadioGroup:
     '''this class holds a group of radio buttons. 
     layout is the layout we're adding this group to
     title is the title of the group
-    
+    col puts the buttons in a column, otherwise row
+    headerRow puts the label in the row above, otherwise in line
     '''
     
     def __init__(self, layout:QLayout, title:str, nameDict:dict, valueDict:dict, initValue, tooltip:str='', col:bool=True, headerRow:bool=True, **kwargs):
@@ -291,8 +292,9 @@ class fRadioGroup:
             # put buttons in a row
             self.buttonLayout = QHBoxLayout()
         
-        self.buttons = []
+        self.buttons = {}
         self.buttonGroup = QButtonGroup()
+        self.buttonGroup.setExclusive(True)
         self.valueDict = valueDict
         for index, name in nameDict.items():
             button = QRadioButton(name)
@@ -300,7 +302,7 @@ class fRadioGroup:
                 button.setChecked(True)
             else:
                 button.setChecked(False)
-            self.buttons.append(button)
+            self.buttons[index]=button
             self.buttonGroup.addButton(button, index)
             self.buttonLayout.addWidget(button)
         
@@ -318,6 +320,14 @@ class fRadioGroup:
         '''returns the value of the button that the clicked button corresponds to'''
         bid = self.buttonGroup.checkedId()
         return self.valueDict[bid] 
+    
+    def setChecked(self, bid:int) -> None:
+        '''check the button with the given id'''
+        for i,b in self.buttons.items():
+            if i==bid:
+                b.setChecked(True)
+            else:
+                b.setChecked(False)
         
 #----
         
