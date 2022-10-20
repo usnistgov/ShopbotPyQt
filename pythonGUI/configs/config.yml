@@ -4,7 +4,7 @@ camera:
     checked: false
     diag: 1
     flag1: 3
-    fps: 30
+    fps: 196
     name: Basler camera
     previewFPS: 15
     type: bascam
