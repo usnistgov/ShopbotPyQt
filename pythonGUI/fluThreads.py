@@ -30,9 +30,23 @@ def convertPressure(val:float, oldUnits:str, newUnits:str) -> float:
     '''convert the pressure from old units to new units'''
     if oldUnits==newUnits:
         return val
+    if type(val) is str:
+        try:
+            val = float(val)
+        except ValueError:
+            return val
     convert = pressureConversion()
     factor = convert[newUnits.lower()]/convert[oldUnits.lower()]
-    return val*factor
+    out = val*factor
+    if newUnits.lower()=='mbar':
+        out = int(out)
+    elif newUnits.lower()=='kpa':
+        out = round(out,1)
+    elif newUnits.lower()=='psi':
+        out = round(out,2)
+    
+    return out
+
 
 class plotWatch(QMutex):
     '''Holds the pressure/time list for all channels'''
@@ -65,7 +79,7 @@ class plotWatch(QMutex):
         oldUnits = self.units
         self.units = newUnits
         convert = pressureConversion()
-        factor = convert[newUnits]/convert[oldUnits]
+        factor = convert[newUnits.lower()]/convert[oldUnits.lower()]
         for i,p in enumerate(self.pressures):
             self.pressures[i] = [x*factor for x in p]
 

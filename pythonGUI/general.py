@@ -271,6 +271,10 @@ class fRadioGroup:
     '''this class holds a group of radio buttons. 
     layout is the layout we're adding this group to
     title is the title of the group
+    nameDict is a dictionary correlating button ids to display names
+    valueDict is a dictionary correlating button ids to values given by that button
+    initValue is the initial value (as in valueDict) that should be initialized
+    tooltip is the message on hover
     col puts the buttons in a column, otherwise row
     headerRow puts the label in the row above, otherwise in line
     '''

@@ -78,7 +78,7 @@ class calibPlot:
         self.graph = pg.PlotWidget()
         self.graph.setBackground('w')
         self.graph.setLabel('left', 'Flow speed (mm/s)')
-        self.updateUnits()
+        self.updateUnitLabel()
         self.horizPen =  pg.mkPen(color='#888888', width=2)
         self.prange = [0,10]
         self.horizLine = self.graph.plot(self.prange, [self.pCalibTab.targetSpeed(), self.pCalibTab.targetSpeed()], pen=self.horizPen)
@@ -101,9 +101,13 @@ class calibPlot:
         self.eqLabel = fLabel(self.layout, title='')
         self.layout.addWidget(self.graph)
         
-    def updateUnits(self) -> None:
-        '''update the display units'''
+    def updateUnitLabel(self) -> None:
+        '''update the label on the pressure graph'''
         self.graph.setLabel('bottom', f'Pressure ({self.pCalibTab.units})')
+        
+    def updateUnits(self, units:str) -> None:
+        '''update the display units'''
+        self.updateUnitLabel()
         self.update()
         
     def updateTargetSpeed(self) -> None:
@@ -209,6 +213,9 @@ class calibTable(QTableWidget):
                 self.setItem(m, n, newitem)
         self.setHorizontalHeaderLabels(horHeaders)
         
+    def updateUnits(self, newUnits:str):
+        horHeadersDict=self.pCalibTab.headerDict
+        
     def updateData(self) -> None:
         '''update the data display'''
         self.setData()
@@ -250,10 +257,12 @@ class pCalibrationTab(QWidget):
         self.sbWin = sbWin
         self.flowRateFolder = checkPath(cfg.fluigent[self.cname].calibration.flowRateFolder)
         self.saved=True
+        self.units = cfg.fluigent.units
         self.initTable()
         self.plot = calibPlot(self)
         self.grid = calibTable(self)
         self.channel = channel  # 0-indexed number
+        
         self.successLayout()
         
     def saveConfig(self, cfg1):
@@ -306,7 +315,8 @@ class pCalibrationTab(QWidget):
                                   , func=self.updateTargetSpeed)
         self.loadConfig(cfg)
         self.pressureLabel = QLabel('0')
-        form.addRow(f'Pressure ({self.units})', self.pressureLabel)
+        self.pressureLabelLabel = QLabel(f'Pressure ({self.units})')
+        form.addRow(self.pressureLabelLabel, self.pressureLabel)
         leftcol.addLayout(form)
         fButton(leftcol, title='Use this pressure'
                 , tooltip=f'Copy this pressure to the channel {self.channel} \
@@ -384,12 +394,17 @@ class pCalibrationTab(QWidget):
         '''convert units'''
         oldUnits = self.units
         self.units = units
+        self.pressureLabelLabel.setText(f'Pressure ({self.units})')
+        self.headerDict = {'initwt':'init wt (g)', 'finalwt':'final wt (g)', 'pressure':f'pressure ({self.units})', 'time':'time (s)', 'speed':'speed (mm/s)'}
         
         # convert data table
-        for i,p in self.data['pressure']:
-            self.data['pressure'][i] = convertPressure(p, oldUnits, self.units)
+        for i,p in enumerate(self.data['pressure']):
+            if not p=='':
+                p1 = float(p)
+                self.data['pressure'][i] = convertPressure(float(p), oldUnits, self.units)
 
         self.updateGrid()
+        self.grid.updateUnits(self.units)
         self.plot.updateUnits(self.units)
         
     #--------------------------
@@ -619,12 +634,21 @@ class pCalibrationTab(QWidget):
                         # this is a header
                         tablerow = 0
                         for j, item in enumerate(row):
-                            shortname = dictrev[item]
+                            if not item in dictrev:
+                                if item.startswith('pressure'):
+                                    shortname = dictrev[f'pressure ({self.units})']
+                                else:
+                                    raise ValueError(f'Unexpected column in pressure calib table {file}')
+                            else:
+                                shortname = dictrev[item]
                             columndict.append([j, shortname])
                         columndict = dict(columndict) # {1:'initwt', 2:'finalwt'...}
                     else:
                         # this is a table row
                         for j, item in enumerate(row):
+                            if columndict[j].startswith('pressure'):
+                                # convert units
+                                item = convertPressure(float(item), oldUnits, newUnits)
                             self.updateVal(columndict[j], tablerow, item)
                         tablerow+=1
                 else:
@@ -639,11 +663,14 @@ class pCalibrationTab(QWidget):
                     elif name=='target speed':
                         self.updateSpeed(row[2])
                     elif name=='target pressure':
-                        self.updatePressure(float(row[2]))
+                        oldUnits = row[1]
+                        newUnits = self.units
+                        factor = convertPressure(1, oldUnits, newUnits)
+                        self.updatePressure(float(row[2])*factor)
                     elif name=='a':
-                        self.plot.a=float(row[2])
+                        self.plot.a=float(row[2])/factor**2   # convert pressure units
                     elif name=='b':
-                        self.plot.b=float(row[2])
+                        self.plot.b=float(row[2])/factor   # convert pressure units
                     elif name=='c':
                         self.plot.c=float(row[2])
 

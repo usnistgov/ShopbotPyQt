@@ -3,8 +3,8 @@
 
 # external packages
 from PyQt5.QtCore import pyqtSignal, QObject, QRunnable, Qt, QThread, QTimer, QThreadPool
-from PyQt5.QtGui import QIntValidator
-from PyQt5.QtWidgets import QLabel, QColorDialog, QCheckBox, QFormLayout, QGridLayout, QLineEdit, QMainWindow, QVBoxLayout, QWidget
+from PyQt5.QtGui import QDoubleValidator, QIntValidator
+from PyQt5.QtWidgets import QLabel, QColorDialog, QCheckBox, QDialogButtonBox, QFormLayout, QGridLayout, QLineEdit, QMainWindow, QMessageBox, QVBoxLayout, QWidget
 import pyqtgraph as pg
 import csv
 import time
@@ -38,12 +38,8 @@ class fluChannel(QObject):
         self.chanNum0 = chanNum0  # 0-indexed
         self.bTitle = f'Channel {chanNum0}'
         self.cname = f'channel{self.chanNum0}'
-<<<<<<< Updated upstream
-=======
         self.printStatus = ''
         self.units = fluBox.units
->>>>>>> Stashed changes
-        
         self.fluBox = fluBox
         self.loadConfig(cfg)
         
@@ -54,7 +50,7 @@ class fluChannel(QObject):
         self.readLabel = fLabel(title='0', width=1.5*columnw)
         
         # setBox is a one line input box that lets the user turn the pressure on to setBox
-        self.objValidator = QDoubleValidator(0, 7000)
+        self.objValidator = QDoubleValidator(0, 7000,2)
         self.setBox = fLineCommand(width=columnw, text='0', func=self.setPressure, validator=self.objValidator)
         self.setButton = fButton(None, title='Go', width=0.5*columnw, func=self.setPressure)
         self.constTimeBox = fLineCommand(width=columnw, text='0', validator=self.objValidator, func=self.runConstTime)
@@ -350,7 +346,7 @@ class fluSettingsBox(QWidget):
         self.unitInv = {v: k for k, v in unitDict.items()}
         
         self.unitsGroup = fRadioGroup(layout, 'Pressure units', unitDict, unitDict,
-                                         unitInv[self.fluBox.units], col=False, headerRow=False,
+                                         self.fluBox.units, col=False, headerRow=False,
                                           func=self.changeUnits)
         
         objValidator = QIntValidator()
@@ -430,18 +426,17 @@ class fluSettingsBox(QWidget):
             self.acceptUnits()
             
     def imperialDialog(self) -> None:
-        '''open an annoying dialog if the user tries to select imperial units'''
+        '''open an annoying dialog if the user tries to select imperial units'''        
         dlg = QDialog(self)
         layout = QVBoxLayout()
-        message = QLabel("Are you sure you want to use pounds per square inch?")
-        self.layout.addWidget(message)
+        layout.addWidget(QLabel("Are you sure you want to use pounds per square inch?"))
         buttonBox = QDialogButtonBox()
-        buttonBox.addButton('Yes, I reject the cool logic of SI and choose the devil\'s imperial units.', QDialogButtonBox.accept)
-        buttonBox.addButton('No, take me back to my old units', QDialogButtonBox.accept)
+        buttonBox.addButton('Yes, I reject the \ncool logic of SI \nand choose the devil\'s \nimperial units.', QDialogButtonBox.AcceptRole)
+        buttonBox.addButton('No, take me back \nto my old units', QDialogButtonBox.RejectRole)
         buttonBox.accepted.connect(dlg.accept)
         buttonBox.rejected.connect(dlg.reject)
-        self.layout.addWidget(self.buttonBox)
-        self.setLayout(self.layout)
+        layout.addWidget(buttonBox)
+        dlg.setLayout(layout)
         if dlg.exec():
             self.acceptUnits()
         else:
