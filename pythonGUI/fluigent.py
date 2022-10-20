@@ -152,6 +152,15 @@ class fluChannel(QObject):
             self.fluBox.updateStatus(f'Setting channel {self.chanNum0} to 0 {self.units}', True)
         setPressure(self.chanNum0, 0, self.units)
         
+    def updatePrintStatus(self, status:str) -> None:
+        '''store the status'''
+        self.printStatus = status
+        
+    def getPrintStatus(self) -> None:
+        '''get the status and clear it'''
+        status = self.printStatus
+        self.printStatus = ''
+        return status
         
     def writeToTable(self, writer) -> None:
         '''write metatable values to a csv writer object'''
@@ -739,7 +748,8 @@ class fluBox(connectBox):
             out = [j[-1] for j in self.fluPlot.pw.pressures]  # most recent pressure
         else:
             out = []
-        return out
+        out2 = [channel.getPrintStatus() for channel in self.pchannels]
+        return out+out2
     
     def timeHeader(self) -> List:
         '''get a list of header values for the time table'''
@@ -747,7 +757,8 @@ class fluBox(connectBox):
             out = [f'Channel_{i}_pressure(mbar)' for i in range(self.numChans)]
         else:
             out = []
-        return out
+        out2 = [f'Channel_{i}_status' for i in range(self.numChans)]
+        return out+out2
     
     
     def writeToTable(self, writer) -> None:
