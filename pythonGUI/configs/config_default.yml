@@ -2,22 +2,28 @@
 appid: leanfried.sbgui.v1.0.5
 camera:
   cam0:
+    checked: false
     diag: 1
     flag1: 3
-    fps: 100
+    fps: 30
     name: Basler camera
+    previewFPS: 15
     type: bascam
   cam1:
+    checked: false
     diag: 1
     flag1: 5
     fps: 15
     name: Nozzle camera
+    previewFPS: 15
     type: webcam
   cam2:
+    checked: false
     diag: 1
     flag1: 6
     fps: 15
     name: Webcam 2
+    previewFPS: 15
     type: webcam
 files:
   createSubfolders: true
@@ -54,6 +60,7 @@ fluigent:
   pmax: 6000
   savePressure: true
   trange: 60
+  units: mbar
 layout:
   save: true
 meta:
@@ -87,15 +94,19 @@ meta:
 savePressure: true
 shopbot:
   autoplay: false
-  critTimeOff: 0.0
-  critTimeOn: 0.1
+  burstLength: 0.01
+  burstScale: 1.0
+  critTimeOff: -0.2
+  critTimeOn: 0.2
   currentFile: No file selected
-  dt: 50.0
+  diag: 2
+  dt: 10.0
   flag1: 12
-  flag1min: 1
   flag1max: 12
+  flag1min: 1
   includeFlagInTable: true
   includePositionInTable: true
+  saveDt: 25
   savePicMetadata: true
   sbpFiles: 
   - No file selected
@@ -103,3 +114,4 @@ shopbot:
   showFolder: false
   units: mm
   zeroDist: 0.1
+testFolder: C:\myfolder\GitHub\ShopbotPyQt\pythonGUI\testResults
