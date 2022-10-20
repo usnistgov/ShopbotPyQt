@@ -364,7 +364,7 @@ class pCalibrationTab(QWidget):
     
     def pressure(self) -> int:
         try:
-            p = int(self.pressureLabel.text())
+            p = float(self.pressureLabel.text())
         except:
             logging.warning('Error reading pressure')
             p = 0

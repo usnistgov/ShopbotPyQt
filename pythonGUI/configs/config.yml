@@ -58,7 +58,7 @@ fluigent:
     color: '#b0401e'
     flag1: 2
   dt: 100
-  pmax: 200.0
+  pmax: 2000
   savePressure: true
   trange: 60
   units: mbar
@@ -100,7 +100,7 @@ shopbot:
   critTimeOff: -0.2
   critTimeOn: 0.2
   currentFile: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleHoriz_0.5_0.500.sbp
-  diag: 2
+  diag: 1
   dt: 10.0
   flag1: 12
   flag1max: 12
