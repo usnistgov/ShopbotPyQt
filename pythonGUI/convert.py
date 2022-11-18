@@ -5,6 +5,7 @@
 from general import *
 import sbList
 
+import sys
 import re
 import os
 import subprocess
@@ -15,7 +16,7 @@ import logging
 import copy
 
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QMainWindow, QDialog, QVBoxLayout, QWidget, QApplication, QAction, QLabel, QCheckBox, QGridLayout, QFileDialog, QPushButton
+from PyQt5.QtWidgets import QMainWindow, QDialog, QVBoxLayout, QWidget, QApplication, QAction, QLabel, QCheckBox, QGridLayout, QFileDialog, QPushButton, QLineEdit
 
    ######################## Conversion program
 
@@ -27,6 +28,7 @@ class convert:
         self.fileName = fileName
         self.shared = convertShare
         
+        # Make everything default/0/null/false
         self.X_Coord = self.Y_Coord = self.Z_Coord = "0"
         self.ERate = self.moveRate = "0"
 
@@ -41,17 +43,21 @@ class convert:
         # If the file isn't GCODE, display error and break out of method
         if (".gcode" or ".stl") not in self.fileName:
                 print("File must be GCODE or STL") 
-                
+        
+        #copy file so not to override original
         file = copy.copy(self.fileName)
         
+        # change filepath if user requested different save path
         if self.shared.samePath is False :
             file = file.replace(os.path.dirname(file), self.shared.pathway)
         
+        # replace extension
         file = file.replace(".gcode", ".sbp")
     
-        print(file)
+        
         with open(self.fileName, 'r') as GCodeFile :
             with open(file, 'w+') as SBPFile :
+                # add in header for every file
                 SBPFile.write("SO, 12, 1\n")
                 SBPFile.write("SO, 2, 1\n")
                 while True :
@@ -68,9 +74,11 @@ class convert:
                         if semiSpot != 0 :
                             line = line.partition(";")[0]
                             
+                            #getting coordinates
                         if line.__contains__("MIN") or line.__contains__("MAX") :
                             self.getCoord(line)
                             
+                            # flaggin for once all coordinates are read
                     if ((self.checkMinX and self.checkMinY and self.checkMinZ and self.checkMaxX and self.checkMaxY and self.checkMaxZ) and not isWritten) :
                             SBPFile.write("VL, " + self.minX + ", " + self.maxX + ", " + self.minY + ", " + self.maxY + ", " + self.minZ + ", " + self.maxZ + ", , , , , \n")
                             isWritten = True
@@ -84,12 +92,12 @@ class convert:
                         if ECommand[0].isdigit() is True :
                             isE = True
                     
-                            if isE is True and isFlowing is False :
-                                isFlowing = True
-                                SBPFile.write("S0, 1, 1\n")                   
-                            if isE is False and isFlowing is True :
-                                isFlowing = False
-                                SBPFile.write("S0, 1, 0\n")
+                        if isE is True and isFlowing is False :
+                            SBPFile.write("S0, 1, 1\n")
+                            isFlowing = True
+                        if isE is False and isFlowing is True :
+                            SBPFile.write("S0, 1, 0\n")
+                            isFlowing = False
                           
    ################################################### G0/G1 command switch to J3/M3 & setting move rate
     
@@ -116,7 +124,6 @@ class convert:
                         SBPFile.write("MH\n")
                         
         self.shared.finished = True
-        print ("before return: " + file)
         
         return file
    ######################################################################                    
@@ -192,11 +199,14 @@ class convert:
 class convertDialog(QDialog) :
     
     def __init__(self, sbWin) :
+        
+        #conversion window setup
         super().__init__(sbWin)
         self.sbWin = sbWin
         
         self.shared = sharedConvert()
         self.addQueue = False
+        self.haveSavePath = False
         
         self.newFile = ""
         self.filePath = ""
@@ -209,21 +219,30 @@ class convertDialog(QDialog) :
         self.loadLabel()
         self.loadBox()
         self.loadButt()
+        self.loadFileEdit()
         
         self.setLayout(self.convertLayout)
         self.resize(900, 500)
         
         self.updateFile()
+        self.updateButt()
         
-        if self.shared.finished is True:
+        if self.shared.finished is True :
             self.close()
+        
+    def loadFileEdit(self) :
+        self.nameChangeLabel = QLabel('Saving file under name of: ')
+        self.fileEdit = QLineEdit()
+        
+        self.convertLayout.addWidget(self.nameChangeLabel, 2, 0)
+        self.convertLayout.addWidget(self.fileEdit, 2, 1)
         
     def loadLabel(self) :
         self.GFileLabel = QLabel('File: ')
         self.pathLabel = QLabel('Pathway to Save: ')
         
         self.convertLayout.addWidget(self.GFileLabel, 0,0)
-        self.convertLayout.addWidget(self.pathLabel, 2, 0)
+        self.convertLayout.addWidget(self.pathLabel, 3, 0)
         
     def loadBox(self) :
         self.pathBox = QCheckBox('Save to file folder')
@@ -233,7 +252,7 @@ class convertDialog(QDialog) :
         self.queueBox.stateChanged.connect(self.updateQueue)
         
         self.convertLayout.addWidget(self.queueBox, 0, 1)
-        self.convertLayout.addWidget(self.pathBox, 2, 1)
+        self.convertLayout.addWidget(self.pathBox, 3, 1)
         
     def loadButt(self) :
         self.locButt = QPushButton('Choose Save Location')
@@ -246,16 +265,21 @@ class convertDialog(QDialog) :
         self.convertButt.clicked.connect(self.conversion)
         
         self.convertLayout.addWidget(self.loadButt, 1, 0)
-        self.convertLayout.addWidget(self.locButt, 3, 0)
-        self.convertLayout.addWidget(self.convertButt, 4, 0)
+        self.convertLayout.addWidget(self.locButt, 4, 0)
+        self.convertLayout.addWidget(self.convertButt, 5, 0)
         
-        
+        #load in chosen file for conversion with gcode/stl extensions only
     def loadFile(self) -> None :
         openFolder = r'C:\\'
-        self.filePath = QFileDialog.getOpenFileName(self, "Open File", openFolder, 'Gcode file (*.gcode *.stl)')
-        self.fileName = os.path.basename(self.filePath[0])
-        self.updateFile()
+        tempPath = QFileDialog.getOpenFileName(self, "Open File", openFolder, 'Gcode file (*.gcode *.stl)')
+        tempFile = os.path.basename(tempPath[0])
         
+        if tempFile :
+            self.filePath = tempPath
+            self.fileName = tempFile
+            self.updateFile()
+        
+        #load up directory to save
     def loadDir(self) -> None :
         if self.shared.samePath is False:
             openFolder = r'C:\\'
@@ -265,33 +289,51 @@ class convertDialog(QDialog) :
     
     def updateFile(self) -> None :
         self.GFileLabel.setText('File:  ' + self.fileName)
+        self.fileEdit.setText(self.fileName.replace('.gcode', ''))
         
+        #update pathway for same folder or chosen by user
     def updatePathway(self) -> None :
-        self.shared.samePath = self.pathBox.isChecked()
+        if self.filePath[0]: 
+            self.shared.samePath = self.pathBox.isChecked()
+            self.haveSavePath = True
+            self.updateButt()
         
-        if self.shared.samePath is True :
-            self.locButt.setEnabled(False)
-            self.shared.pathway = os.path.dirname(self.filePath[0])
-            self.pathLabel.setText('Pathway to save : ' + self.shared.pathway)
-        else :
-            self.locButt.setEnabled(True)
-            if not self.custFolder :
+            if self.shared.samePath is True :
+                self.locButt.setEnabled(False)
+                self.shared.pathway = os.path.dirname(self.filePath[0])
                 self.pathLabel.setText('Pathway to save : ' + self.shared.pathway)
+
             else :
-                self.pathLabel.setText('Pathway to save : ' + self.custFolder)
+                self.locButt.setEnabled(True)
+                if not self.custFolder :
+                    self.pathLabel.setText('Pathway to save : ' + self.shared.pathway)
+                else :
+                    self.pathLabel.setText('Pathway to save : ' + self.custFolder)     
         
+    def updateButt(self) -> None :
+        if self.haveSavePath is False :
+            self.convertButt.setEnabled(False)
+            
+        else :
+            self.convertButt.setEnabled(True)
+    
     def updateQueue(self) -> None :
         self.addQueue = self.queueBox.isChecked()
         
     def conversion(self) -> None :
+        self.newName = self.fileEdit.text()
+        
+        # if gcode, go to python script above
         if '.gcode' in self.fileName :
             fileObject = convert(self.filePath[0], self.shared)
             self.newFile = fileObject.readInFile()
             
         elif '.stl' in self.fileName :
+            #otherwise, open the slicer for use
             fileObject = slicerBox(self.filePath[0], self.shared)
             temp = fileObject.findSlicer()
         
+        #if user requested file to be added to queue
         if self.addQueue is True :
             self.sbWin.sbBox.enableRunButt()
             self.sbWin.sbBox.sbList.addFile(self.newFile)
@@ -306,10 +348,12 @@ class convertDialog(QDialog) :
    #################################################### Shared class for convert & convertDialog
 class sharedConvert :
     
+    #to get shared variables between all classes working
     def __init__(self) :
         self.samePath = False
         self.pathway = ""
         self.finished = False
+        self.newName = ""
         
    ################################################### Class for opening Slicer  
 class slicerBox :
@@ -325,7 +369,7 @@ class slicerBox :
         self.slicerFolder = "Ultimaker Cura"
         self.startDir = "\Program Files"
         
-    
+    #find where the slicer is located within the computer
     def findSlicer(self) :
         dir_list = os.listdir(self.startDir)
         
