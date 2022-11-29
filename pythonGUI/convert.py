@@ -24,7 +24,8 @@ from PyQt5.QtWidgets import QMainWindow, QDialog, QVBoxLayout, QWidget, QApplica
 
 class convert:
 
-    def __init__(self, fileName, convertShare) :
+    def __init__(self, fileName, convertShare, reName) :
+        self.reName = reName
         self.fileName = fileName
         self.shared = convertShare
         
@@ -39,21 +40,27 @@ class convert:
     def readInFile(self) :
         isFlowing = False
         isWritten = False
+        file = ""
         
         # If the file isn't GCODE, display error and break out of method
         if (".gcode" or ".stl") not in self.fileName:
                 print("File must be GCODE or STL") 
         
+        dirPath = os.path.dirname(self.fileName)
+        
         #copy file so not to override original
-        file = copy.copy(self.fileName)
+        # file = copy.copy(self.fileName)
         
         # change filepath if user requested different save path
         if self.shared.samePath is False :
-            file = file.replace(os.path.dirname(file), self.shared.pathway)
+            # file = file.replace(os.path.dirname(file), self.shared.pathway)
+            dirPath = dirPath.replace(os.path.dirname(self.fileName), self.shared.pathway)
+        
+        file = dirPath + "/" + self.reName + ".sbp"
+        print (file)
         
         # replace extension
-        file = file.replace(".gcode", ".sbp")
-    
+        # file = file.replace(".gcode", ".sbp")
         
         with open(self.fileName, 'r') as GCodeFile :
             with open(file, 'w+') as SBPFile :
@@ -281,11 +288,13 @@ class convertDialog(QDialog) :
         
         #load up directory to save
     def loadDir(self) -> None :
+        self.haveSavePath = True
         if self.shared.samePath is False:
             openFolder = r'C:\\'
             self.custFolder = QFileDialog.getExistingDirectory(self, "Choose Directory", openFolder)
             self.shared.pathway = self.custFolder
             self.pathLabel.setText('Pathway to save : ' + self.shared.pathway)
+        self.updateButt()
     
     def updateFile(self) -> None :
         self.GFileLabel.setText('File:  ' + self.fileName)
@@ -293,22 +302,25 @@ class convertDialog(QDialog) :
         
         #update pathway for same folder or chosen by user
     def updatePathway(self) -> None :
+        self.haveSavePath = True
         if self.filePath[0]: 
             self.shared.samePath = self.pathBox.isChecked()
-            self.haveSavePath = True
-            self.updateButt()
         
             if self.shared.samePath is True :
                 self.locButt.setEnabled(False)
                 self.shared.pathway = os.path.dirname(self.filePath[0])
                 self.pathLabel.setText('Pathway to save : ' + self.shared.pathway)
-
+     
             else :
                 self.locButt.setEnabled(True)
+
                 if not self.custFolder :
                     self.pathLabel.setText('Pathway to save : ' + self.shared.pathway)
                 else :
                     self.pathLabel.setText('Pathway to save : ' + self.custFolder)     
+       
+        self.updateButt()
+        
         
     def updateButt(self) -> None :
         if self.haveSavePath is False :
@@ -325,12 +337,12 @@ class convertDialog(QDialog) :
         
         # if gcode, go to python script above
         if '.gcode' in self.fileName :
-            fileObject = convert(self.filePath[0], self.shared)
+            fileObject = convert(self.filePath[0], self.shared, self.newName)
             self.newFile = fileObject.readInFile()
             
         elif '.stl' in self.fileName :
             #otherwise, open the slicer for use
-            fileObject = slicerBox(self.filePath[0], self.shared)
+            fileObject = slicerBox(self.filePath[0], self.shared, self.newName)
             temp = fileObject.findSlicer()
         
         #if user requested file to be added to queue

@@ -92,6 +92,9 @@ You may cite the use of this code as follows:
     - `config.py`
         Import saved settings
         
+    -  'convert.py'
+        Functions for converting a .gcode file to .sbp format.
+        
     - `pypylon-1.7.4rc1-cp38-cp38-win_amd64.whl`
         Wheel for pypylon version that this GUI was developed on.
 
