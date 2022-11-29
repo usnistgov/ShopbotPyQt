@@ -370,9 +370,10 @@ class sharedConvert :
    ################################################### Class for opening Slicer  
 class slicerBox :
     
-    def __init__(self, file, convertShare) :
+    def __init__(self, file, convertShare, reName) :
         self.shared = convertShare
         stlFile = file
+        self.reName = reName
         
         self.foundFolder = False
         
