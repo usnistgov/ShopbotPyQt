@@ -137,6 +137,7 @@ class convert:
                                     # write in header SO commands one time after first MS
                                     if headerFlag is False :
                                         SBPFile.write("JS, " + self.moveRate + ", " + self.moveRate + "\n")
+                                        SBPFile.write("VR,10.06, 10.06, , , 10.06, 10.06, , , 5.08, 5.08, 100, 3.81, 65, , , 5.08\n")
                                         SBPFile.write("SO, " + self.shared.getRunFlag() + ", 1\n")
                                         SBPFile.write("SO, 2, 1\n")
                                         SBPFile.write("SO, 2, 0\n")
@@ -149,8 +150,8 @@ class convert:
                         SBPFile.write("SA\n")
 
                         #return to machine zero/go home
-                    if line.__contains__("G28") :
-                        SBPFile.write("MH\n")
+                    #if line.__contains__("G28") :
+                        #SBPFile.write("MH\n")
                         
         self.shared.finished = True
         
@@ -240,8 +241,8 @@ class convertDialog(QDialog) :
         self.shared = sharedConvert(self.sbWin)
         self.addQueue = False
         self.haveSavePath = False
-        self.channel1 = True
-        self.channel2 = False
+        self.channel0 = True
+        self.channel1 = False
         
         self.newFile = ""
         self.filePath = ""
@@ -289,17 +290,17 @@ class convertDialog(QDialog) :
         self.queueBox = QCheckBox('load to queue after conversion')
         self.queueBox.stateChanged.connect(self.updateQueue)
         
-        self.channel1Box = QCheckBox('Channel 1')
-        self.channel1Box.setChecked(True)
-        self.channel1Box.stateChanged.connect(self.updateChannel)
+        self.channel0Box = QCheckBox('Channel 0')
+        self.channel0Box.setChecked(True)
+        self.channel0Box.stateChanged.connect(self.updateChannel)
         
-        self.channel2Box = QCheckBox('Channel 2')
-        self.channel2Box.stateChanged.connect(self.updateChannel)
+        self.channel1Box = QCheckBox('Channel 1')
+        self.channel1Box.stateChanged.connect(self.updateChannel)
         
         self.convertLayout.addWidget(self.queueBox, 0, 1)
         self.convertLayout.addWidget(self.pathBox, 3, 1)
-        self.convertLayout.addWidget(self.channel1Box, 4, 2)
-        self.convertLayout.addWidget(self.channel2Box, 4, 3)
+        self.convertLayout.addWidget(self.channe01Box, 4, 2)
+        self.convertLayout.addWidget(self.channe12Box, 4, 3)
         
     def loadButt(self) :
         self.locButt = QPushButton('Choose Save Location')
@@ -373,21 +374,21 @@ class convertDialog(QDialog) :
         self.addQueue = self.queueBox.isChecked()
         
     def updateChannel(self) -> None :
+        self.channel0 = self.channel0Box.isChecked()
         self.channel1 = self.channel1Box.isChecked()
-        self.channel2 = self.channel2Box.isChecked()
         
         self.changeChannel()
         
     def changeChannel(self) -> None :
-        if self.channel1 is True and self.channel2 is False :
-            self.shared.setChannel(1)
+        if self.channel0 is True and self.channel1 is False :
+            self.shared.setChannel(0)
             self.updateButt()
             
-        if self.channel2 is True and self.channel1 is False :
-            self.shared.setChannel(2)
+        if self.channel1 is True and self.channel0 is False :
+            self.shared.setChannel(1)
             self.updateButt()
         
-        if (self.channel1 is False and self.channel2 is False) or (self.channel1 is True and self.channel2 is True) :
+        if (self.channel0 is False and self.channel1 is False) or (self.channel0 is True and self.channel1 is True) :
             self.convertButt.setEnabled(False)
         
     def conversion(self) -> None :
@@ -435,7 +436,7 @@ class sharedConvert :
         return str(self.sbWin.sbBox.runFlag1)
     
     def setChannel(self, channel) :
-        self.channelNum = self.sbWin.fluBox.pchannels[channel-1]
+        self.channelNum = self.sbWin.fluBox.pchannels[channel]
         
    ################################################### Class for opening Slicer  
 class slicerBox :
