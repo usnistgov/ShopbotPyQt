@@ -67,7 +67,6 @@ class convert:
                 
                 SBPFile.write("VD , , 1\n")
                 SBPFile.write("VU, 157.480315, 157.480315, -157.480315\n")
-                SBPFile.write("VR,10.06, 10.06, , , 10.06, 10.06, , , 5.08, 5.08, 100, 3.81, 65, , , 5.08\n")
                 
                 while True :
                     line = GCodeFile.readline()
@@ -120,6 +119,7 @@ class convert:
                                     # write in header SO commands one time after first MS
                                     if headerFlag is False :
                                         SBPFile.write("MS, " + self.moveRate + ", " + self.moveRate + "\n")
+                                        SBPFile.write("VR,10.06, 10.06, , , 10.06, 10.06, , , 5.08, 5.08, 100, 3.81, 65, , , 5.08\n")
                                         SBPFile.write("SO, " + self.shared.getRunFlag() + ", 1\n")
                                         SBPFile.write("SO, 2, 1\n")
                                         SBPFile.write("SO, 2, 0\n")
@@ -298,8 +298,8 @@ class convertDialog(QDialog) :
         
         self.convertLayout.addWidget(self.queueBox, 0, 1)
         self.convertLayout.addWidget(self.pathBox, 3, 1)
-        self.convertLayout.addWidget(self.channel1, 4, 2)
-        self.convertLayout.addWidget(self.channel2, 4, 3)
+        self.convertLayout.addWidget(self.channel1Box, 4, 2)
+        self.convertLayout.addWidget(self.channel2Box, 4, 3)
         
     def loadButt(self) :
         self.locButt = QPushButton('Choose Save Location')
@@ -380,12 +380,14 @@ class convertDialog(QDialog) :
         
     def changeChannel(self) -> None :
         if self.channel1 is True and self.channel2 is False :
-            self.setChannel(1)
+            self.shared.setChannel(1)
             self.updateButt()
-        elif self.channel2 is True and self.channel1 is False :
-            self.setChannel(2)
+            
+        if self.channel2 is True and self.channel1 is False :
+            self.shared.setChannel(2)
             self.updateButt()
-        else :
+        
+        if (self.channel1 is False and self.channel2 is False) or (self.channel1 is True and self.channel2 is True) :
             self.convertButt.setEnabled(False)
         
     def conversion(self) -> None :
