@@ -132,6 +132,8 @@ class convert:
                         if line.__contains__("F") :
                                 FCommand = line.partition("F")[2]
                                 if FCommand[0].isdigit() is True :
+                                    if headerFlag is True :
+                                        SBPFile.write("'ink_speed_" + str(self.shared.channel) + "=" + str(self.moveRate)) 
                                     SBPFile.write("MS, " + self.moveRate + ", " + self.moveRate + "\n")
                                     
                                     # write in header SO commands one time after first MS
@@ -428,6 +430,7 @@ class sharedConvert :
         self.finished = False
         self.newName = ""
         self.channelNum = self.sbWin.fluBox.pchannels[0]
+        self.channel = 0
                                                       
     def getFluFlag(self) :
         return str(self.channelNum.flag1)
@@ -437,6 +440,7 @@ class sharedConvert :
     
     def setChannel(self, channel) :
         self.channelNum = self.sbWin.fluBox.pchannels[channel]
+        self.channel = channel
         
    ################################################### Class for opening Slicer  
 class slicerBox :
