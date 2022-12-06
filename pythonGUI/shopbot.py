@@ -313,6 +313,10 @@ class sbBox(connectBox):
                 out = out+[self.xe, self.ye, self.ze]
             else:
                 out = out + ['','','']
+            if hasattr(self, 'xt') and hasattr(self, 'yt') and hasattr(self, 'zt'):
+                out = out+[self.xt, self.yt, self.zt]
+            else:
+                out = out + ['','','']
         else:
             out = []
         if self.saveFlag:
@@ -330,7 +334,7 @@ class sbBox(connectBox):
     def timeHeader(self) -> List:
         '''get a list of header values for the time table'''
         if self.savePos:
-            out = ['x_disp(mm)', 'y_disp(mm)', 'z_disp(mm)', 'x_est(mm)', 'y_est(mm)', 'z_est(mm)']
+            out = ['x_disp(mm)', 'y_disp(mm)', 'z_disp(mm)', 'x_est(mm)', 'y_est(mm)', 'z_est(mm)', 'x_target(mm)', 'y_target(mm)', 'z_target(mm)']
         else:
             out = []
         if self.saveFlag:
@@ -372,8 +376,10 @@ class sbBox(connectBox):
         cfg1.shopbot.burstScale = self.burstScale
         cfg1.shopbot.burstLength = self.burstLength
         cfg1.shopbot.diag = self.diag
-        cfg1 = self.settingsBox.saveConfig(cfg1)
-        cfg1 = self.sbList.saveConfig(cfg1)
+        if hasattr(self, 'settingsBox'):
+            cfg1 = self.settingsBox.saveConfig(cfg1)
+        if hasattr(self, 'sbList'):
+            cfg1 = self.sbList.saveConfig(cfg1)
         return cfg1
     
     def loadConfigMain(self, cfg1):
@@ -453,6 +459,7 @@ class sbBox(connectBox):
     def saveMeta(self) -> None:
         '''create a csv file that describes the run speeds'''
         self.sbWin.saveMetaData()
+        
        
     def writeToTable(self, writer) -> None:
         '''write metadata values to the table'''
@@ -544,6 +551,15 @@ class sbBox(connectBox):
         self.ze = z
         if hasattr(self, 'flagBox'):
             self.flagBox.updateXYZest(x,y,z)
+            
+    @pyqtSlot(float,float,float)
+    def updateXYZt(self, x:float, y:float, z:float) -> None:
+        '''update the target xyz display'''
+        self.xt = x
+        self.yt = y
+        self.zt = z
+        if hasattr(self, 'flagBox'):
+            self.flagBox.updateXYZt(x,y,z)
 
     ####################            
     #### functions to start on run
@@ -638,6 +654,7 @@ class sbBox(connectBox):
         self.printWorker.signals.aborted.connect(self.triggerKill)
         self.printWorker.signals.finished.connect(self.triggerEndOfPrint)
         self.printWorker.signals.estimate.connect(self.updateXYZest)
+        self.printWorker.signals.target.connect(self.updateXYZt)
 
         # send the file to the shopbot via command line
         self.keys.lock()
@@ -660,7 +677,8 @@ class sbBox(connectBox):
     def triggerWatch(self) -> None:
         '''start recording and start the timer to watch for changes in pressure'''
         
-        
+        if not self.runningSBP:
+            return
 
         # start the cameras if any flow is triggered in the run
         if min(self.channelsTriggered)<len(self.sbWin.fluBox.pchannels):
@@ -669,6 +687,7 @@ class sbBox(connectBox):
             # only save speeds and pressures if there is extrusion or if the checkbox is marked
             self.sbWin.saveMetaData()    # save metadata
             self.sbWin.initSaveTable()   # save table of pressures
+            
             
         self.printThread = QThread()
         self.printWorker.moveToThread(self.printThread)
@@ -690,11 +709,14 @@ class sbBox(connectBox):
             
     def closeDevices(self) -> None:
         '''stop all recording devices'''
-        self.sbWin.writeSaveTable()     # save the pressure and xyz readings
         if hasattr(self.sbWin, 'fluBox'):
             self.sbWin.fluBox.resetAllChannels(-1) # turn off all channels
+            
         if hasattr(self.sbWin, 'camBoxes'):
             self.sbWin.camBoxes.stopRecording()    # turn off cameras
+            
+        self.sbWin.writeSaveTable()     # save the pressure and xyz readings    
+            
         if hasattr(self, 'timer'):
             try:
                 self.timer.stop()
@@ -714,12 +736,14 @@ class sbBox(connectBox):
     @pyqtSlot()
     def triggerKill(self) -> None:
         '''the stop button was hit, so stop'''
+        logging.info('Stop hit')
         self.stopRunning()
         self.readyState()
         
     @pyqtSlot()
     def triggerEndOfPrint(self) -> None:
         '''we finished the file, so stop and move onto the next one'''
+        logging.info('File completed')
         self.stopRunning()
         self.sbList.activateNext() # activate the next sbp file in the list
         if self.autoPlay and self.sbList.sbpNumber()>0: # if we're in autoplay and we're not at the beginning of the list, play the next file

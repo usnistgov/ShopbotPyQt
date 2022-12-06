@@ -46,21 +46,26 @@ class flagGrid(QGridLayout):
         
     def successLayout(self, tall:bool=True) -> None:
         # coords
+        self.addWidget(QLabel('SB3'), 0, 0, 1, 2)
+        self.addWidget(QLabel('Estimate'), 0, 2, 1, 2)
+        self.addWidget(QLabel('Target'), 0, 4, 1, 2)
+        self.addWidget(QLabel('Flags'), 0, 6, 1, 6)
+        
         w = 25
-        for j,s in enumerate(['', 'e']):
+        for j,s in enumerate(['', 'e', 't']):
             for i,dim in enumerate(['x', 'y', 'z']):
                 dname = f'{dim}{s}'
                 dlabel = QLabel(dname)
                 dlabel.setFixedWidth(w)
                 dlabel.setFixedHeight(w)
                 dlabel.setAlignment(Qt.AlignCenter)
-                self.addWidget(dlabel, i, 0+j*2)
+                self.addWidget(dlabel, i+1, 0+j*2)
                 setattr(self, dname, QLabel(''))
-                self.addWidget(getattr(self, dname), i, 1+j*2)
+                self.addWidget(getattr(self, dname), i+1, 1+j*2)
         
         # flags
         row = -1
-        col = 4
+        col = 6
         for flag0 in range(self.numFlags):
             if tall:
                 row = flag0+3
@@ -79,12 +84,12 @@ class flagGrid(QGridLayout):
             flagBox.setAlignment(Qt.AlignCenter)
             setattr(self, fname, flagBox)           # label should be 1-indexed
             
-            self.addWidget(getattr(self, fname), row, col)
+            self.addWidget(getattr(self, fname), row+1, col)
             
             # create the device label
             label = self.flagLabelName(flag0)
             setattr(self, label, QLabel(''))
-            self.addWidget(getattr(self, label), row, col+1)
+            self.addWidget(getattr(self, label), row+1, col+1)
             
         
         
@@ -105,6 +110,15 @@ class flagGrid(QGridLayout):
         self.xe.setText(f'{x:0.3f}')
         self.ye.setText(f'{y:0.3f}')
         self.ze.setText(f'{z:0.3f}')
+        
+    def updateXYZt(self, x,y,z) -> None:
+        '''update the target xyz display'''
+        if not hasattr(self, 'xt') or not hasattr(self, 'yt') or not hasattr(self, 'zt'):
+            # missing attribute, can't set xyz labels
+            return
+        self.xt.setText(f'{x:0.3f}')
+        self.yt.setText(f'{y:0.3f}')
+        self.zt.setText(f'{z:0.3f}')
  
     def flagTaken(self, flag0:int) -> bool:
         '''check the dictionary to see if the flag is taken'''

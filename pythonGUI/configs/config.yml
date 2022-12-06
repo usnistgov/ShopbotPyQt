@@ -1,13 +1,15 @@
 appid: leanfried.sbgui.v1.0.5
 camera:
   cam0:
+    checked: false
     diag: 1
     flag1: 3
-    fps: 100
+    fps: 196
     name: Basler camera
     previewFPS: 15
     type: bascam
   cam1:
+    checked: false
     diag: 1
     flag1: 5
     fps: 15
@@ -15,6 +17,7 @@ camera:
     previewFPS: 15
     type: webcam
   cam2:
+    checked: false
     diag: 1
     flag1: 6
     fps: 15
@@ -43,7 +46,7 @@ fluigent:
       initDensity: 1
       initDiam: 0.603
       initSpeed: 10.0
-    color: '#3f8d88'
+    color: '#5a8171'
     flag1: 1
   channel1:
     calibration:
@@ -54,10 +57,11 @@ fluigent:
       initSpeed: 5.0
     color: '#b0401e'
     flag1: 2
-  dt: 25
-  pmax: 6000
+  dt: 100
+  pmax: 2000
   savePressure: true
   trange: 60
+  units: mbar
 layout:
   save: true
 meta:
@@ -91,11 +95,11 @@ meta:
 savePressure: true
 shopbot:
   autoplay: true
-  burstLength: 0.05
+  burstLength: 0.01
   burstScale: 1.0
-  critTimeOff: 0.05
-  critTimeOn: 0.05
-  currentFile: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleHorizPics2.sbp
+  critTimeOff: -0.2
+  critTimeOn: 0.2
+  currentFile: C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleHoriz_0.5_0.500.sbp
   diag: 1
   dt: 10.0
   flag1: 12
@@ -106,7 +110,7 @@ shopbot:
   saveDt: 25
   savePicMetadata: true
   sbpFiles:
-  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleHorizPics2.sbp
+  - C:/Users/lmf1/Documents/GitHub/ShopbotPyQt/SBP_files/tripleLinesSide/crossDoubleHoriz_0.5_0.500.sbp
   sbpFolder: C:\Users\lmf1\Documents\GitHub\ShopbotPyQt\SBP_files
   showFolder: false
   units: mm

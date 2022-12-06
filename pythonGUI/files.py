@@ -412,12 +412,14 @@ class fileBox(connectBox):
             return ''
         if not self.sbWin.sbBox.runningSBP and not demoMode:
             # if we're not running a shopbot file, return empty
+            print('not running')
             return ''
         # get the path name
         sbpPath = self.sbWin.sbBox.sbpName()
         if os.path.exists(sbpPath):
             return os.path.splitext(os.path.basename(sbpPath))[0]
         else:
+            print('sbp path does not exist')
             return ''
         
     def sample(self, file:bool) -> str:
@@ -492,7 +494,6 @@ class fileBox(connectBox):
         '''Get a filename and folder for a new file. First return is the sample name. Second is the folder name. If subfolder creation is off, just return the save folder. If it is on, create subfolders and return the subfolder. The device name indicates what device is generating data for this file. ext is the extension'''
         
         folder = self.makeSubFolders(demoMode=demoMode)
-        
 
         # entries for files
         sbBase = self.sbBase(True, demoMode=demoMode)

@@ -1,0 +1,111 @@
+&slideW = 25.000
+&slideH = 75.000
+&margin = 5.000
+&spacing = 5.000
+&nid = 0.603
+&nd = 0.907
+&downdisp = 0.000
+&wait1 = 1.500
+&wait2 = 0.500
+VD , , 1
+VU, 157.480315, 157.480315, -157.480315
+MS, 10, 10
+JS, 20, 20
+VR,10.06, 10.06, , , 10.06, 10.06, , , 5.08, 5.08, 100, 3.81, 65, , , 5.08
+MS, 10, 10
+JS, 20, 20
+MS, 10, 10
+JS, 20, 20
+MS, 10, 10
+JS, 20, 20
+MS, 10, 10
+JS, 20, 20
+MS, 10, 10
+JS, 20, 20
+MS, 10, 10
+JS, 20, 20
+MS, 10, 10
+JS, 20, 20
+MS, 10, 10
+JS, 20, 20
+MS, 10, 10
+JS, 20, 20
+MS, 10, 10
+JS, 20, 20
+MS, 10, 10
+JS, 20, 20
+MS, 10, 10
+JS, 20, 20
+&nid = 0.603
+SO, 12, 1
+SO, 1, 1
+SO, 1, 0
+J2, 12.500, 21*&margin/2 + 20*&nid
+JY, 21*&margin/2 + 20*&nid
+JZ, &margin/2 -&slideW
+SO, 1, 1
+MZ, -0.5*&margin - 0.5*&slideW
+SO, 1, 0
+JY, 21*&margin/2 + 23*&nid
+MZ, -0.75*&slideW
+PAUSE 1
+MZ, -0.5*&margin - 0.5*&slideW
+MY, 10.5*&margin + 21.25*&nid
+JZ, &margin/2 -&slideW
+MZ, -0.5*&margin - 0.5*&slideW
+JY, 21*&margin/2 + 23*&nid
+MZ, -0.75*&slideW
+PAUSE 1
+MZ, -0.5*&margin - 0.5*&slideW
+JY, 21*&margin/2 + 20*&nid
+JZ, -0.5*&slideW
+SO, 1, 1
+MZ, -&margin
+SO, 1, 0
+JY, 21*&margin/2 + 23*&nid
+MZ, -0.5*&margin - 0.25*&slideW
+PAUSE 1
+MZ, -&margin
+MY, 10.5*&margin + 21.25*&nid
+JZ, -0.5*&slideW
+MZ, -&margin
+JY, 21*&margin/2 + 23*&nid
+MZ, -0.5*&margin - 0.25*&slideW
+PAUSE 1
+MZ, -&margin
+JY, 23*&margin/2 + 22*&nid
+JY, 23*&margin/2 + 22*&nid
+JZ, &margin/2 -&slideW
+SO, 1, 1
+MZ, -0.5*&margin - 0.5*&slideW
+SO, 1, 0
+JY, 23*&margin/2 + 25*&nid
+MZ, -0.75*&slideW
+PAUSE 1
+MZ, -0.5*&margin - 0.5*&slideW
+MY, 11.5*&margin + 23.25*&nid
+JZ, &margin/2 -&slideW
+MZ, -0.5*&margin - 0.5*&slideW
+JY, 23*&margin/2 + 25*&nid
+MZ, -0.75*&slideW
+PAUSE 1
+MZ, -0.5*&margin - 0.5*&slideW
+JY, 23*&margin/2 + 22*&nid
+JZ, -0.5*&slideW
+SO, 1, 1
+MZ, -&margin
+SO, 1, 0
+JY, 23*&margin/2 + 25*&nid
+MZ, -0.5*&margin - 0.25*&slideW
+PAUSE 1
+MZ, -&margin
+MY, 11.5*&margin + 23.25*&nid
+JZ, -0.5*&slideW
+MZ, -&margin
+JY, 23*&margin/2 + 25*&nid
+MZ, -0.5*&margin - 0.25*&slideW
+PAUSE 1
+MZ, -&margin
+JY, 25*&margin/2 + 24*&nid
+JZ, 10.000
+SO, 12, 0

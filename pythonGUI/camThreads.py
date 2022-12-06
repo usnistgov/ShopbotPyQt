@@ -132,8 +132,6 @@ class vidReader(QObject):
             # if we're in super debug mode, print header for the table of frames
             self.signals.progress.emit('Camera name\t\tFrame t\tTotal t\tRec t\tSleep t\tAdj t')
 
-#         while True:
-#             self.loop()
         self.timer = QTimer()
         self.timer.timeout.connect(self.loop)
         self.timer.setTimerType(Qt.PreciseTimer)
@@ -146,17 +144,10 @@ class vidReader(QObject):
         self.dnow = datetime.datetime.now()
         frame = self.readFrame()  # read the frame
         if not self.cont:
-            if hasattr(self, 'timer') and self.timer.isActive():
-                self.timer.stop()
-            self.signals.finished.emit()
+            self.close()
             return
         self.sendNewFrame(frame) # send back to window
         self.checkDrop(frame)   # check for dropped frames
-        # loopEnd = datetime.datetime.now()
-        # inStepTimeElapsed = (loopEnd - self.dnow).total_seconds()  # time elapsed from beginning of step to end
-        # self.sleepTime = self.mspf/1000 - inStepTimeElapsed - self.dt
-        # if self.sleepTime>0:
-        #     time.sleep(self.sleepTime)   # wait for next frame
 
             
     def readFrame(self):
@@ -223,9 +214,9 @@ class vidReader(QObject):
                     self.signals.progress.emit(f'{self.cameraName}\tPAD{numfill}\t\t{self.timeRec:2.3f}\t\t{self.dt}')
                     
     def close(self):
-        if hasattr(self, 'timer'):
+        if hasattr(self, 'timer') and self.timer.isActive():
             self.timer.stop()
-        
+        self.signals.finished.emit()
 
 
    

@@ -1,0 +1,88 @@
+&slideW = 25.000
+&slideH = 75.000
+&margin = 5.000
+&spacing = 5.000
+&nid = 0.603
+&nd = 0.907
+&downdisp = 0.000
+&wait1 = 1.500
+&wait2 = 0.500
+VD , , 1
+VU, 157.480315, 157.480315, -157.480315
+MS, 10, 10
+JS, 20, 20
+VR,10.06, 10.06, , , 10.06, 10.06, , , 5.08, 5.08, 100, 3.81, 65, , , 5.08
+MS, 10, 10
+JS, 20, 20
+MS, 10, 10
+JS, 20, 20
+MS, 10, 10
+JS, 20, 20
+&nid = 0.603
+SO, 12, 1
+SO, 1, 1
+SO, 1, 0
+M2, &slideW/2, 10.0*&margin
+JZ, -&slideW
+MZ, -0.9*&slideW
+SO, 1, 1
+MY, 10.0*&margin + 9.0
+MY, 10.0*&margin + 10
+SO, 1, 0
+MZ, 3*&nid - 0.9*&slideW
+MY, 10.0*&margin + 5.0
+PAUSE 1
+JY, 10.0*&margin
+MZ, &nid - 0.9*&slideW
+MY, 10.0*&margin + 10
+JZ, 3*&nid - 0.9*&slideW
+MY, 10.0*&margin + 5.0
+PAUSE 1
+JY, 10.0*&margin
+MZ, -0.7*&slideW
+SO, 1, 1
+MY, 10.0*&margin + 9.0
+MY, 10.0*&margin + 10
+SO, 1, 0
+MZ, 3*&nid - 0.7*&slideW
+MY, 10.0*&margin + 5.0
+PAUSE 1
+JY, 10.0*&margin
+MZ, &nid - 0.7*&slideW
+MY, 10.0*&margin + 10
+JZ, 3*&nid - 0.7*&slideW
+MY, 10.0*&margin + 5.0
+PAUSE 1
+JY, 10.0*&margin
+MZ, -0.5*&slideW
+SO, 1, 1
+MY, 10.0*&margin + 9.0
+MY, 10.0*&margin + 10
+SO, 1, 0
+MZ, 3*&nid - 0.5*&slideW
+MY, 10.0*&margin + 5.0
+PAUSE 1
+JY, 10.0*&margin
+MZ, &nid - 0.5*&slideW
+MY, 10.0*&margin + 10
+JZ, 3*&nid - 0.5*&slideW
+MY, 10.0*&margin + 5.0
+PAUSE 1
+JY, 10.0*&margin
+MZ, -0.3*&slideW
+SO, 1, 1
+MY, 10.0*&margin + 9.0
+MY, 10.0*&margin + 10
+SO, 1, 0
+MZ, 3*&nid - 0.3*&slideW
+MY, 10.0*&margin + 5.0
+PAUSE 1
+JY, 10.0*&margin
+MZ, &nid - 0.3*&slideW
+MY, 10.0*&margin + 10
+JZ, 3*&nid - 0.3*&slideW
+MY, 10.0*&margin + 5.0
+PAUSE 1
+JY, 10.0*&margin
+JZ, 10.000
+SO, 12, 0
