@@ -23,16 +23,42 @@ from general import *
    
 #----------------------------------------------------------------------
 
+def pressureConversion():
+    return {'mbar':1, 'kpa':0.1, 'psi':0.0145038}
+
+def convertPressure(val:float, oldUnits:str, newUnits:str) -> float:
+    '''convert the pressure from old units to new units'''
+    if oldUnits==newUnits:
+        return val
+    if type(val) is str:
+        try:
+            val = float(val)
+        except ValueError:
+            return val
+    convert = pressureConversion()
+    factor = convert[newUnits.lower()]/convert[oldUnits.lower()]
+    out = val*factor
+    if newUnits.lower()=='mbar':
+        out = int(out)
+    elif newUnits.lower()=='kpa':
+        out = round(out,1)
+    elif newUnits.lower()=='psi':
+        out = round(out,2)
+    
+    return out
+
+
 class plotWatch(QMutex):
     '''Holds the pressure/time list for all channels'''
 
-    def __init__(self, numChans:int, trange:float, dt:float):
+    def __init__(self, numChans:int, trange:float, dt:float, units:str):
         super().__init__()
         self.stop = False          # tells us to stop reading pressures
         self.numChans = numChans   # number of channels
         self.trange = cfg.fluigent.trange       # time range
         self.dt = dt
         self.d0 = datetime.datetime.now()
+        self.units = units
         self.initializePList()
 
         
@@ -47,6 +73,15 @@ class plotWatch(QMutex):
         for i in range(self.numChans):
             press = [0 for _ in range(len(self.time))]
             self.pressures.append(press)
+            
+    def updateUnits(self, newUnits:str) -> None:
+        '''convert to units'''
+        oldUnits = self.units
+        self.units = newUnits
+        convert = pressureConversion()
+        factor = convert[newUnits.lower()]/convert[oldUnits.lower()]
+        for i,p in enumerate(self.pressures):
+            self.pressures[i] = [x*factor for x in p]
 
 
 class fluSignals(QObject):
@@ -57,9 +92,14 @@ class fluSignals(QObject):
     
     
 def checkPressure(channel:int) -> int:
-    '''reads the pressure of a given channel, 0-indexed'''
+    '''reads the pressure in mbar of a given channel, 0-indexed'''
     pressure = int(fgt.fgt_get_pressure(channel))
     return pressure
+
+def setPressure(channel:int, runPressure:float, units:str) -> None:
+    '''convert to mbar and set the pressure'''
+    p_mbar = int(convertPressure(runPressure, units, 'mbar')) # convert to mbar
+    fgt.fgt_set_pressure(channel, p_mbar)
             
 class plotUpdate(QObject):
     '''plotUpdate updates the list of times and pressures and allows us to read pressures continuously in a background thread.'''
@@ -85,6 +125,7 @@ class plotUpdate(QObject):
                 newpressures = self.pw.pressures  
                 d0 = self.pw.d0   # initial time
                 stop = self.pw.stop
+                units = self.pw.units
                 self.dt = self.pw.dt   # dt in milliseconds
                 self.pw.unlock()
                 
@@ -98,7 +139,8 @@ class plotUpdate(QObject):
                 for i in range(self.numChans):
                     newpressures[i] = newpressures[i][1:]
                     if self.connected:
-                        pnew = checkPressure(i)
+                        pnew_mbar = checkPressure(i)    # read pressure in mbar
+                        pnew = convertPressure(pnew_mbar, 'mbar', units)
                     else:
                         pnew = 0
                     newpressures[i].append(pnew)         # Add the current pressure to the list, for each channel

@@ -98,9 +98,9 @@ class settingsDialog(QDialog):
         '''save the config file to file'''
         sbWin = self.sbWin
         cfg1 = cfg.copy()
-        for box in (self.sbWin.boxes()):
-            if hasattr(box, 'saveConfig'):
-                cfg1 = box.saveConfig(cfg1)
+        for b in (self.sbWin.boxes()):
+            if hasattr(b, 'saveConfig'):
+                cfg1 = b.saveConfig(cfg1)
         out = dumpConfigs(cfg1, file)
         if out==0:
             logging.info(f'Saved settings to {file}')

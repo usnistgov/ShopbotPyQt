@@ -44,7 +44,7 @@ class vc(QMutex):
         
     def updateStatus(self, msg:str, log:bool):
         '''update the status bar by sending a signal'''
-        self.signals.status.emit(msg, log)
+        self.signals.status.emit(str(msg), log)
 
 
 
@@ -93,7 +93,9 @@ class camera(QObject):
         '''update the diag value'''
         self.diag = diag
         if self.deviceOpen:
+            self.vc.lock()
             self.vc.diag = diag
+            self.vc.unlock()
         
     def loadConfig(self, cfg1):
         '''load the current settings from the config Box object'''
@@ -154,8 +156,10 @@ class camera(QObject):
             
             if hasattr(self, 'vc'):
                 # update the vc object
+                self.vc.lock()
                 self.vc.fps=self.fps
                 self.vc.mspf = self.mspf
+                self.vc.unlock()
             return 0
         
     def setFrameRateAuto(self) -> int:
@@ -164,7 +168,9 @@ class camera(QObject):
     def getFrameRate(self):
         '''get the native frame rate of the camera'''
         if self.deviceOpen:
+            self.vc.lock()
             fps = self.vc.getFrameRate()
+            self.vc.unlock()
             if fps>0:
                 return fps
             else:
@@ -193,6 +199,7 @@ class camera(QObject):
         if self.previewing or self.recording:
             # if we're currently collecting frames, we can use the last frame
             cv2.imwrite(fullfn, self.lastFrame[0])
+            self.updateStatus(f'File saved to {fullfn}', True)
         else:
             # if we're not currently collecting frames, we need to collect a new frame.
             last = False
@@ -214,13 +221,17 @@ class camera(QObject):
         # preview will only show at 15 fps
         self.updateFramesToPrev()
         self.previewing = True
+        self.vc.lock()
         self.vc.previewing = True
+        self.vc.unlock()
         self.startReader()      # this only starts the reader if we're not already recording
     
     def stopPreview(self) -> None:
         '''stop live preview. This freezes the last frame on the screen.'''
         self.previewing = False
+        self.vc.lock()
         self.vc.previewing = False
+        self.vc.unlock()
         self.stopReader()       # this only stops the reader if we are neither recording nor previewing
  
     #---------------------------------
@@ -242,8 +253,10 @@ class camera(QObject):
         self.writeWarning=False
         self.recording = True
         self.writing = True
+        self.vc.lock()
         self.vc.recording = True
         self.vc.writing = True
+        self.vc.unlock()
         self.resetVidStats()                       # this resets the frame list, and other vars
         fn = self.getFilename('.avi')              # generate a new file name for this video
         self.vFilename = fn
@@ -279,7 +292,10 @@ class camera(QObject):
             return
         self.frames.put([None,0]) # this tells the vidWriter that this is the end of the video
         self.recording = False
-        self.vc.recording = False     # this helps the frame reader and the status update know we're not reading frames
+        if hasattr(self, 'vc'):
+            self.vc.lock()
+            self.vc.recording = False     # this helps the frame reader and the status update know we're not reading frames
+            self.vc.unlock()
         self.stopReader()           # only turns off the reader if we're not recording or previewing
 
             
@@ -317,7 +333,7 @@ class camera(QObject):
             # Step 4: Move worker to the thread
             self.readWorker.moveToThread(self.readThread)
             # Step 5: Connect signals and slots
-            self.readThread.started.connect(self.readWorker.run)       
+            self.readThread.started.connect(self.readWorker.run)  
             self.readWorker.signals.finished.connect(self.readThread.quit)
             self.readWorker.signals.finished.connect(self.readWorker.deleteLater)
             self.readThread.finished.connect(self.readWorker.close)
@@ -350,11 +366,10 @@ class camera(QObject):
     
     def stopReader(self) -> None:
         '''this only stops the reader if we are neither recording nor previewing'''
-        if not self.recording and not self.previewing:
-            if self.diag>1:
-                logging.info(f'Stopping {self.cameraName} reader')
-            self.readerRunning = False
+        if not self.recording and not self.previewing and self.readerRunning:
             logging.info(f'{self.cameraName} reader stopped')
+            self.readerRunning = False
+           
     
     #---------------------------------
     
@@ -477,31 +492,36 @@ class camera(QObject):
     def doneRecording(self) -> None:
         '''update the status box when we're done recording  '''
         self.writing = False
+        self.vc.lock()
         self.vc.writing = False
+        self.vc.unlock()
         self.updateRecordStatus()
         
     #-----------------------------------    
     
     def closeCam(self) -> None:
         '''disconnect from the camera when the window is closed'''
-        self.recording = False
-        self.previewing = False
+        self.stopPreview()
+        self.stopRecording()
         if hasattr(self, 'vc'):
+            self.vc.lock()
             self.vc.recording = False
             self.vc.previewing = False  
+            self.vc.unlock()
             
             
     def close(self) -> None:
         '''this gets triggered when the whole window is closed. Disconnects from the cameras and deletes videoCapture objects'''
+        self.closeCam()   # tell reader to stop
+        QTimer.singleShot(1000, self.finishClose)   # wait a bit, then finish closing  
+        
+    def finishClose(self) -> None:
+        '''finish closing the camera'''
         for s in ['writeThread', 'recThread']:
             if hasattr(self, s):
                 o = getattr(self, s)
                 if not sip.isdeleted(o) and o.isRunning():
                     o.quit()
-        self.closeCam()
-        if hasattr(self, 'timer') and not self.timer is None:
-            self.timer.stop()
-
         if hasattr(self, 'vc'):
             self.vc.close()
             del self.vc
