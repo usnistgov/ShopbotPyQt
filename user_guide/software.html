@@ -41,13 +41,16 @@
         <li>Install <a href="https://www.shopbottools.com/support/control-software">the Shopbot control software</a></li>
         <ul>
             <li> By default, the Shopbot control software shows 4 output flags, but it allows 12. To increase the number of visible output flags for signaling additional devices (e.g. pressure channels, lights, etc.), go into Move/Cut Mode. Once in Move/Cut - right click in the input/output section of the red position window. Here you can set the number of inputs/outputs displayed up to 12 in the red window</li>
+            <li>You will need to start up Shopbot independently the first time. For the pop-up message that occurs, check the box to not show the message again. Load all the setting you will need into shopbot at this time. </li>
         </ul>
+        
         <li>Install <a href="https://ultimaker.com/software/ultimaker-cura">Ultimaker Cura</a> slicer. Save it to the system's 'program files' folder</li>
         <ul>
             <li>Create a free ultimaker account</li>
             <li>Once downloaded and opened, go to the setting tab and add printer. Under the 'add a non-networked printer', there should be a 'custom' option with a drop down menu. Click on the 'Custom FFF printer' and rename it to your preference.</li>
             <li>A 'machine setting' window should pop up, where you will place corresponding variables to the printer.</li>
             <li> <img src="img/cura_variables.png" alt="Variable inputs that correspond to ShopBot for the Cura slicer"></li>
+            <li>Set the print resolution to extra coarse - 0.6mm and unclick the Adhesion box in the same window</li>
             <li>Note that the Cura slicer takes 1/3 inch off the edges, so you can add that much to the X/Y/Z measurements. However, measurements of 42.34mm by 103.14mm will have you go past the container dimensions.
 </li>
             <li>When creating an STL file through <a href="https://www.onshape.com/en/">Onshape</a>, create measurements in millimeters, even if it states in inches. Cura assumes all measurements are in millimeters.</li>

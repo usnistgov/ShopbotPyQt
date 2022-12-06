@@ -40,6 +40,7 @@ class convert:
     def readInFile(self) :
         isFlowing = False
         isWritten = False
+        headerFlag = False
         file = ""
         
         # If the file isn't GCODE, display error and break out of method
@@ -57,21 +58,21 @@ class convert:
             dirPath = dirPath.replace(os.path.dirname(self.fileName), self.shared.pathway)
         
         file = dirPath + "/" + self.reName + ".sbp"
-        print (file)
         
         # replace extension
         # file = file.replace(".gcode", ".sbp")
         
         with open(self.fileName, 'r') as GCodeFile :
             with open(file, 'w+') as SBPFile :
-                # add in header for every file
-                SBPFile.write("SO, 12, 1\n")
-                SBPFile.write("SO, 2, 1\n")
+                
+                SBPFile.write("VD , , 1\n")
+                SBPFile.write("VU, 157.480315, 157.480315, -157.480315\n")
+                SBPFile.write("VR,10.06, 10.06, , , 10.06, 10.06, , , 5.08, 5.08, 100, 3.81, 65, , , 5.08\n")
+                
                 while True :
                     line = GCodeFile.readline()
                     if not line:
-                        SBPFile.write("SO, 12, 0\n")
-                        SBPFile.write("SO, 2, 0\n")
+                        SBPFile.write("SO, " + self.shared.getRunFlag() + ", 0\n")
                         break
                     
    ##################################################### Setting Variables
@@ -85,7 +86,8 @@ class convert:
                         if line.__contains__("MIN") or line.__contains__("MAX") :
                             self.getCoord(line)
                             
-                            # flaggin for once all coordinates are read
+                            # flagging for once all coordinates are read
+                            #Values for limits for Table
                     if ((self.checkMinX and self.checkMinY and self.checkMinZ and self.checkMaxX and self.checkMaxY and self.checkMaxZ) and not isWritten) :
                             SBPFile.write("VL, " + self.minX + ", " + self.maxX + ", " + self.minY + ", " + self.maxY + ", " + self.minZ + ", " + self.maxZ + ", , , , , \n")
                             isWritten = True
@@ -100,10 +102,10 @@ class convert:
                             isE = True
                     
                         if isE is True and isFlowing is False :
-                            SBPFile.write("S0, 1, 1\n")
+                            SBPFile.write("SO, " + self.shared.getFluFlag() + ", 1\n")
                             isFlowing = True
                         if isE is False and isFlowing is True :
-                            SBPFile.write("S0, 1, 0\n")
+                            SBPFile.write("SO, " + self.shared.getFluFlag() + ", 0\n")
                             isFlowing = False
                           
    ################################################### G0/G1 command switch to J3/M3 & setting move rate
@@ -113,7 +115,16 @@ class convert:
                         if line.__contains__("F") :
                                 FCommand = line.partition("F")[2]
                                 if FCommand[0].isdigit() is True :
-                                    SBPFile.write("MS, " + self.moveRate + ", " + self.moveRate + "\n")
+                                    SBPFile.write("JS, " + self.moveRate + ", " + self.moveRate + "\n")
+                                    
+                                    # write in header SO commands one time after first MS
+                                    if headerFlag is False :
+                                        SBPFile.write("MS, " + self.moveRate + ", " + self.moveRate + "\n")
+                                        SBPFile.write("SO, " + self.shared.getRunFlag() + ", 1\n")
+                                        SBPFile.write("SO, 2, 1\n")
+                                        SBPFile.write("SO, 2, 0\n")
+                                        headerFlag = True
+                                        
                         SBPFile.write("J3, " + self.X_Coord + ", " + self.Y_Coord + ", " + self.Z_Coord + "\n")
 
                     if line.__contains__("G1") and not line.__contains__(";") :
@@ -122,11 +133,22 @@ class convert:
                                 FCommand = line.partition("F")[2]
                                 if FCommand[0].isdigit() is True :
                                     SBPFile.write("MS, " + self.moveRate + ", " + self.moveRate + "\n")
+                                    
+                                    # write in header SO commands one time after first MS
+                                    if headerFlag is False :
+                                        SBPFile.write("JS, " + self.moveRate + ", " + self.moveRate + "\n")
+                                        SBPFile.write("SO, " + self.shared.getRunFlag() + ", 1\n")
+                                        SBPFile.write("SO, 2, 1\n")
+                                        SBPFile.write("SO, 2, 0\n")
+                                        headerFlag = True
+                            
                         SBPFile.write("M3, " + self.X_Coord + ", " + self.Y_Coord + ", " + self.Z_Coord + "\n")
                         
+                        #absolute extruder mode
                     if line.__contains__("M82") :
                         SBPFile.write("SA\n")
 
+                        #return to machine zero/go home
                     if line.__contains__("G28") :
                         SBPFile.write("MH\n")
                         
@@ -199,6 +221,10 @@ class convert:
 
     def getRate(self, speed) :  # Conversion of gcode (mm/min) to sbp (mm/sec)
         convertedSpeed = speed / 60
+        
+        if convertedSpeed > 40 :
+            convertedSpeed = 40
+        
         self.moveRate = str(round(convertedSpeed, 2))
                                             
    ###############################################  Conversion Window
@@ -211,9 +237,11 @@ class convertDialog(QDialog) :
         super().__init__(sbWin)
         self.sbWin = sbWin
         
-        self.shared = sharedConvert()
+        self.shared = sharedConvert(self.sbWin)
         self.addQueue = False
         self.haveSavePath = False
+        self.channel1 = True
+        self.channel2 = False
         
         self.newFile = ""
         self.filePath = ""
@@ -244,12 +272,15 @@ class convertDialog(QDialog) :
         self.convertLayout.addWidget(self.nameChangeLabel, 2, 0)
         self.convertLayout.addWidget(self.fileEdit, 2, 1)
         
+        
     def loadLabel(self) :
         self.GFileLabel = QLabel('File: ')
         self.pathLabel = QLabel('Pathway to Save: ')
+        self.channelLabel = QLabel('Flow channel designated to: ')
         
         self.convertLayout.addWidget(self.GFileLabel, 0,0)
         self.convertLayout.addWidget(self.pathLabel, 3, 0)
+        self.convertLayout.addWidget(self.channelLabel, 4, 1)
         
     def loadBox(self) :
         self.pathBox = QCheckBox('Save to file folder')
@@ -258,8 +289,17 @@ class convertDialog(QDialog) :
         self.queueBox = QCheckBox('load to queue after conversion')
         self.queueBox.stateChanged.connect(self.updateQueue)
         
+        self.channel1Box = QCheckBox('Channel 1')
+        self.channel1Box.setChecked(True)
+        self.channel1Box.stateChanged.connect(self.updateChannel)
+        
+        self.channel2Box = QCheckBox('Channel 2')
+        self.channel2Box.stateChanged.connect(self.updateChannel)
+        
         self.convertLayout.addWidget(self.queueBox, 0, 1)
         self.convertLayout.addWidget(self.pathBox, 3, 1)
+        self.convertLayout.addWidget(self.channel1, 4, 2)
+        self.convertLayout.addWidget(self.channel2, 4, 3)
         
     def loadButt(self) :
         self.locButt = QPushButton('Choose Save Location')
@@ -332,6 +372,22 @@ class convertDialog(QDialog) :
     def updateQueue(self) -> None :
         self.addQueue = self.queueBox.isChecked()
         
+    def updateChannel(self) -> None :
+        self.channel1 = self.channel1Box.isChecked()
+        self.channel2 = self.channel2Box.isChecked()
+        
+        self.changeChannel()
+        
+    def changeChannel(self) -> None :
+        if self.channel1 is True and self.channel2 is False :
+            self.setChannel(1)
+            self.updateButt()
+        elif self.channel2 is True and self.channel1 is False :
+            self.setChannel(2)
+            self.updateButt()
+        else :
+            self.convertButt.setEnabled(False)
+        
     def conversion(self) -> None :
         self.newName = self.fileEdit.text()
         
@@ -361,11 +417,23 @@ class convertDialog(QDialog) :
 class sharedConvert :
     
     #to get shared variables between all classes working
-    def __init__(self) :
+    def __init__(self, sbWin) :
+        self.sbWin = sbWin
+        
         self.samePath = False
         self.pathway = ""
         self.finished = False
         self.newName = ""
+        self.channelNum = self.sbWin.fluBox.pchannels[0]
+                                                      
+    def getFluFlag(self) :
+        return str(self.channelNum.flag1)
+                                                      
+    def getRunFlag(self) :
+        return str(self.sbWin.sbBox.runFlag1)
+    
+    def setChannel(self, channel) :
+        self.channelNum = self.sbWin.fluBox.pchannels[channel-1]
         
    ################################################### Class for opening Slicer  
 class slicerBox :
