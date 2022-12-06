@@ -299,8 +299,8 @@ class convertDialog(QDialog) :
         
         self.convertLayout.addWidget(self.queueBox, 0, 1)
         self.convertLayout.addWidget(self.pathBox, 3, 1)
-        self.convertLayout.addWidget(self.channe0Box, 4, 2)
-        self.convertLayout.addWidget(self.channe1Box, 4, 3)
+        self.convertLayout.addWidget(self.channel0Box, 4, 2)
+        self.convertLayout.addWidget(self.channel1Box, 4, 3)
         
     def loadButt(self) :
         self.locButt = QPushButton('Choose Save Location')
