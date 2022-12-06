@@ -98,6 +98,17 @@ class SBPHeader:
                     setattr(self, f'{row[1]}_units', 'mm')
                 elif int(spl[row[0]])==0:
                     setattr(self, f'{row[1]}_units', 'in')
+                    
+    def readVL(self,l:str) -> None:
+        '''read a VL command. l is hte whole line.
+            {low-X , high-X, low-Y , high-Y, low-Z , high-Z, low-Acc , high-Acc, [1-file 
+            limit checking ON or 0-limit checking OFF], low-B, high-B}'''
+        spl, entries = self.checkSpl('VL', l)
+        
+        d = {1: 'low_x', 2: 'high_x', 3: 'low_y', 4: 'high_y', 5: 'low_z', 6: 'high_z', 7: 'low_acc', 8: 'high_acc',
+            9: 'limit_checking', 10: 'low_b', 11: 'high_b'}
+        self.readToDict(spl, d)
+        
 
     def readVO(self,l:str) -> None:
         '''read a VO command. l is the whole line. 
@@ -175,6 +186,11 @@ class SBPHeader:
             self.readVS(l)
         elif l.startswith('VU'):
             self.readVU(l)
+        elif l.startswith('VL'):
+            self.readVL(l)
+        elif l.startswith('SA') or l.startswith('MH'):
+            return True
+        
         else:
             return False
 

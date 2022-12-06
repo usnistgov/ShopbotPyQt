@@ -87,6 +87,7 @@ class convert:
                             
                             # flagging for once all coordinates are read
                             #Values for limits for Table
+                            
                     if ((self.checkMinX and self.checkMinY and self.checkMinZ and self.checkMaxX and self.checkMaxY and self.checkMaxZ) and not isWritten) :
                             SBPFile.write("VL, " + self.minX + ", " + self.maxX + ", " + self.minY + ", " + self.maxY + ", " + self.minZ + ", " + self.maxZ + ", , , , , \n")
                             isWritten = True
@@ -150,8 +151,8 @@ class convert:
                         SBPFile.write("SA\n")
 
                         #return to machine zero/go home
-                    #if line.__contains__("G28") :
-                        #SBPFile.write("MH\n")
+                    if line.__contains__("G28") :
+                        SBPFile.write("MH\n")
                         
         self.shared.finished = True
         
