@@ -16,7 +16,7 @@ import logging
 import copy
 
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QMainWindow, QDialog, QVBoxLayout, QWidget, QApplication, QAction, QLabel, QCheckBox, QGridLayout, QFileDialog, QPushButton, QLineEdit
+from PyQt5.QtWidgets import QMainWindow, QDialog, QVBoxLayout, QWidget, QApplication, QAction, QLabel, QCheckBox, QGridLayout, QFileDialog, QPushButton, QLineEdit, QRadioButton
 
    ######################## Conversion program
 
@@ -134,7 +134,7 @@ class convert:
                                 FCommand = line.partition("F")[2]
                                 if FCommand[0].isdigit() is True :
                                     if headerFlag is True :
-                                        SBPFile.write("'ink_speed_" + str(self.shared.channel) + "=" + str(self.moveRate)) 
+                                        SBPFile.write("'ink_speed_" + str(self.shared.channel) + "=" + str(self.moveRate) + "\n") 
                                     SBPFile.write("MS, " + self.moveRate + ", " + self.moveRate + "\n")
                                     
                                     # write in header SO commands one time after first MS
@@ -293,12 +293,12 @@ class convertDialog(QDialog) :
         self.queueBox = QCheckBox('load to queue after conversion')
         self.queueBox.stateChanged.connect(self.updateQueue)
         
-        self.channel0Box = QCheckBox('Channel 0')
+        self.channel0Box = QRadioButton('Channel 0')
         self.channel0Box.setChecked(True)
-        self.channel0Box.stateChanged.connect(self.updateChannel)
+        self.channel0Box.toggled.connect(self.updateChannel)
         
-        self.channel1Box = QCheckBox('Channel 1')
-        self.channel1Box.stateChanged.connect(self.updateChannel)
+        self.channel1Box = QRadioButton('Channel 1')
+        self.channel1Box.toggled.connect(self.updateChannel)
         
         self.convertLayout.addWidget(self.queueBox, 0, 1)
         self.convertLayout.addWidget(self.pathBox, 3, 1)
