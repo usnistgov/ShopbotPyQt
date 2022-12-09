@@ -269,6 +269,7 @@ class printLoop(QObject):
         self.modes = []
         self.pSettings = pSettings
         self.tableDone = False
+        self.runSimple = False
         self.printStarted = False
         self.hitRead = False
         self.targetPoint = {}
@@ -403,6 +404,7 @@ class printLoop(QObject):
         self.printi = -1
         self.zmax = self.points[self.points.z<=0].z.max() + 2
         self.fillTable()    # fill empty entries with current position
+        self.decideIfSimple()
 
         
     def naPoint(self, row) -> bool:
@@ -690,50 +692,71 @@ class printLoop(QObject):
 
     def evalState(self) -> bool:
         '''determine what to do about the channels'''
-        # get keys and position, new estimate position
-        if not self.printStarted:
-            # once we go below z=0, we've started printing
-            if self.readLoc[2]<self.zmax:
-                self.printStarted = True
-        
-        self.updateState()
-        if self.flag==0:
-            # print finished, end loop
-            return True
-        d = self.getDistances()                  # get distances between points
-        self.checkHitRead(d)                     # check if the read point has hit the target
-        self.checkTimeTaken(d)                   # check if we've started the line
-        diagStr = self.diagPosRow(d)             # get diagnostic row
-        diagStr = self.checkEstimate(d,diagStr)  # check estimate
-        
-        readyForNextPoint = {}
-        ready = False
-        force, angle = self.evalAngle(d)
-        if force:
-            ready = True
-            for flag0 in self.channelWatches:
-                readyForNextPoint[flag0] = False
-        else:
-            # still going in the same direction
-            for flag0, cw in self.channelWatches.items():
-                # determine if each channel has reached the action
-                readyForNextPoint[flag0] = cw.assessPosition(d, self.flag, diagStr)
-                if readyForNextPoint[flag0]:
-                    ready = True
-                
-        if ready:
-            # if only some of the channels have moved on, force the action for the rest of them
-            for flag0, r0 in readyForNextPoint.items():
-                if not r0:
-                    self.channelWatches[flag0].forceAction(diagStr, angle)
-            # move onto the next point
-            self.readPoint()
-            if self.tableDone:
-                return True
+        if self.runSimple :
+            return self.evalStateSimple()
             
-        return False
-
+        else:
+            # get keys and position, new estimate position
+            if not self.printStarted:
+                # once we go below z=0, we've started printing
+                if self.readLoc[2]<self.zmax:
+                    self.printStarted = True
+        
+            self.updateState()
+            if self.flag==0:
+                # print finished, end loop
+                return True
+            d = self.getDistances()                  # get distances between points
+            self.checkHitRead(d)                     # check if the read point has hit the target
+            self.checkTimeTaken(d)                   # check if we've started the line
+            diagStr = self.diagPosRow(d)             # get diagnostic row
+            diagStr = self.checkEstimate(d,diagStr)  # check estimate
+        
+            readyForNextPoint = {}
+            ready = False
+            force, angle = self.evalAngle(d)
+            if force:
+                ready = True
+                for flag0 in self.channelWatches:
+                    readyForNextPoint[flag0] = False
+            else:
+                # still going in the same direction
+                for flag0, cw in self.channelWatches.items():
+                    # determine if each channel has reached the action
+                    readyForNextPoint[flag0] = cw.assessPosition(d, self.flag, diagStr)
+                    if readyForNextPoint[flag0]:
+                        ready = True
+                
+            if ready:
+                # if only some of the channels have moved on, force the action for the rest of them
+                for flag0, r0 in readyForNextPoint.items():
+                    if not r0:
+                        self.channelWatches[flag0].forceAction(diagStr, angle)
+                # move onto the next point
+                self.readPoint()
+                if self.tableDone:
+                    return True
+            
+            return False
     
+    
+    def evalStateSimple(self) -> bool:
+        '''determine what to do about the channels for short moves'''
+        self.updateState()
+        for flag0, cw in self.channelWatches.item():
+            cw.assessPositionSimple(self.flag)
+        return not flagOn(sbFlag, self.sbRunFlag1 -1)
+    
+    def decideIfSimple(self) -> bool:
+        self.points['distance'] = np.sqrt((self.points['x'].diff())**2+(self.points['y'].diff())**2+(self.points['z'].diff())**2)
+        
+        if len(self.points[self.points.distance < 0.5]) > 10 : #getting list of points < .5
+            self.runSimple = True
+        else :
+            self.runSimple = False
+        
+
+
     #----------------------------
     
     def close(self):
