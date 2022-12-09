@@ -373,6 +373,22 @@ class channelWatch(QObject):
                 return self.assessTurnOff(flagOn0, d, diagStr)
                 
         return readyForNextPoint
+    
+    def assessPositionSimple(self, sbFlag:int) -> None:
+        flagOn0 = flagOn(sbFlag, self.flag0)
+        
+        if flagOn0 is True:
+            if self.on is True:
+                return
+            else:
+                self.turnOn()
+                return
+        else:
+            if self.on is True:
+                self.turnOff()
+                return
+            else:
+                return
 
 
     @pyqtSlot() 
