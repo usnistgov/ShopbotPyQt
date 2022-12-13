@@ -33,13 +33,13 @@ class convert:
         self.X_Coord = self.Y_Coord = self.Z_Coord = "0"
         self.ERate = self.moveRate = "0"
 
-        self.minX = self.maxX = self.minY = self.maxY = self.minZ = self.maxZ = "0"
-        self.checkMinX = self.checkMinY = self.checkMinZ = self.checkMaxX = self.checkMaxY = self.checkMaxZ = False
+       # self.minX = self.maxX = self.minY = self.maxY = self.minZ = self.maxZ = "0"
+       # self.checkMinX = self.checkMinY = self.checkMinZ = self.checkMaxX = self.checkMaxY = self.checkMaxZ = False
     
     
     def readInFile(self) :
         isFlowing = False
-        isWritten = False
+      #  isWritten = False
         headerFlag = False
         file = ""
         
@@ -88,9 +88,9 @@ class convert:
                             # flagging for once all coordinates are read
                             #Values for limits for Table
                             
-                    if ((self.checkMinX and self.checkMinY and self.checkMinZ and self.checkMaxX and self.checkMaxY and self.checkMaxZ) and not isWritten) :
-                            SBPFile.write("VL, " + self.minX + ", " + self.maxX + ", " + self.minY + ", " + self.maxY + ", " + self.minZ + ", " + self.maxZ + ", , , , , \n")
-                            isWritten = True
+                  #  if ((self.checkMinX and self.checkMinY and self.checkMinZ and self.checkMaxX and self.checkMaxY and self.checkMaxZ) and not isWritten) :
+                         #   SBPFile.write("VL, " + self.minX + ", " + self.maxX + ", " + self.minY + ", " + self.maxY + ", " + self.minZ + ", " + self.maxZ + ", , , , , \n")
+                         #   isWritten = True
                                                                                 
    ################################################## E command switch to S0, 1, 1/0                          
                     isE = False

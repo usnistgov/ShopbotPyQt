@@ -743,9 +743,9 @@ class printLoop(QObject):
     def evalStateSimple(self) -> bool:
         '''determine what to do about the channels for short moves'''
         self.updateState()
-        for flag0, cw in self.channelWatches.item():
+        for flag0, cw in self.channelWatches.items():
             cw.assessPositionSimple(self.flag)
-        return not flagOn(sbFlag, self.sbRunFlag1 -1)
+        return not flagOn(self.flag, self.sbRunFlag1 -1)
     
     def decideIfSimple(self) -> bool:
         self.points['distance'] = np.sqrt((self.points['x'].diff())**2+(self.points['y'].diff())**2+(self.points['z'].diff())**2)
