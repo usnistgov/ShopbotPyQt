@@ -228,10 +228,23 @@ class SBKeys(QMutex):
         self.diag = diag
         self.signals = SBKeySignals()
         self.connectKeys()   # connect to the keys and open SB3.exe
+        self.ctr = 0
         
     def updateStatus(self, message:str, log:bool) -> None:
         '''send the status back to the SBbox'''
         self.signals.status.emit(message, log)
+        
+    def connectKey(self, aReg, path:str, name:str):
+        '''connect a single key'''
+        key = os.path.join(r'Software\VB and VBA Program Settings\Shopbot', path)
+        try:
+            k = winreg.OpenKey(aReg, key)
+            setattr(self, f'{name}Key', k)
+        except FileNotFoundError:
+            self.updateStatus(f'Failed to connect to shopbot: Key not found: {key}', True)
+            return
+        except Exception as e:
+            print(e)
         
         
     def connectKeys(self) -> None:
@@ -245,12 +258,9 @@ class SBKeys(QMutex):
             return
             
         # find key
-        aKey = r'Software\VB and VBA Program Settings\Shopbot\UserData'
-        try:
-            self.aKey = winreg.OpenKey(aReg, aKey)
-        except FileNotFoundError:
-            self.updateStatus(f'Failed to connect to shopbot: Key not found: {aKey}', True)
-            return
+        self.connectKey(aReg, 'UserData', 'UserData')
+        self.connectKey(aReg, r'Sb3\Settings', 'Settings')
+        self.connectKey(aReg, r'Sb3\DebugStatus', 'DebugStatus')
             
         # found key
         self.connected = True
@@ -258,13 +268,43 @@ class SBKeys(QMutex):
         self.findSb3()                     # find the SB3 file
         subprocess.Popen([self.sb3File])   # open the SB3 program
         
+    def keyFolderDict(self) -> dict:
+        return {'UserData':
+                    ['AnInp1', 'AnInp2', 'InputSwitches'
+                     , 'Loc_1', 'Loc_2', 'Loc_3'
+                     , 'OutPutSwitches', 'SpindleStatus','Status'
+                     , 'uAppPath'
+                     , 'uCommand', 'uCommandQ1', 'uMsgBoxCaption'
+                     , 'uMsgBoxMessage', 'uPartFileName', 'uResponse'
+                     , 'uSpindleStatus', 'uUsrPath', 'uValueClrd']
+            , 'Settings':
+                    ['Cheight', 'Cheight_prev', 'Cleft', 'Cleft_prev'
+                     , 'Ctop', 'Ctop_prev', 'Cwidth', 'Cwidth_prev'
+                     , 'DoneEASY', 'DoneWelcome', 'LAstConnected'
+                     , 'LAstRead', 'LastSoftwareLoaded', 'RegInteractionActive']
+            , 'Debug':
+                    ['Status01', 'Status02', 'Status03']}
+        
+    def getKeyFolder(self, value:str):
+        '''get the key folder, as a QueryValueEx, that holds the requested key'''
+        d0 = self.keyFolderDict()
+        for key,val in d0.items():
+            if value in val:
+                ks = f'{key}Key'
+                if not hasattr(self, ks):
+                    raise ValueError(f'Unexpected key requested: {ks}')
+                else:
+                    k = getattr(self, ks)
+                    return k
+        raise ValueError(f'Unexpected key requested: {value}')
+        
     def queryValue(self, value) -> Any:
-        '''try to get a value from a key located at self.aKey'''
+        '''try to get a value from a key located at self.UserDataKey'''
         if not self.connected:
             raise ValueError
-        
+        k = self.getKeyFolder(value)
         try:
-            val = winreg.QueryValueEx(self.aKey, value)
+            val = winreg.QueryValueEx(k, value)
         except FileNotFoundError:  
             # if we fail to get the registry key, we have no way of knowing 
             # if the print is over, so just stop it now
@@ -284,8 +324,7 @@ class SBKeys(QMutex):
         try:
             path,_ = self.queryValue('uAppPath')
         except ValueError:
-            return
-        
+            raise ValueError('Could not find SB3.exe path')        
         # found file
         self.sb3File = os.path.join(path, 'Sb3.exe')
         return
@@ -374,6 +413,36 @@ class SBKeys(QMutex):
         self.signals.pos.emit(xlist[0], xlist[1], xlist[2])   # send position back to GUI
             
         return xlist
+    
+    def getListOfKeys(self, l:List[str]) -> dict:
+        '''probe the given list of keys and return a dictionary'''
+        d = {}
+        for command in l:
+            try:
+                c, _ = self.queryValue(command)
+            except ValueError:
+                pass
+            else:
+                d[command]=c
+        return d
+    
+    def printAllKeys(self) -> None:
+        '''print all of the registry keys available to us in Shopbot/UserData'''
+        d0 = self.keyFolderDict()
+        d = {}
+        for key,l in d0.items():
+            d = {**d, **self.getListOfKeys(l)}
+        print(d)
+        
+    def printChangingKeys(self) -> None:
+        '''print the registry keys that change during a print'''
+        self.ctr+=1
+        l = ['Loc_1', 'Loc_2', 'Loc_3', 'Status', 'OutPutSwitches', 'LAstRead'] 
+        d = self.getListOfKeys(l)
+        if self.ctr%100==0:
+            print('\t'.join(list(d.keys())))
+        print('\t'.join(list(d.values())))
+        
     
     
     def readMsg(self) -> None:
