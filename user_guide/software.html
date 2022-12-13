@@ -274,24 +274,36 @@
         <img src="img/shopbot_flags.png" alt="Flags within shobpot and their designated variables">
         
         <li>There are a total of 12 flags that can be assigned different variables for use with shopbot.</li>
-        <li>Flags 1 and 2 are primarily for use with the extrudant</li>
-        <li>Flags 3, 5, and 6 are connected to cameras</li>
-        <li>Flag 12 is to run shopbot</li>
-        
+        <ul>
+            <li>Flags 1 and 2 are primarily for use with the extrudant</li>
+            <li>Flags 3, 5, and 6 are connected to cameras</li>
+            <li>Flag 12 is to run shopbot</li>
+        </ul>
+            
         <img src="img/sbpFile_example.png" alt="Beginning of a working sbp file for a sphere">
         
         <li>To turn a designated flag on, write 'SO, #, 1', where # is the flag number. To turn it off, write 'SO, #, 0'</li>
-        <li>for the fluigent flags (1,2), write 'SO, # 1' to turn flow/pressure on. Write 'SO, #, 0' to turn flow/pressure off.</li>
-        <li>Each file must have the VD and VU commands placed first as a header. Theses commands designate Values for Display and Values for Values for Units. VU in simplicity tells the printer which way is up, with a negative Z value being considered positive/up.</li>
-        <li>Move speed (MS) and Jump speed (JS) must also be assigned values within the header</li>
-        <li>Then the values of ramp (VR) must be assigned</li>
+        <ul>
+            <li>for the fluigent flags (1,2), write 'SO, # 1' to turn flow/pressure on. Write 'SO, #, 0' to turn flow/pressure off.</li>
+            <li>The fluigent and run flags (1/2, 12) must be turned off at the end of the file. 'SO, 12, 0' is the very last line.</li>
+        </ul>
+        <li>Lines 1 to 10 are considered the header</li>
+        <ul>
+            <li>Each file must have the VD and VU commands placed first in the header. Theses commands designate Values for Display and Values for Values for Units. VU in simplicity tells the printer which way is up, with a negative Z value being considered positive/up.</li>
+            <li>Move speed (MS) and Jump speed (JS) must also be assigned values within the header</li>
+            <li>Then the values of ramp (VR) must be assigned</li>
+            <li>For lines 9 and 10 in the example, an unused flag is being turned on/off to activate the system. This is needed after shopbot has started the run due to a glitch in the system.</li>
+            <li>'SO, 12, 1' is needed to actually start the shopbot. If it is not included, your file will never run.</li>
+        </ul>   
         <li>Each command must have a comma separating each variable. 'M3 3, 5, 6' will not work because there is a missing comma between the M3 and 3.</li>
-        <li>If a command starts with an M, it is a move. So M3 moves to the designated X, Y, and Z coordinates.</li>
-        <li>If a command starts with a J, it is a jump. So J2 jumps to the designated X and Y coordinates</li>
-        <li>If a command starts with a V, it is a value setup.</li>
-        <li></li>
-        <li></li>
-        <li></li>
+        <ul>
+            <li>If a command starts with an M, it is a move. So M3 moves to the designated X, Y, and Z coordinates.</li>
+            <li>If a command starts with a J, it is a jump. So J2 jumps to the designated X and Y coordinates</li>
+            <li>If a command starts with a V, it is a value setup.</li>
+            <li>MH is the command for move home, or where the stage is considered to be (0, 0, 0)</li>
+            <li>SA sets the file to be done in absolute distances/ absolute mode </li>
+        </ul>   
+        <li>ink speed is a comment (started with ') to let you know the flow rate of the extrudant</li>
     
         
     </details>
