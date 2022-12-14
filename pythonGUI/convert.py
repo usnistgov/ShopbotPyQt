@@ -1,22 +1,23 @@
 #!/usr/bin/env python
 '''Shopbot GUI functions for setting up the convert window'''
 
-# local packages
-from general import *
-import sbList
-
+# external packages
 import sys
 import re
 import os
 import subprocess
 import winreg
-
 import numpy
 import logging
 import copy
-
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow, QDialog, QVBoxLayout, QWidget, QApplication, QAction, QLabel, QCheckBox, QGridLayout, QFileDialog, QPushButton, QLineEdit, QRadioButton
+
+# local packages
+from general import *
+import sbList
+from config import cfg
+
 
    ######################## Conversion program
 
@@ -24,10 +25,13 @@ from PyQt5.QtWidgets import QMainWindow, QDialog, QVBoxLayout, QWidget, QApplica
 
 class convert:
 
-    def __init__(self, fileName, convertShare, reName) :
-        self.reName = reName
-        self.fileName = fileName
+    def __init__(self, gfileName:str, convertShare, reName:str) :
+        self.reName = reName     # name of the new file
+        self.gfileName = gfileName
         self.shared = convertShare
+        self.runFlag = self.shared.getRunFlag()
+        self.pFlag = self.shared.getFluFlag()
+        self.unusedFlag = self.shared.getUnusedFlag()
         
         # Make everything default/0/null/false
         self.X_Coord = self.Y_Coord = self.Z_Coord = "0"
@@ -35,131 +39,7 @@ class convert:
 
        # self.minX = self.maxX = self.minY = self.maxY = self.minZ = self.maxZ = "0"
        # self.checkMinX = self.checkMinY = self.checkMinZ = self.checkMaxX = self.checkMaxY = self.checkMaxZ = False
-    
-    
-    def readInFile(self) :
-        isFlowing = False
-      #  isWritten = False
-        headerFlag = False
-        file = ""
         
-        # If the file isn't GCODE, display error and break out of method
-        if (".gcode" or ".stl") not in self.fileName:
-                print("File must be GCODE or STL") 
-        
-        dirPath = os.path.dirname(self.fileName)
-        
-        #copy file so not to override original
-        # file = copy.copy(self.fileName)
-        
-        # change filepath if user requested different save path
-        if self.shared.samePath is False :
-            # file = file.replace(os.path.dirname(file), self.shared.pathway)
-            dirPath = dirPath.replace(os.path.dirname(self.fileName), self.shared.pathway)
-        
-        file = dirPath + "/" + self.reName + ".sbp"
-        
-        # replace extension
-        # file = file.replace(".gcode", ".sbp")
-        
-        with open(self.fileName, 'r') as GCodeFile :
-            with open(file, 'w+') as SBPFile :
-                
-                SBPFile.write("VD , , 1\n")
-                SBPFile.write("VU, 157.480315, 157.480315, -157.480315\n")
-                
-                while True :
-                    line = GCodeFile.readline()
-                    if not line:
-                        SBPFile.write("SO, " + self.shared.getRunFlag() + ", 0\n")
-                        break
-                    
-   ##################################################### Setting Variables
-                   
-                    if line.__contains__(";") :
-                        semiSpot = line.find(";")  #if comment in middle of code, get rid of comment
-                        if semiSpot != 0 :
-                            line = line.partition(";")[0]
-                            
-                            #getting coordinates
-                        if line.__contains__("MIN") or line.__contains__("MAX") :
-                            self.getCoord(line)
-                            
-                            # flagging for once all coordinates are read
-                            #Values for limits for Table
-                            
-                  #  if ((self.checkMinX and self.checkMinY and self.checkMinZ and self.checkMaxX and self.checkMaxY and self.checkMaxZ) and not isWritten) :
-                         #   SBPFile.write("VL, " + self.minX + ", " + self.maxX + ", " + self.minY + ", " + self.maxY + ", " + self.minZ + ", " + self.maxZ + ", , , , , \n")
-                         #   isWritten = True
-                                                                                
-   ################################################## E command switch to S0, 1, 1/0                          
-                    isE = False
-                    if line.__contains__("E") and not line.__contains__(";") :
-                        self.getCoord(line)
-                
-                        ECommand = line.partition("E")[2]
-                        if ECommand[0].isdigit() is True :
-                            isE = True
-                    
-                        if isE is True and isFlowing is False :
-                            SBPFile.write("SO, " + self.shared.getFluFlag() + ", 1\n")
-                            isFlowing = True
-                        if isE is False and isFlowing is True :
-                            SBPFile.write("SO, " + self.shared.getFluFlag() + ", 0\n")
-                            isFlowing = False
-                          
-   ################################################### G0/G1 command switch to J3/M3 & setting move rate
-    
-                    if line.__contains__("G0") and not line.__contains__(";") :
-                        self.getCoord(line)
-                        if line.__contains__("F") :
-                                FCommand = line.partition("F")[2]
-                                if FCommand[0].isdigit() is True :
-                                    SBPFile.write("JS, " + self.moveRate + ", " + self.moveRate + "\n")
-                                    
-                                    # write in header SO commands one time after first MS
-                                    if headerFlag is False :
-                                        SBPFile.write("MS, " + self.moveRate + ", " + self.moveRate + "\n")
-                                        SBPFile.write("VR,10.06, 10.06, , , 10.06, 10.06, , , 5.08, 5.08, 100, 3.81, 65, , , 5.08\n")
-                                        SBPFile.write("SO, " + self.shared.getRunFlag() + ", 1\n")
-                                        SBPFile.write("SO, 2, 1\n")
-                                        SBPFile.write("SO, 2, 0\n")
-                                        headerFlag = True
-                                        
-                        SBPFile.write("J3, " + self.X_Coord + ", " + self.Y_Coord + ", " + self.Z_Coord + "\n")
-
-                    if line.__contains__("G1") and not line.__contains__(";") :
-                        self.getCoord(line)
-                        if line.__contains__("F") :
-                                FCommand = line.partition("F")[2]
-                                if FCommand[0].isdigit() is True :
-                                    if headerFlag is True :
-                                        SBPFile.write("'ink_speed_" + str(self.shared.channel) + "=" + str(self.moveRate) + "\n") 
-                                    SBPFile.write("MS, " + self.moveRate + ", " + self.moveRate + "\n")
-                                    
-                                    # write in header SO commands one time after first MS
-                                    if headerFlag is False :
-                                        SBPFile.write("JS, " + self.moveRate + ", " + self.moveRate + "\n")
-                                        SBPFile.write("VR,10.06, 10.06, , , 10.06, 10.06, , , 5.08, 5.08, 100, 3.81, 65, , , 5.08\n")
-                                        SBPFile.write("SO, " + self.shared.getRunFlag() + ", 1\n")
-                                        SBPFile.write("SO, 2, 1\n")
-                                        SBPFile.write("SO, 2, 0\n")
-                                        headerFlag = True
-                            
-                        SBPFile.write("M3, " + self.X_Coord + ", " + self.Y_Coord + ", " + self.Z_Coord + "\n")
-                        
-                        #absolute extruder mode
-                    if line.__contains__("M82") :
-                        SBPFile.write("SA\n")
-
-                        #return to machine zero/go home
-                    if line.__contains__("G28") :
-                        SBPFile.write("MH\n")
-                        
-        self.shared.finished = True
-        
-        return file
-   ######################################################################                    
     def getCoord(self, line) :  # Retrieving values after key characters
         
         if line.__contains__("X") :
@@ -230,8 +110,136 @@ class convert:
             convertedSpeed = 40
         
         self.moveRate = str(round(convertedSpeed, 2))
+        
+    def writeHeader(self, SBPFile):
+        '''write the header into the file'''
+        SBPFile.write(f'&runFlag={self.runFlag}\n')
+        SBPFile.write(f'&pFlag={self.pFlag}\n')
+        SBPFile.write(f'&unusedFlag={self.unusedFlag}\n')
+        SBPFile.write("VD , , 1\n")  # mm
+        SBPFile.write("VU, 157.480315, 157.480315, -157.480315\n")   # mm, negative z is up
+        SBPFile.write("VR,10.06, 10.06, , , 10.06, 10.06, , , 5.08, 5.08, 100, 3.81, 65, , , 5.08\n")
+        
+    def writeHeaderFlagTriggers(self, SBPFile):
+        '''turn on run flag and trigger the dummy flag'''
+        self.setSpeed(SBPFile, 'M')
+        self.setSpeed(SBPFile, 'J')
+        SBPFile.write("SO, &runFlag, 1\n")
+        SBPFile.write("SO, &unusedFlag, 1\n")
+        SBPFile.write("SO, &unusedFlag, 0\n")
+        self.headerFlag = True
+        
+    def writeFooter(self, SBPFile):
+        '''write the footer into the file'''
+        SBPFile.write("SO, &runFlag, 0\n")
+    
+    def setSpeed(self, SBPFile, m:str):
+        '''set the speed. m should be "M" or "J"'''
+        SBPFile.write(f"{m}S, {self.moveRate}, {self.moveRate}\n")
+        
+    def setPressure(self, SBPFile, line:str) -> None:
+        '''turn the pressure on or off'''
+        if line.__contains__("E") and not line.__contains__(";") :
+            self.getCoord(line)
+
+            ECommand = line.partition("E")[2]
+            isE = ECommand[0].isdigit()
+
+            if isE and not self.isFlowing:
+                SBPFile.write("SO, &pFlag, 1\n")
+                self.isFlowing = True
+            if not isE and self.isFlowing:
+                SBPFile.write("SO, &pFlag, 0\n")
+                self.isFlowing = False
+    
+    def readInFile(self) :
+        self.isFlowing = False
+      #  isWritten = False
+        self.headerFlag = False
+        file = ""
+        
+        # If the file isn't GCODE, display error and break out of method
+        if (".gcode" or ".stl") not in self.gfileName:
+                print("File must be GCODE or STL") 
+        
+        file = os.path.join(self.shared.SBPFolder, self.reName)
+        
+        with open(self.gfileName, 'r') as GCodeFile :
+            with open(file, 'w+') as SBPFile :
+                self.writeHeader(SBPFile)
+
+                while True :
+                    line = GCodeFile.readline()
+                    if not line:
+                        self.writeFooter(SBPFile)
+                        break
+                    
+                    ## Setting Variables
+                   
+                    if line.__contains__(";") :
+                        semiSpot = line.find(";")  #if comment in middle of code, get rid of comment
+                        if semiSpot != 0 :
+                            line = line.partition(";")[0]
+                            
+                            #getting coordinates
+                        if line.__contains__("MIN") or line.__contains__("MAX") :
+                            self.getCoord(line)
+                            
+                            # flagging for once all coordinates are read
+                            #Values for limits for Table
+                            
+                  #  if ((self.checkMinX and self.checkMinY and self.checkMinZ and self.checkMaxX and self.checkMaxY and self.checkMaxZ) and not isWritten) :
+                         #   SBPFile.write("VL, " + self.minX + ", " + self.maxX + ", " + self.minY + ", " + self.maxY + ", " + self.minZ + ", " + self.maxZ + ", , , , , \n")
+                         #   isWritten = True
+                                                                                
+                    ## E command switch to S0, 1, 1/0                          
+                    self.setPressure(SBPFile, line)
+                          
+                    ## G0/G1 command switch to J3/M3 & setting move rate
+    
+                    if line.__contains__("G0") and not line.__contains__(";") :
+                        self.getCoord(line)
+                        if line.__contains__("F") :
+                                FCommand = line.partition("F")[2]
+                                if FCommand[0].isdigit() is True :
+                                    self.setSpeed(SBPFile, 'J')
+                                    
+                                    # write in header SO commands one time after first MS
+                                    if not self.headerFlag:
+                                        self.writeHeaderFlagTriggers(SBPFile)
+                                        
+                                        
+                        SBPFile.write(f"J3, {self.X_Coord}, {self.Y_Coord}, {self.Z_Coord}\n")
+
+                    if line.__contains__("G1") and not line.__contains__(";") :
+                        self.getCoord(line)
+                        if line.__contains__("F") :
+                                FCommand = line.partition("F")[2]
+                                if FCommand[0].isdigit() is True :
+                                    if self.headerFlag:
+                                        SBPFile.write(f"'ink_speed_{self.shared.channel}={self.moveRate}\n") 
+                                    else:
+                                        # write in header SO commands one time after first MS
+                                        self.writeHeaderFlagTriggers(SBPFile)
+                        SBPFile.write(f"M3, {self.X_Coord}, {self.Y_Coord}, {self.Z_Coord}\n")   
+                        
+                        #absolute extruder mode
+                    if line.__contains__("M82") :
+                        SBPFile.write("SA\n")
+
+                        #return to machine zero/go home
+                    if line.__contains__("G28") :
+                        SBPFile.write("MH\n")
+                        
+        self.shared.finished = True
+        logging.info(f'Converted gcode file {self.gfileName} to {file}')
+        
+        return file
+               
+
                                             
    ###############################################  Conversion Window
+
     
 class convertDialog(QDialog) :
     
@@ -242,179 +250,205 @@ class convertDialog(QDialog) :
         self.sbWin = sbWin
         
         self.shared = sharedConvert(self.sbWin)
-        self.addQueue = False
+        self.addToQueue = False
         self.haveSavePath = False
         self.channel0 = True
         self.channel1 = False
         
         self.newFile = ""
         self.filePath = ""
-        self.fileName = ""
+        self.gcodeFileName = ""
         self.custFolder = ""
-        self.setWindowTitle("File Conversion")
+        self.setWindowTitle("Convert gcode to SBP")
+        self.loadConfig(cfg)
         
-        self.convertLayout = QGridLayout()
-        
-        self.loadLabel()
-        self.loadBox()
-        self.loadButt()
-        self.loadFileEdit()
-        
-        self.setLayout(self.convertLayout)
-        self.resize(900, 500)
-        
+        self.successLayout()
+
         self.updateFile()
         self.updateButt()
         
         if self.shared.finished is True :
             self.close()
+            
+    def loadConfig(self, cfg1) -> None:
+        self.gcodeFolder = cfg1.convert.gcodeFolder
+        self.sbpDir = cfg1.convert.sbpFolder
+        self.sameFolder = cfg1.convert.sameFolder
+        self.addToQueue = cfg1.convert.addToQueue
+        self.closeWhenDone = cfg1.convert.closeWhenDone
         
-    def loadFileEdit(self) :
-        self.nameChangeLabel = QLabel('Saving file under name of: ')
-        self.fileEdit = QLineEdit()
+    def saveConfig(self, cfg1):
+        cfg1.convert.gcodeFolder = self.gcodeFolder
+        cfg1.convert.sbpFolder = self.sbpDir
+        cfg1.convert.sameFolder = self.sameFolder
+        cfg1.convert.addToQueue = self.addToQueue
+        cfg1.convert.closeWhenDone = self.closeWhenDone
+        return cfg1
+            
+    def successLayout(self):
+        self.convertLayout = QVBoxLayout()
+        w = 600
+        appendForm = QFormLayout()
+        appendForm.setSpacing(20)
+        self.gcodeRow = fileSetOpenRow(width=w, title='Set gcode file', 
+                                   initFolder='No file selected', 
+                                   tooltip='Open G-Code folder',
+                                  setFunc = self.setGCodeFile,
+                                   openFunc = self.openGCodeFolder
+                                  )
+        appendForm.addRow('G-Code file', self.gcodeRow)
         
-        self.convertLayout.addWidget(self.nameChangeLabel, 2, 0)
-        self.convertLayout.addWidget(self.fileEdit, 2, 1)
+        self.stlFileEdit = QLineEdit()
+        appendForm.addRow('SBP name', self.stlFileEdit)
         
+        self.SBPFolderGroup = fRadioGroup(None, '', 
+                                  {0:'Same folder as G-Code file', 1:'Different folder'}, 
+                                  {0:True, 1:False},
+                                 {True:0,False:1}[self.sameFolder], col=False, headerRow=False,
+                                  func=self.updateSBPFolder)
+        appendForm.addRow('SBP folder', self.SBPFolderGroup.layout)
         
-    def loadLabel(self) :
-        self.GFileLabel = QLabel('File: ')
-        self.pathLabel = QLabel('Pathway to Save: ')
-        self.channelLabel = QLabel('Flow channel designated to: ')
-        
-        self.convertLayout.addWidget(self.GFileLabel, 0,0)
-        self.convertLayout.addWidget(self.pathLabel, 3, 0)
-        self.convertLayout.addWidget(self.channelLabel, 4, 1)
-        
-    def loadBox(self) :
-        self.pathBox = QCheckBox('Save to file folder')
-        self.pathBox.stateChanged.connect(self.updatePathway)
-        
-        self.queueBox = QCheckBox('load to queue after conversion')
-        self.queueBox.stateChanged.connect(self.updateQueue)
-        
-        self.channel0Box = QRadioButton('Channel 0')
-        self.channel0Box.setChecked(True)
-        self.channel0Box.toggled.connect(self.updateChannel)
-        
-        self.channel1Box = QRadioButton('Channel 1')
-        self.channel1Box.toggled.connect(self.updateChannel)
-        
-        self.convertLayout.addWidget(self.queueBox, 0, 1)
-        self.convertLayout.addWidget(self.pathBox, 3, 1)
-        self.convertLayout.addWidget(self.channel0Box, 4, 2)
-        self.convertLayout.addWidget(self.channel1Box, 4, 3)
-        
-    def loadButt(self) :
-        self.locButt = QPushButton('Choose Save Location')
-        self.locButt.clicked.connect(self.loadDir)
-        
-        self.loadButt = QPushButton('Load File')
-        self.loadButt.clicked.connect(self.loadFile)
-        
-        self.convertButt = QPushButton('Convert File')
-        self.convertButt.clicked.connect(self.conversion)
-        
-        self.convertLayout.addWidget(self.loadButt, 1, 0)
-        self.convertLayout.addWidget(self.locButt, 4, 0)
-        self.convertLayout.addWidget(self.convertButt, 5, 0)
-        
-        #load in chosen file for conversion with gcode/stl extensions only
-    def loadFile(self) -> None :
-        openFolder = r'C:\\'
-        tempPath = QFileDialog.getOpenFileName(self, "Open File", openFolder, 'Gcode file (*.gcode *.stl)')
-        tempFile = os.path.basename(tempPath[0])
-        
-        if tempFile :
-            self.filePath = tempPath
-            self.fileName = tempFile
-            self.updateFile()
-        
-        #load up directory to save
-    def loadDir(self) -> None :
-        self.haveSavePath = True
-        if self.shared.samePath is False:
-            openFolder = r'C:\\'
-            self.custFolder = QFileDialog.getExistingDirectory(self, "Choose Directory", openFolder)
-            self.shared.pathway = self.custFolder
-            self.pathLabel.setText('Pathway to save : ' + self.shared.pathway)
-        self.updateButt()
-    
-    def updateFile(self) -> None :
-        self.GFileLabel.setText('File:  ' + self.fileName)
-        self.fileEdit.setText(self.fileName.replace('.gcode', ''))
-        
-        #update pathway for same folder or chosen by user
-    def updatePathway(self) -> None :
-        self.haveSavePath = True
-        if self.filePath[0]: 
-            self.shared.samePath = self.pathBox.isChecked()
-        
-            if self.shared.samePath is True :
-                self.locButt.setEnabled(False)
-                self.shared.pathway = os.path.dirname(self.filePath[0])
-                self.pathLabel.setText('Pathway to save : ' + self.shared.pathway)
-     
-            else :
-                self.locButt.setEnabled(True)
+        self.SBPFolderRow = fileSetOpenRow(width=w, title='Set SBP folder', 
+                                   initFolder=self.sbpDir, 
+                                   tooltip='Open SBP folder',
+                                  setFunc = self.setSBPFolder,
+                                   openFunc = self.openSBPFolder
+                                  )
+        appendForm.addRow('', self.SBPFolderRow)
+        self.queueBox = fCheckBox(None, title='Add sbp file to queue', tooltip='Add converted file to the play queue'
+                                 , checked=self.addToQueue, func=self.updateQueue)
+        appendForm.addRow('Queue', self.queueBox)
+        self.closeWhenDoneBox = fCheckBox(None, title='Close this window when done', tooltip='Close this window when done converting'
+                                 , checked=self.closeWhenDone, func=self.updateCloseWhenDone)
+        appendForm.addRow('Close', self.closeWhenDoneBox)
 
-                if not self.custFolder :
-                    self.pathLabel.setText('Pathway to save : ' + self.shared.pathway)
-                else :
-                    self.pathLabel.setText('Pathway to save : ' + self.custFolder)     
-       
+        self.channelRow = fRadioGroup(None, '', 
+                              dict([[i,f'Channel {i}'] for i in range(self.sbWin.fluBox.numChans)]), 
+                              dict([[i,i] for i in range(self.sbWin.fluBox.numChans)]),
+                             0, col=False, headerRow=False,
+                              func=self.changeChannel)
+        appendForm.addRow('Flow channel', self.channelRow.layout)
+        self.convertLayout.addItem(appendForm)
+        self.convertButt = QPushButton('Convert G-Code to SBP')
+        self.convertButt.clicked.connect(self.conversion)
+        self.convertLayout.addWidget(self.convertButt)
+        
+        self.setLayout(self.convertLayout)
+        # self.resize(900, 500)
+
+        
+           
+    def setGCodeFile(self) -> None :
+        '''set a new value for the gcode file'''
+        if os.path.exists(self.gcodeFolder):
+            openFolder = self.gcodeFolder
+        else:
+            openFolder = r'C:\\'
+        tempPath = QFileDialog.getOpenFileName(self, "Open File", openFolder, 'G-Code file (*.gcode *.stl)')
+        if len(tempPath)==0:
+            return
+        if not os.path.exists(tempPath[0]):
+            return
+        
+        tempPath = tempPath[0]
+        self.gcodeFolder = os.path.dirname(tempPath)
+        self.gcodeFileName = tempPath
+        self.updateFile()
+            
+    def updateFile(self) -> None :
+        '''update the display to reflect the new gcode file'''
+        self.gcodeRow.updateText(self.gcodeFileName)
+        self.stlFileEdit.setText(os.path.basename(self.gcodeFileName).replace('.gcode', '.sbp'))
+        self.updateSBPFolder()
         self.updateButt()
         
+    def openGCodeFolder(self):
+        '''open the gcode folder'''
+        openFolder(self.gcodeFolder)
         
-    def updateButt(self) -> None :
-        if self.haveSavePath is False :
-            self.convertButt.setEnabled(False)
+    def updateSBPFolder(self):
+        '''change the shopbot folder mode'''
+        self.sameFolder = self.SBPFolderGroup.value()
+        if self.sameFolder:
+            self.shared.SBPFolder = self.gcodeFolder
+            self.SBPFolderRow.disable()
+        else:
+            self.shared.SBPFolder = self.sbpDir
+            self.SBPFolderRow.enable()
+        self.SBPFolderRow.updateText(self.shared.SBPFolder)
+
+        
+    def setSBPFolder(self):
+        '''change the directory to save the sbp file to'''
+        if self.sameFolder:
+            return
+        openFolder = self.sbpDir
+        custFolder = QFileDialog.getExistingDirectory(self, "Choose Directory", openFolder)
+        if os.path.exists(custFolder):
+            self.shared.SBPFolder = custFolder
+            self.sbpDir = custFolder
+            self.updateSBPFolder()
+            self.updateButt()
             
-        else :
-            self.convertButt.setEnabled(True)
-    
+    def openSBPFolder(self):
+        '''open the SBP save folder'''
+        openFolder(self.sbpDir)
+        
     def updateQueue(self) -> None :
-        self.addQueue = self.queueBox.isChecked()
+        '''read the checkbox and decide whether to add the file to queue when done'''
+        self.addToQueue = self.queueBox.isChecked()
         
-    def updateChannel(self) -> None :
-        self.channel0 = self.channel0Box.isChecked()
-        self.channel1 = self.channel1Box.isChecked()
+    def changeChannel(self) -> None:
+        '''store the selected channel in the shared object'''
+        self.shared.setChannel(self.channelRow.value())
         
-        self.changeChannel()
+    def updateCloseWhenDone(self) -> None:
+        '''read the checkbox and decide whether to close the window when done'''
+        self.closeWhenDone = self.closeWhenDoneBox.isChecked()
         
-    def changeChannel(self) -> None :
-        if self.channel0 is True and self.channel1 is False :
-            self.shared.setChannel(0)
-            self.updateButt()
-            
-        if self.channel1 is True and self.channel0 is False :
-            self.shared.setChannel(1)
-            self.updateButt()
-        
-        if (self.channel0 is False and self.channel1 is False) or (self.channel0 is True and self.channel1 is True) :
+    def updateButt(self) -> None:
+        '''disable or enable the convert button'''
+        if os.path.exists(self.gcodeFileName) and os.path.exists(self.sbpDir):
+            self.convertButt.setEnabled(True)
+            self.convertButt.setToolTip('Convert G-Code to SBP')
+        else:
             self.convertButt.setEnabled(False)
+            err = 'Cannot convert: '
+            if not os.path.exists(self.gcodeFileName):
+                print(self.gcodeFileName)
+                err+='G-Code file does not exist'
+            if not os.path.exists(self.sbpDir):
+                if len(err)>0:
+                    err+=', '
+                err+='SBP folder does not exist'
+            self.convertButt.setToolTip(err)
         
     def conversion(self) -> None :
-        self.newName = self.fileEdit.text()
+        '''convert the file'''
+        self.newName = self.stlFileEdit.text()
+        if not self.newName.endswith('.sbp'):
+            self.newName = self.newName + '.sbp'
         
         # if gcode, go to python script above
-        if '.gcode' in self.fileName :
-            fileObject = convert(self.filePath[0], self.shared, self.newName)
+        if '.gcode' in self.gcodeFileName :
+            fileObject = convert(self.gcodeFileName, self.shared, self.newName)
             self.newFile = fileObject.readInFile()
             
-        elif '.stl' in self.fileName :
+        elif '.stl' in self.gcodeFileName :
             #otherwise, open the slicer for use
-            fileObject = slicerBox(self.filePath[0], self.shared, self.newName)
+            fileObject = slicerBox(self.gcodeFileName, self.shared, self.newName)
             temp = fileObject.findSlicer()
         
         #if user requested file to be added to queue
-        if self.addQueue is True :
+        if self.addToQueue:
             self.sbWin.sbBox.enableRunButt()
             self.sbWin.sbBox.sbList.addFile(self.newFile)
             logging.debug(f'Added file to queue: {self.newFile}')
             self.sbWin.sbBox.updateStatus('Ready ... ', False)
         
-        self.close()
+        if self.closeWhenDone:
+            self.close()
+
         
     def close(self) :
         self.done(0)
@@ -439,6 +473,9 @@ class sharedConvert :
     def getRunFlag(self) :
         return str(self.sbWin.sbBox.runFlag1)
     
+    def getUnusedFlag(self):
+        return str(self.sbWin.flagBox.unusedFlag0()+1)
+    
     def setChannel(self, channel) :
         self.channelNum = self.sbWin.fluBox.pchannels[channel]
         self.channel = channel
@@ -446,10 +483,10 @@ class sharedConvert :
    ################################################### Class for opening Slicer  
 class slicerBox :
     
-    def __init__(self, file, convertShare, reName) :
+    def __init__(self, file, convertShare, reName:str) :
         self.shared = convertShare
         stlFile = file
-        self.reName = reName
+        self.reName = reName   # name of the new file
         
         self.foundFolder = False
         

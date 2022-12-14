@@ -132,6 +132,13 @@ class sbSettingsBox(QWidget):
                                   tooltip='Check the status of the shopbot every _ ms',
                                   validator=objValidator2,
                                    width=w)
+        self.runSimple = fRadioGroup(layout, 'Pressure strategy', 
+                                          {0:'Track points, flow speeds, and flags', 
+                                           1:'Only track flags'}, 
+                                          {0:False, 1:True},
+                                         self.sbBox.runSimple, col=True, headerRow=True,
+                                          func=self.changeRunSimple)
+        
         objValidator3 = QIntValidator(cfg.shopbot.flag1min,cfg.shopbot.flag1max)
         self.flag1Edit = fLineEdit(fileForm, title=f'Run flag ({cfg.shopbot.flag1min}-{cfg.shopbot.flag1max})',
                               text =str(cfg.shopbot.flag1),
@@ -179,6 +186,15 @@ class sbSettingsBox(QWidget):
         else:
             self.sbBox.autoPlay = False
             self.sbBox.updateStatus('Turned off autoplay', True)
+            
+    def changeRunSimple(self) -> None:
+        '''Change points tracking strategy'''
+        if self.runSimple.value():
+            self.sbBox.runSimple = True
+            self.sbBox.updateStatus('Only tracking flags', True)
+        else:
+            self.sbBox.runSimple = False
+            self.sbBox.updateStatus('Tracking points and flags', True)
             
     def updateSavePos(self) -> None:
         '''update whether to save position in table'''
@@ -294,6 +310,7 @@ class sbBox(connectBox):
         self.keys.signals.status.connect(self.updateStatus)   # connect key status to GUI
         self.keys.signals.flag.connect(self.updateFlag)       # connect flag status to GUI
         self.keys.signals.pos.connect(self.updateXYZ)         # connect position status to GUI
+        self.keys.signals.lastRead.connect(self.updateLastRead) # connect lastline read to GUI
         if hasattr(self.sbWin, 'flagBox'):
             self.flagBox = self.sbWin.flagBox    # adopt the parent's flagBox for shorter function calls
         if not self.keys.connected:
@@ -321,11 +338,11 @@ class sbBox(connectBox):
             out = []
         if self.saveFlag:
             if hasattr(self, 'keys'):
-                if hasattr(self, 'sbFlag'):
-                    out = out + [self.sbFlag]
+                if hasattr(self, 'sbFlag') and hasattr(self, 'lastRead') and hasattr(self, 'tline'):
+                    out = out + [self.sbFlag, self.lastRead, self.tline]
                 else:
                     self.keys.lock()
-                    out = out + [self.keys.currentFlag]
+                    out = out + [self.keys.currentFlag, self.keys.lastRead, '']
                     self.keys.unlock()
             else:
                 out = out + ['']
@@ -338,7 +355,7 @@ class sbBox(connectBox):
         else:
             out = []
         if self.saveFlag:
-            out = out + ['flag']
+            out = out + ['flag', 'lastRead', 'targetLine']
         return out
  
     #-------------
@@ -376,6 +393,7 @@ class sbBox(connectBox):
         cfg1.shopbot.burstScale = self.burstScale
         cfg1.shopbot.burstLength = self.burstLength
         cfg1.shopbot.diag = self.diag
+        cfg1.shopbot.runSimple = self.runSimple
         if hasattr(self, 'settingsBox'):
             cfg1 = self.settingsBox.saveConfig(cfg1)
         if hasattr(self, 'sbList'):
@@ -399,6 +417,7 @@ class sbBox(connectBox):
         self.burstLength = cfg1.shopbot.burstLength
         self.saveFreq = cfg1.shopbot.saveDt
         self.diag = cfg1.shopbot.diag
+        self.runSimple = cfg1.shopbot.runSimple
         
     
     def loadConfig(self, cfg1):
@@ -421,14 +440,19 @@ class sbBox(connectBox):
         else:
             logging.debug('flagBox not initialized')
             
+    def updateLastRead(self, line:int) -> None:
+        self.lastRead = line
+            
     def readAndUpdateFlag(self) -> None:
         if self.runningSBP:
             return
         if hasattr(self, 'keys'):
             self.keys.lock()
             sbflag = self.keys.getSBFlag()
+            line = self.keys.getLastRead()
             self.keys.unlock()
             self.updateFlag(sbFlag)
+            self.updateLastRead(line)
             
     def updateDiag(self, diag:int) -> None:
         '''update the logging mode'''
@@ -560,6 +584,10 @@ class sbBox(connectBox):
         self.zt = z
         if hasattr(self, 'flagBox'):
             self.flagBox.updateXYZt(x,y,z)
+            
+    @pyqtSlot(int)
+    def updateXYZtline(self, line:int) -> None:
+        self.tline = line
 
     ####################            
     #### functions to start on run
@@ -577,13 +605,20 @@ class sbBox(connectBox):
     def getCritFlag(self) -> int:
         '''Identify which channels are triggered during the run. critFlag is a shopbot flag value that indicates that the run is done. We always set this to 0. If you want the video to shut off after the first flow is done, set this to 2^(cfg.shopbot.flag-1). We run this function at the beginning of the run to determine what flag will trigger the start of videos, etc.'''
         self.channelsTriggered = channelsTriggered(self.sbpName())
-        
         if not self.runFlag1-1 in self.channelsTriggered:
             # abort run: no signal to run this file
             self.updateStatus(f'Missing flag in sbp file: {self.runFlag1}', True)
             raise ValueError('Missing flag in sbp file')
+        
+        # remove run flag
         if self.runFlag1-1 in self.channelsTriggered:
             self.channelsTriggered.remove(self.runFlag1-1)
+            
+        # remove flags that aren't attached to anything
+        for c in self.channelsTriggered:
+            if self.sbWin.flagBox.flagLabels0[c]=='':
+                self.channelsTriggered.remove(c)
+        
         return 0
     
     def stopHit(self) -> None:
@@ -637,7 +672,8 @@ class sbBox(connectBox):
         ''' allowEnd is a failsafe measure because when the shopbot starts running a file that changes output flags, it asks the user to allow spindle movement to start. While it is waiting for the user to hit ok, only flag 4 would be up, giving a flag value of 8. If critFlag=8 (i.e. we want to stop running after the first extrusion step), this means the GUI will think the file is done before it even starts. We create an extra trigger to say that if we're extruding, we have to wait for extrusion to start before we can let the tracking stop'''
         try:
             self.critFlag = self.getCritFlag()
-        except ValueError:
+        except ValueError as e:
+            print(f'value error: {e}')
             self.triggerKill()
             return
         if self.critFlag==0:
@@ -649,12 +685,13 @@ class sbBox(connectBox):
 
             
         self.stopPrintThread()  # stop any existing threads
-        pSettings = {'critTimeOn':self.critTimeOn, 'zeroDist':self.zeroDist, 'critTimeOff':self.critTimeOff, 'burstScale':self.burstScale, 'burstLength':self.burstLength}
+        pSettings = {'critTimeOn':self.critTimeOn, 'zeroDist':self.zeroDist, 'critTimeOff':self.critTimeOff, 'burstScale':self.burstScale, 'burstLength':self.burstLength, 'runSimple':self.runSimple}
         self.printWorker = printLoop(self.settingsBox.getDt(), self.keys, self.sbpName(), pSettings, self.sbWin, self.runFlag1)   # create a worker to track the print
         self.printWorker.signals.aborted.connect(self.triggerKill)
         self.printWorker.signals.finished.connect(self.triggerEndOfPrint)
         self.printWorker.signals.estimate.connect(self.updateXYZest)
         self.printWorker.signals.target.connect(self.updateXYZt)
+        self.printWorker.signals.targetLine.connect(self.updateXYZtline)
 
         # send the file to the shopbot via command line
         self.keys.lock()

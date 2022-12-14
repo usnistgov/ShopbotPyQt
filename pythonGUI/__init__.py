@@ -1,7 +1,7 @@
 # info
 __author__ = "Leanne Friedrich"
 __copyright__ = "This data is publicly available according to the NIST statements of copyright, fair use and licensing; see https://www.nist.gov/director/copyright-fair-use-and-licensing-statements-srd-data-and-software"
-__credits__ = ["Leanne Friedrich"]
+__credits__ = ["Leanne Friedrich @LeanFried", "Leigh Vining @BiLeVi"]
 __license__ = "NIST"
 __version__ = "1.1.0"
 __maintainer__ = "Leanne Friedrich"

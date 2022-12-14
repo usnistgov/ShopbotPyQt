@@ -190,6 +190,7 @@ class waitForStart(QRunnable):
         self.keys = keys
         self.runFlag1 = runFlag1
         self.channelsTriggered = channelsTriggered
+        self.cf = 2**(self.runFlag1-1) + 2**(self.channelsTriggered[0]) # the critical flag at which flow starts
         self.signals = waitSignals()
         self.spindleKilled = False
         self.spindleFound = False
@@ -203,9 +204,8 @@ class waitForStart(QRunnable):
             sbFlag = self.keys.getSBFlag()
             running = self.keys.runningSBP
             self.keys.unlock()
-            cf = 2**(self.runFlag1-1) + 2**(self.channelsTriggered[0]) # the critical flag at which flow starts
-            self.updateStatus(f'Waiting to start file, Shopbot output flag = {sbFlag}, start at {cf}', False)
-            if sbFlag==cf or not running:
+            self.updateStatus(f'Waiting to start file, Shopbot output flag = {sbFlag}, start at {self.cf}', False)
+            if sbFlag==self.cf or not running:
                 self.signals.finished.emit()
                 return
             else:
@@ -224,6 +224,7 @@ class waitForStart(QRunnable):
             self.spindleFound = True
             time.sleep(self.dt/1000/2)
             self.killSpindle()
+            
         return True
        
     @pyqtSlot()
@@ -252,6 +253,7 @@ class printLoopSignals(QObject):
     aborted = pyqtSignal()    # print was aborted from sbp app
     estimate = pyqtSignal(float,float,float)   # new estimated position
     target = pyqtSignal(float,float,float)      # send current target to GUI
+    targetLine = pyqtSignal(int)   # send current target line to GUI
     
     
 class printLoop(QObject):
@@ -272,9 +274,11 @@ class printLoop(QObject):
         self.runSimple = False
         self.printStarted = False
         self.hitRead = False
+        self.lastRead = 0 # last line read 
         self.targetPoint = {}
         self.nextPoint = {}
         self.zeroDist = pSettings['zeroDist']
+        self.runSimple = pSettings['runSimple']
         self.timeTaken = False
         self.readKeys()   # intialize flag, loc
         self.lastPoint = {'x':self.readLoc[0], 'y':self.readLoc[1], 'z':self.readLoc[2]}
@@ -393,12 +397,18 @@ class printLoop(QObject):
             raise ValueError('Input to SBPtimings must be an SBP file')
         sbpfile = sbpfile
         csvfile = sbpfile.replace('.sbp', '.csv')
-        if not os.path.exists(csvfile):
+        if not os.path.exists(csvfile) or os.path.getmtime(csvfile)<os.path.getmtime(sbpfile):
+            # if there is no csv file or the sbp file was edited since the csv file was created, create a csv
             sp = SBPPoints(sbpfile)
             sp.export()
             sp = pd.read_csv(csvfile, index_col=0)
         else:
             sp = pd.read_csv(csvfile, index_col=0)
+            if not 'line' in sp:
+                # overwrite the file
+                sp = SBPPoints(sbpfile)
+                sp.export()
+                sp = pd.read_csv(csvfile, index_col=0)
         self.points = sp
         self.pointsi = -1
         self.printi = -1
@@ -433,6 +443,9 @@ class printLoop(QObject):
     @pyqtSlot()
     def readPoint(self) -> None:
         '''read the next point from the points list'''
+        if self.pointsi>0 and self.lastRead>0 and self.points.iloc[self.pointsi]['line']>self.lastRead:
+            # don't read the point if we're ahead of the file
+            return
         self.lastTime = self.pointTime    # store the time when we got the last point
         self.pointTime = datetime.datetime.now()
         self.changePoint = self.readLoc
@@ -457,6 +470,7 @@ class printLoop(QObject):
             self.speed = float(self.targetPoint['speed'])
             self.speed0 = self.speed
             self.signals.target.emit(*toXYZ(self.targetPoint))          # update gui
+            self.signals.targetLine.emit(int(self.targetPoint['line']))
             self.targetVec = ppVec(self.lastPoint, self.targetPoint)
             if len(self.points)>self.pointsi+1:
                 self.nextPoint = self.points.iloc[self.pointsi+1]
@@ -523,6 +537,7 @@ class printLoop(QObject):
         self.flag = self.keys.getSBFlag()   # gets flag and sends signal back to GUI from keys
         self.readLoc = self.keys.getLoc()       # gets SB3 location and sends signal back to GUI from keys
         self.runningSBP = self.keys.runningSBP   # checks if the stop button has been hit
+        self.lastRead = self.keys.getLastRead()  # get the last line read into the shopbot. this is ahead of the line it is running
         newDiag = self.keys.diag                # logging mode           
         self.keys.unlock()
         
@@ -538,6 +553,7 @@ class printLoop(QObject):
         self.oldReadLoc = self.readLoc
         self.estimateLoc()
         self.readKeys()
+    
         
     @pyqtSlot()
     def estimateLoc(self) -> None:
@@ -598,7 +614,7 @@ class printLoop(QObject):
         headStr = '\t'
         for flag0 in self.channelWatches:
             headStr = headStr + f'flag0:on mode\tstate|\t'
-        headStr = headStr + f'xd\tyd\tzd|\txe\tye\tze|\txt\tyt\tzt|\tflag\tspeed\tstart\tend\ttrd\tlrd\ttld\tted\tled'
+        headStr = headStr + f'xd\tyd\tzd|\txe\tye\tze|\txt\tyt\tzt\tline|\tline\tflag\tspeed\tstart\tend\ttrd\tlrd\ttld\tted\tled'
         self.headStr = headStr
         if self.diag>1:
             print(self.headStr)
@@ -631,9 +647,9 @@ class printLoop(QObject):
                 ted = d['ted']
                 led = d['led']
             xt,yt,zt = toXYZ(self.targetPoint)
-            
-            diagStr = diagStr + f'\t{xt:2.2f}\t{yt:2.2f}\t{zt:2.2f}|'
-            diagStr = diagStr + f'\t{flag}'
+            tline = self.targetPoint['line']
+            diagStr = diagStr + f'\t{xt:2.2f}\t{yt:2.2f}\t{zt:2.2f}\t{tline}|'
+            diagStr = diagStr + f'\t{self.lastRead}\t{flag}'
             if newPoint:
                 diagStr = diagStr + '\t \t \t \t \t \t \t \t '
             else:
@@ -646,6 +662,13 @@ class printLoop(QObject):
             self.printi+=1
         return diagStr
     
+    def calcAngle(self, vec1, vec2):
+        dot = np.dot(vec1, vec2)
+        if dot<=0:
+            return 0
+        else:
+            return np.arccos(dot)   # angle between traveled vec and target vec
+
     
     def evalAngle(self, d:dict) -> Tuple[bool, float]:
         '''evaluate whether the angle of travel agrees with the intended angle of travel'''
@@ -654,8 +677,8 @@ class printLoop(QObject):
             readStepDist = ppDist(self.oldReadLoc, self.readLoc)   # distance traveled between this step and last step
             if readStepDist>self.zeroDist and self.timeTaken:
                 vec = ppVec(self.oldReadLoc, self.readLoc)       # direction traveled during this step
-                angle = np.arccos(np.dot(vec, self.targetVec))   # angle between traveled vec and target vec
-                nextAngle = np.arccos(np.dot(vec, self.nextVec)) # angle between vec and next vec
+                angle = self.calcAngle(vec, self.targetVec)
+                nextAngle = self.calcAngle(vec, self.nextVec) # angle between vec and next vec
             else:
                 angle = 0
         else:
@@ -748,12 +771,14 @@ class printLoop(QObject):
         return not flagOn(self.flag, self.sbRunFlag1 -1)
     
     def decideIfSimple(self) -> bool:
-        self.points['distance'] = np.sqrt((self.points['x'].diff())**2+(self.points['y'].diff())**2+(self.points['z'].diff())**2)
+#         self.points['distance'] = np.sqrt((self.points['x'].diff())**2+(self.points['y'].diff())**2+(self.points['z'].diff())**2)
         
-        if len(self.points[self.points.distance <5]) > 10 : #getting list of points < .5
-            self.runSimple = True
-        else :
-            self.runSimple = False
+#         if len(self.points[self.points.distance <0.5]) > 10 : #getting list of points < .5
+#             self.runSimple = True
+#         else :
+#             self.runSimple = False
+        return self.runSimple
+        
         
 
 

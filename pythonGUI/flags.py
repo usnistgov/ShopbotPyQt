@@ -39,10 +39,20 @@ class flagGrid(QGridLayout):
         self.successLayout(tall=tall)
         self.labelFlags()
         
-    def resetFlagLabels(self):
+    def resetFlagLabels(self) -> None:
+        '''create a new dictionary to hold flags and labels'''
         self.flagLabels0 = dict([[flag0, ''] for flag0 in range(self.numFlags)])   
                     # dictionary that holds labels {flag:device name}
                     # 0=indexed
+                
+    def unusedFlag0(self) -> int:
+        '''find an unused flag'''
+        i = 0
+        while i<12:
+            if self.flagLabels0[i]=='':
+                return i
+            i+=1
+        raise ValueError('All flags are taken')
         
     def successLayout(self, tall:bool=True) -> None:
         # coords
@@ -210,6 +220,7 @@ class SBKeySignals(QObject):
     status = pyqtSignal(str, bool) # send status message back to GUI
     flag = pyqtSignal(int)         # send current flag status back to GUI
     pos = pyqtSignal(float,float,float) # send current position back to GUI
+    lastRead = pyqtSignal(int)   # send last line read back to GUI
     
 
 class SBKeys(QMutex):
@@ -223,6 +234,7 @@ class SBKeys(QMutex):
         self.sb3File = ''
         self.prevFlag = 0
         self.currentFlag = 0
+        self.lastRead = 0
         self.msg = ''
         self.runningSBP = False
         self.diag = diag
@@ -414,6 +426,16 @@ class SBKeys(QMutex):
             
         return xlist
     
+    def getLastRead(self) -> int:
+        '''get the line number of the last line read into the file'''
+        try:
+            c, _ = self.queryValue('LAstRead')
+        except ValueError:
+            return -1
+        self.lastRead = int(c)
+        self.signals.lastRead.emit(self.lastRead)
+        return self.lastRead
+    
     def getListOfKeys(self, l:List[str]) -> dict:
         '''probe the given list of keys and return a dictionary'''
         d = {}
@@ -443,7 +465,6 @@ class SBKeys(QMutex):
             print('\t'.join(list(d.keys())))
         print('\t'.join(list(d.values())))
         
-    
     
     def readMsg(self) -> None:
         '''read messages from the shopbot'''

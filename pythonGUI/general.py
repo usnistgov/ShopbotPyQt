@@ -151,6 +151,19 @@ class fileSetOpenRow(QHBoxLayout):
     def updateText(self, sf:str) -> None:
         '''set the folder name display'''
         self.saveFolderLabel.setText(sf)
+        
+    def disable(self) -> None:
+        '''gray out the open button'''
+        self.saveButt.setEnabled(False)
+        self.saveButt.setIcon(QIcon())
+        
+        
+    def enable(self) -> None:
+        '''enable the open button'''
+        self.saveButt.setEnabled(True)
+        self.saveButt.setIcon(icon('open.png'))
+        
+        
 
 #############################################
 
