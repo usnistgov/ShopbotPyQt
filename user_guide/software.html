@@ -9,7 +9,7 @@
 <h1>Software</h1>
     
    <div class="header">
-        <p>Last updated Jan 11, 2022 by Leanne Friedrich<p>
+        <p>Last updated Dec 15, 2022 by Leanne Friedrich, B. Leigh Vining<p>
 
         <p><i>Certain commercial equipment, instruments, or materials are identified in this user guide in order to describe a specific device. Such identification is not intended to imply recommendation or endorsement by the National Institute of Standards and Technology, nor is it intended to imply that the materials or equipment identified are necessarily the best available for the purpose.</i></p>
 
@@ -49,13 +49,83 @@
             <li>Create a free ultimaker account</li>
             <li>Once downloaded and opened, go to the setting tab and add printer. Under the 'add a non-networked printer', there should be a 'custom' option with a drop down menu. Click on the 'Custom FFF printer' and rename it to your preference.</li>
             <li>A 'machine setting' window should pop up, where you will place corresponding variables to the printer.</li>
-            <li> <img src="img/cura_variables.png" alt="Variable inputs that correspond to ShopBot for the Cura slicer"></li>
-            <li>Set the print resolution to extra coarse - 0.6mm and unclick the Adhesion box in the same window</li>
-            <li>Note that the Cura slicer takes 1/3 inch off the edges, so you can add that much to the X/Y/Z measurements. However, measurements of 42.34mm by 103.14mm will have you go past the container dimensions.
+            <style>
+            table, th, td {
+            border:1px solid black;
+            }
+            </style>
+            <table>
+                <tr>
+                    <th colspan = "2">Printer Settings</th>
+                    <th colspan = "2">Printhead Settings</th>
+                    <th colspan = "2">Extruder/Nozzle Settings</th>
+                </tr>
+                <tr>
+                    <th> X (Width) </th>
+                    <td> 76.2 mm </td>
+                    <th> X Min </th>
+                    <td> -1 mm </td>
+                    <th> Nozzle Size </th>
+                    <td> 0.603 mm </td>
+                </tr>
+                  <tr>
+                    <th> Y (Depth) </th>
+                    <td> 25.4 mm </td>
+                    <th> Y Min </th>
+                    <td> -1 mm </td>
+                    <th> Compatible Material Diameter </th>
+                    <td> 0.603 mm </td>
+                </tr>
+                 <tr>
+                    <th> Z (Height) </th>
+                    <td> 25.4 mm </td>
+                    <th> X Max </th>
+                    <td> 1 mm </td>
+                    <th> Nozzle Offset X </th>
+                    <td> 0.0 mm </td>
+                </tr>
+                 <tr>
+                    <th> Build Plate Shape </th>
+                    <td> Rectangular </td>
+                    <th> Y Max </th>
+                    <td> 1 mm </td>
+                    <th> Nozzle Offset Y </th>
+                    <td> 0.0 mm </td>
+                </tr>
+                 <tr>
+                    <th> Origin at Center </th>
+                    <td> Checked </td>
+                    <th> Gantry Height </th>
+                    <td> 70.0 mm </td>
+                    <th> Cooling Fan Number </th>
+                    <td> 0 </td>
+                </tr>
+                 <tr>
+                    <th> Headed Bed </th>
+                    <td> Unchecked </td>
+                    <th> Number of Extruders </th>
+                    <td> 1 </td>
+                </tr>
+                 <tr>
+                    <th> Headed Build Volume </th>
+                    <td> Unchecked </td>
+                    <th> Apply Extruder Offsets to GCode </th>
+                    <td> Checked </td>
+                </tr>
+                <tr>
+                    <th> GCode Flavor </th>
+                    <td> Marlin </td>
+                </tr>
+            </table>
+            
+            <li>Set the print resolution to extra coarse - 0.6mm and unclick the Adhesion box and Support box in the same window</li>
+            <li>Within the print settings 'Custom', make certain the 'Infill' section's density is set to 0.0, the 'Support' section's Generate Support box is unchecked, and the 'Build Plate Adhesion' type is set to None. </li>
+            <li>Essentially, any supports for the structure are redundant as it is already supported in the bath. It will only cause excess ink to be extruded and ruin your print.</li>
+            <li>Note that the Cura slicer takes 1/3 inch, or about 8.46mm, off the edges, so you can add that much to the X/Y/Z measurements. However, measurements of 41.66mm x 41.66mm x 92.46mm will have you go past the container dimensions, as those hit the stage walls.
 </li>
             <li>When creating an STL file through <a href="https://www.onshape.com/en/">Onshape</a>, create measurements in millimeters, even if it states in inches. Cura assumes all measurements are in millimeters.</li>
         </ul>
-
+        
         <li><a href="https://boscacci.medium.com/why-and-how-to-make-a-requirements-txt-f329c685181e">Install Python packages</a> listed in <i>requirements.txt</i>. </li>
         <li>Launch the GUI.</li>
         <ul>
@@ -71,15 +141,18 @@
       <summary>
           <span class="icon">▼</span><span class="open_text">Open</span><span class="close_text">Close</span>
       </summary>
-    <img src="img/updated_software_header.png"  class="graphic" alt="header menu of the GUI. Menu buttons are Log, speed calibration tool, and settings">
-    
-    <ul>
-        <li>The "log" button opens a separate window holding a log of all of the status updates in all of the windows.</li>
-        <li>The "speed calibration tool" button opens a separate window holding the flow rate calibration tool.</li>
-        <li>The "convert" button opens a separate window holding the file conversion tool.</li>
-        <li>The "settings" <img src="../pythonGUI/icons/settings.png" class="icon2"> button opens a separate window that holds settings for all of the modules</li>
-    </ul>
+       
+               <img src="img/updated_software_header.png"  class="graphic" alt="header menu of the GUI. Menu buttons are Log, speed calibration tool, and settings">
+         
+            <ul>
+                <li>The "log" button opens a separate window holding a log of all of the status updates in all of the windows.</li>
+                <li>The "speed calibration tool" button opens a separate window holding the flow rate calibration tool.</li>
+                <li>The "convert" button opens a separate window holding the file conversion tool.</li>
+                <li>The "settings" <img src="../pythonGUI/icons/settings.png" class="icon2"> button opens a separate window that holds settings for all of the modules</li>
+            </ul>
+          
     </details>
+
     
     <h3>Settings</h3>
     <details>
@@ -87,9 +160,9 @@
           <span class="icon">▼</span><span class="open_text">Open</span><span class="close_text">Close</span>
       </summary>
     
-        <img src="img/software_settings_load.png" class="graphic" alt="The load/save tab of the settings module. There are 2 buttons and a checkbox that pertain to loading and saving settings configurations.">
+            <img src="img/software_settings_load.png" class="graphic" alt="The load/save tab of the settings module. There are 2 buttons and a checkbox that pertain to loading and saving settings configurations.">
         
-        <p>All of the settings can be collectively saved to a .yml file via "Save settings to file." A previously saved settings file can be loaded via "Load settings from file". The checkbox "Save settings for next session" automatically saves all settings to configs/config.yml when the GUI is closed. configs/config.yml is automatically loaded on startup of the GUI.</p>
+            <p>All of the settings can be collectively saved to a .yml file via "Save settings to file." A previously saved settings file can be loaded via "Load settings from file". The checkbox "Save settings for next session" automatically saves all settings to configs/config.yml when the GUI is closed. configs/config.yml is automatically loaded on startup of the GUI.</p>
         
     </details>
     
@@ -109,7 +182,8 @@
         <li>To add the SBP file to the Shopbot queue, click the 'load to queue after conversion' checkbox.</li>
         <li>To run the conversion on the selected file, click the 'convert file' button. The window should close automatically.</li>
         <li>If you exit out of the window accidentally, the window keeps all previous settings. This includes when there is a successful conversion.</li>
-        
+        <p>Currently, the conversion program must override a method within sbprint.py that obtains the flow speed. As a result, set target speed in the speed calibration tool between 1 and 10 to start with, and adjust from there. </p>
+        <p style = "text-align:right">B. Leigh Vining</p>
     </details>
     
     
@@ -198,8 +272,7 @@
             <li>Duplicate suffix is the format to use if there is already an file with the name that you are requesting, and the program needs to add a suffix to the filename to avoid overwriting the existing file. {0:0=3d} adds a 3 digit counter to the end, e.g. 012</li>
             <li>Separator is the character to place in between parts of the file name. E.g. "_" might produce a file called "[Shopbot file name]_[device]_[date].[extension]", and "-" would produce a file called "[Shopbot file name]-[device]-[date].[extension]". </li>
             <li>A sample file name is provided at the bottom of the page and should automatically update.</li>
-        </ul>
-            
+        </ul>   
         
     </details>
     
@@ -258,7 +331,95 @@
             <li>To change the pressure range shown on the plot, from 0 to P, change the "Plot pressure range" field.</li>
             <li>To change the line color and caption color for a channel, change the "Channel color" field to a hex color value.</li>
         </ul>
+        
+    </details>
+    
+    <h3>SBP Files</h3>
+    <details>
+      <summary>
+          <span class="icon">▼</span><span class="open_text">Open</span><span class="close_text">Close</span>
+      </summary>
+        
+        <img src="img/shopbot_flags.png" alt="Flags within shobpot and their designated variables">
+        
+        <li>There are a total of 12 flags that can be assigned different variables for use with shopbot.</li>
+        <ul>
+            <li>Flags 1 and 2 are primarily for use with the extrudant</li>
+            <li>Flags 3, 5, and 6 are connected to cameras</li>
+            <li>Flag 12 is to run shopbot</li>
+        </ul>
             
+        <span class="code">
+            <pre>
+                VD , , 1
+                VU, 157.480315, 157.480315, -157.480315
+                SA
+                MH
+                MS, 40, 40
+                JS, 40, 40
+                VR,10.06, 10.06, , , 10.06, 10.06, , , 5.08, 5.08, 100, 3.81, 65, , , 5.08
+                SO, 12, 1
+                SO, 2, 1
+                SO, 2, 0
+                M3, 0, 0, 15.0
+                SO, 1, 1
+                'ink_speed_0=3.33
+                MS, 3.33, 3.33
+                M3, 0, 0, 15.0
+                SO, 1, 0
+                'ink_speed_0=25.0
+                MS, 25.0, 25.0
+                M3, 0, 0, 15.0
+                JS, 40, 40
+                J3, 3.861, -8.673, 0.3
+                J3, -8.804, -3.58
+                SO, 1, 1
+                'ink_speed_0=25.0
+                MS, 25.0, 25.0
+                M3, -8.804, -3.58, 0.3
+                SO, 1, 0
+                'ink_speed_0=5.0
+                MS, 5.0, 5.0
+                M3, -.156, 0.369, 12.7
+                MH
+                SA
+                SO, 12, 0
+</pre>
+</span>
+        
+        
+        <li>To turn a designated flag on, write 'SO, #, 1', where # is the flag number. To turn it off, write 'SO, #, 0'</li>
+        <ul>
+            <li>for the fluigent flags (1,2), write 'SO, # 1' to turn flow/pressure on. Write 'SO, #, 0' to turn flow/pressure off.</li>
+            <li>The fluigent and run flags (1/2, 12) must be turned off at the end of the file. 'SO, 12, 0' is the very last line.</li>
+        </ul>
+        
+        
+        <li>Lines 1 to 10 in this file are considered the header</li>
+        <ul>
+            <li>Each file must have the VD and VU commands placed first in the header. Theses commands designate Values for Display and Values for Values for Units. VU in simplicity tells the printer which way is up, with a negative Z value being considered positive/up.</li>
+            <li>Move speed (MS) and Jump speed (JS) must also be assigned values within the header</li>
+            <li>Then the values of ramp (VR) must be assigned</li>
+            <li>For lines 9 and 10 in the example, an unused flag is being turned on/off to activate the system. This is needed after shopbot has started the run to close a pop-up that opens because shopbot thinks a drill is attached.</li>
+            <li>'SO, 12, 1' is needed to actually start the shopbot. If it is not included, your file will never run.</li>
+            <li>The end of header is indicated by the closing of the pop-up that stalls the run, 'SO, 2, 0'</li>
+        </ul>
+        
+        
+        <li>Each command must have a comma separating each variable. 'M3 3, 5, 6' will not work because there is a missing comma between the M3 and 3.</li> 
+        <ul>
+            <li>If a command starts with an M, it is a move. So M3 moves to the designated X, Y, and Z coordinates.</li>
+            <li>If a command starts with a J, it is a jump. So J2 jumps to the designated X and Y coordinates</li>
+            <li>If a command starts with a V, it is a value setup.</li>
+            <li>MH is the command for move home, or where the stage is considered to be (0, 0, 0)</li>
+            <li>SA sets the file to be done in absolute distances/ absolute mode </li>
+        </ul>  
+        
+        
+        <li>Ink speed is a comment (started with ') to let you know the flow rate of the extrudant</li>
+        <ul>
+            <li>Ink speed lets you know what the speed of flow is at for the following moves.</li>
+        </ul>
         
     </details>
     

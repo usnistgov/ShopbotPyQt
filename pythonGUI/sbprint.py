@@ -771,13 +771,15 @@ class printLoop(QObject):
         return not flagOn(self.flag, self.sbRunFlag1 -1)
     
     def decideIfSimple(self) -> bool:
-#         self.points['distance'] = np.sqrt((self.points['x'].diff())**2+(self.points['y'].diff())**2+(self.points['z'].diff())**2)
+        '''determine if the move/s made are simple/short or not'''
+        self.points['distance'] = np.sqrt((self.points['x'].diff())**2+(self.points['y'].diff())**2+(self.points['z'].diff())**2)       
         
-#         if len(self.points[self.points.distance <0.5]) > 10 : #getting list of points < .5
-#             self.runSimple = True
-#         else :
-#             self.runSimple = False
+         if len(self.points[self.points.distance <0.5]) > 10 : #getting list of points < .5
+             self.runSimple = True
+         else :
+             self.runSimple = False
         return self.runSimple
+
         
         
 
