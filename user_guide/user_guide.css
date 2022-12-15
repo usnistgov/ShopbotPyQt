@@ -1,6 +1,8 @@
 details {
-  user-select: none;
-    margin-left:20px
+    margin-left:20px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    padding: .5em .5em .5em;
 }
 
 details[close]>summary span.icon {
@@ -34,8 +36,11 @@ details[open]>summary span.close_text {
 }
 
 summary {
-  display: flex;
-  cursor: pointer;
+    display: flex;
+    font-weight: bold;
+    margin: -.5em -.5em 0;
+    padding: .5em;
+    cursor: pointer;
 }
 
 summary::-webkit-details-marker {
@@ -44,6 +49,10 @@ summary::-webkit-details-marker {
 
 .graphic {
     width:400px;
+    max-width:100%;
+}
+
+.graphicwide {
     max-width:100%;
 }
 
