@@ -28,7 +28,7 @@ convert:
   addToQueue: true
   closeWhenDone: false
   gcodeFolder: C:/Users/lmf1/OneDrive - NIST/NIST/data/shopbot/leigh
-  sameFolder: true
+  sameFolder: false
   sbpFolder: C:/Users/lmf1/OneDrive - NIST/NIST/data/shopbot
 files:
   createSubfolders: true
