@@ -1,5 +1,5 @@
 ---
-appid: leanfried.sbgui.v1.0.5
+appid: usnistgov.sbgui.v1.1.0
 camera:
   cam0:
     checked: false
@@ -25,6 +25,12 @@ camera:
     name: Webcam 2
     previewFPS: 15
     type: webcam
+convert:
+  addToQueue: true
+  closeWhenDone: false
+  gcodeFolder: C://
+  sameFolder: false
+  sbpFolder: C://
 files:
   createSubfolders: true
   dateFormat: '%y%m%d'
