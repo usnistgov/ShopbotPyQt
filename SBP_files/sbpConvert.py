@@ -145,15 +145,42 @@ def fsss(vi:Union[str, float]) -> str:
 
 
 
+def splitStrip(l:str, delimiter:str=',') -> list:
+    '''get a list of values'''
+    spl = re.split(delimiter, l)
+    out = []
+    for s in spl:
+        s1 = s.strip()
+        try:
+            s2 = float(s1)
+        except:
+            s2 = s1
+        out.append(s2)
+    return out
+    
 def channelsTriggered(sbpName:str) -> int:
-    '''Identify which channels are triggered during the run. critFlag is a shopbot flag value that indicates that the run is done. We always set this to 0. If you want the video to shut off after the first flow is done, set this to 8. We run this function at the beginning of the run to determine what flag will trigger the start of videos, etc.'''
+    '''Identify which channels are triggered during the run. critFlag is a shopbot flag value that indicates that the run is done. We always set this to 0. If you want the video to shut off after the first flow is done, set this to 8. We run this function at the beginning of the run to determine what flag will trigger the start of videos, etc. Results are 0-indexed'''
     channelsTriggered = []
+    defs = {}
     with open(sbpName, 'r') as f:
         for line in f:
+            if line.startswith('&'):
+                spl = splitStrip(line, delimiter='=')
+                key = spl[0]
+                va = spl[1]
+                defs[key[1:]] = int(va)
             if line.startswith('SO') and (line.endswith('1') or line.endswith('1\n')):
                 '''the shopbot flags are 1-indexed, while our channels list is 0-indexed, 
                 so when it says to change flag 1, we want to change channels[0]'''
-                li = int(line.split(',')[1])-1
+                lii = line.split(',')[1]
+                try:
+                    li = int(lii)-1
+                except:
+                    li = lii.strip()[1:]
+                    if li in defs:
+                        li = defs[li]-1
+                    else:
+                        print(f'{li} not found in defs')
                 if li not in channelsTriggered:
                     channelsTriggered.append(li) 
     return channelsTriggered

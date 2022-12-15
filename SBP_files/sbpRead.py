@@ -15,18 +15,7 @@ from sbpConvert import *
 
 #-----------------------------------------------------
 
-def splitStrip(l:str, delimiter:str=',') -> list:
-    '''get a list of values'''
-    spl = re.split(delimiter, l)
-    out = []
-    for s in spl:
-        s1 = s.strip()
-        try:
-            s2 = float(s1)
-        except:
-            s2 = s1
-        out.append(s2)
-    return out
+
     
 
 
@@ -258,6 +247,7 @@ class SBPPoints:
         if not file.endswith('.sbp'):
             raise ValueError('Input to SBPPoints must be an SBP file')
         self.header = SBPHeader(file)  # scrape variables
+        self.line = 0
         if hasattr(self.header, 'speed_move_xy'):
             self.ms = self.header.speed_move_xy 
         else:
@@ -269,7 +259,7 @@ class SBPPoints:
         self.file = file
         self.channels = channelsTriggered(file)
         self.cp = ['','','']
-        self.points = [{'x':'', 'y':'', 'z':''}]   # list of dictionary points
+        self.points = [{'x':'', 'y':'', 'z':'', 'line':self.header.hrows}]   # list of dictionary points
         self.pressures = dict([[i,0] for i in self.channels])   
         for channel in self.channels:
             self.points[0][f'p{channel}_before'] = 0
@@ -284,11 +274,14 @@ class SBPPoints:
         with open(self.file, mode='r') as f:
             for i in range(self.header.hrows):
                 f.readline()
+                self.line+=1
             l = f.readline()
+            self.line+=1
             while len(l)>0:
                 self.readLine(l)    # interpret the line
                 self.lastLine = l   # store the line
                 l = f.readline()    # get a new line
+                self.line+=1
                 
                 
     def floatSC(self, vi:Union[str, float]) -> float:
@@ -297,7 +290,7 @@ class SBPPoints:
     
     def addPoint(self, command:str) -> None:
         '''add the current point to the list'''
-        p1 = {'x':self.cp[0], 'y':self.cp[1], 'z':self.cp[2]}
+        p1 = {'line':self.line, 'x':self.cp[0], 'y':self.cp[1], 'z':self.cp[2]}
         for c in self.channels:
             for s in ['before', 'after']:
                 p1[f'p{c}_{s}'] = self.pressures[c]
@@ -328,7 +321,7 @@ class SBPPoints:
         spl = re.split('=', command)
         channel = spl[0][-1]
         val = float(spl[1])
-        self.points.append({f'p{channel}_before':-1000, f'p{channel}_after':val})  # -1000 is code for "change speed"        
+        self.points.append({'line':self.line, f'p{channel}_before':-1000, f'p{channel}_after':val})  # -1000 is code for "change speed"        
             
     def readLine(self, l:str) -> None:
         '''read a line into the list of points'''
@@ -338,7 +331,15 @@ class SBPPoints:
                 if self.lastLine.startswith('SO'):
                     # turned off/on
                     self.addPoint('')
-            channel = spl[1]-1 # shopbot flags are 1-indexed, but we store 0-indexed
+            li = spl[1]
+            if type(li) is str:
+                if li[1:] in self.header.vardefs:
+                    channel = self.header.vardefs[li[1:]]-1
+                else:
+                    print(self.header.vardefs)
+                    raise ValueError(f'Missing pressure channel in header: {li}')
+            else:
+                channel = int(spl[1])-1 # shopbot flags are 1-indexed, but we store 0-indexed
             if spl[2]==1:
                 self.pressures[channel] = 1
             else:

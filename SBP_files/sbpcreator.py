@@ -517,7 +517,8 @@ class sbpCreator:
         
     def setUnits(self, **kwargs):
         '''Set the units to mm'''
-        self.file+='VD , , 1\nVU, 157.480315, 157.480315, -157.480315\n'
+        self.file+='VD , , 1\nVU, 157.480315, 157.480315, -157.480315\n'  # set mm, negative z is up
+        self.file+='SA\n'  # set absolute
     
     
 ############---------------------------------

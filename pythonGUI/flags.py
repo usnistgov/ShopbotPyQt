@@ -39,10 +39,20 @@ class flagGrid(QGridLayout):
         self.successLayout(tall=tall)
         self.labelFlags()
         
-    def resetFlagLabels(self):
+    def resetFlagLabels(self) -> None:
+        '''create a new dictionary to hold flags and labels'''
         self.flagLabels0 = dict([[flag0, ''] for flag0 in range(self.numFlags)])   
                     # dictionary that holds labels {flag:device name}
                     # 0=indexed
+                
+    def unusedFlag0(self) -> int:
+        '''find an unused flag'''
+        i = 0
+        while i<12:
+            if self.flagLabels0[i]=='':
+                return i
+            i+=1
+        raise ValueError('All flags are taken')
         
     def successLayout(self, tall:bool=True) -> None:
         # coords
@@ -210,6 +220,7 @@ class SBKeySignals(QObject):
     status = pyqtSignal(str, bool) # send status message back to GUI
     flag = pyqtSignal(int)         # send current flag status back to GUI
     pos = pyqtSignal(float,float,float) # send current position back to GUI
+    lastRead = pyqtSignal(int)   # send last line read back to GUI
     
 
 class SBKeys(QMutex):
@@ -223,15 +234,29 @@ class SBKeys(QMutex):
         self.sb3File = ''
         self.prevFlag = 0
         self.currentFlag = 0
+        self.lastRead = 0
         self.msg = ''
         self.runningSBP = False
         self.diag = diag
         self.signals = SBKeySignals()
         self.connectKeys()   # connect to the keys and open SB3.exe
+        self.ctr = 0
         
     def updateStatus(self, message:str, log:bool) -> None:
         '''send the status back to the SBbox'''
         self.signals.status.emit(message, log)
+        
+    def connectKey(self, aReg, path:str, name:str):
+        '''connect a single key'''
+        key = os.path.join(r'Software\VB and VBA Program Settings\Shopbot', path)
+        try:
+            k = winreg.OpenKey(aReg, key)
+            setattr(self, f'{name}Key', k)
+        except FileNotFoundError:
+            self.updateStatus(f'Failed to connect to shopbot: Key not found: {key}', True)
+            return
+        except Exception as e:
+            print(e)
         
         
     def connectKeys(self) -> None:
@@ -245,12 +270,9 @@ class SBKeys(QMutex):
             return
             
         # find key
-        aKey = r'Software\VB and VBA Program Settings\Shopbot\UserData'
-        try:
-            self.aKey = winreg.OpenKey(aReg, aKey)
-        except FileNotFoundError:
-            self.updateStatus(f'Failed to connect to shopbot: Key not found: {aKey}', True)
-            return
+        self.connectKey(aReg, 'UserData', 'UserData')
+        self.connectKey(aReg, r'Sb3\Settings', 'Settings')
+        self.connectKey(aReg, r'Sb3\DebugStatus', 'DebugStatus')
             
         # found key
         self.connected = True
@@ -258,13 +280,43 @@ class SBKeys(QMutex):
         self.findSb3()                     # find the SB3 file
         subprocess.Popen([self.sb3File])   # open the SB3 program
         
+    def keyFolderDict(self) -> dict:
+        return {'UserData':
+                    ['AnInp1', 'AnInp2', 'InputSwitches'
+                     , 'Loc_1', 'Loc_2', 'Loc_3'
+                     , 'OutPutSwitches', 'SpindleStatus','Status'
+                     , 'uAppPath'
+                     , 'uCommand', 'uCommandQ1', 'uMsgBoxCaption'
+                     , 'uMsgBoxMessage', 'uPartFileName', 'uResponse'
+                     , 'uSpindleStatus', 'uUsrPath', 'uValueClrd']
+            , 'Settings':
+                    ['Cheight', 'Cheight_prev', 'Cleft', 'Cleft_prev'
+                     , 'Ctop', 'Ctop_prev', 'Cwidth', 'Cwidth_prev'
+                     , 'DoneEASY', 'DoneWelcome', 'LAstConnected'
+                     , 'LAstRead', 'LastSoftwareLoaded', 'RegInteractionActive']
+            , 'Debug':
+                    ['Status01', 'Status02', 'Status03']}
+        
+    def getKeyFolder(self, value:str):
+        '''get the key folder, as a QueryValueEx, that holds the requested key'''
+        d0 = self.keyFolderDict()
+        for key,val in d0.items():
+            if value in val:
+                ks = f'{key}Key'
+                if not hasattr(self, ks):
+                    raise ValueError(f'Unexpected key requested: {ks}')
+                else:
+                    k = getattr(self, ks)
+                    return k
+        raise ValueError(f'Unexpected key requested: {value}')
+        
     def queryValue(self, value) -> Any:
-        '''try to get a value from a key located at self.aKey'''
+        '''try to get a value from a key located at self.UserDataKey'''
         if not self.connected:
             raise ValueError
-        
+        k = self.getKeyFolder(value)
         try:
-            val = winreg.QueryValueEx(self.aKey, value)
+            val = winreg.QueryValueEx(k, value)
         except FileNotFoundError:  
             # if we fail to get the registry key, we have no way of knowing 
             # if the print is over, so just stop it now
@@ -284,8 +336,7 @@ class SBKeys(QMutex):
         try:
             path,_ = self.queryValue('uAppPath')
         except ValueError:
-            return
-        
+            raise ValueError('Could not find SB3.exe path')        
         # found file
         self.sb3File = os.path.join(path, 'Sb3.exe')
         return
@@ -375,6 +426,45 @@ class SBKeys(QMutex):
             
         return xlist
     
+    def getLastRead(self) -> int:
+        '''get the line number of the last line read into the file'''
+        try:
+            c, _ = self.queryValue('LAstRead')
+        except ValueError:
+            return -1
+        self.lastRead = int(c)
+        self.signals.lastRead.emit(self.lastRead)
+        return self.lastRead
+    
+    def getListOfKeys(self, l:List[str]) -> dict:
+        '''probe the given list of keys and return a dictionary'''
+        d = {}
+        for command in l:
+            try:
+                c, _ = self.queryValue(command)
+            except ValueError:
+                pass
+            else:
+                d[command]=c
+        return d
+    
+    def printAllKeys(self) -> None:
+        '''print all of the registry keys available to us in Shopbot/UserData'''
+        d0 = self.keyFolderDict()
+        d = {}
+        for key,l in d0.items():
+            d = {**d, **self.getListOfKeys(l)}
+        print(d)
+        
+    def printChangingKeys(self) -> None:
+        '''print the registry keys that change during a print'''
+        self.ctr+=1
+        l = ['Loc_1', 'Loc_2', 'Loc_3', 'Status', 'OutPutSwitches', 'LAstRead'] 
+        d = self.getListOfKeys(l)
+        if self.ctr%100==0:
+            print('\t'.join(list(d.keys())))
+        print('\t'.join(list(d.values())))
+        
     
     def readMsg(self) -> None:
         '''read messages from the shopbot'''
