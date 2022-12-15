@@ -1,3 +1,5 @@
+#Written Fall 2022 for Montgomery College internship, B. Leigh Vining
+
 #!/usr/bin/env python
 '''Shopbot GUI functions for setting up the convert window'''
 
