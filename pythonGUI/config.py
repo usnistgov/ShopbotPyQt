@@ -49,23 +49,30 @@ def dumpConfigs(cfg, path:str) -> int:
         return 0
     
     
-def findConfigFile() -> str:
+def findConfigFile(default:bool=False) -> str:
     '''find the config file and return the path'''
     configdir = getConfigDir()
-    path = os.path.join(configdir,"config.yml")
-    if os.path.exists(path):
-        return path
+    if not default:
+        path = os.path.join(configdir,"config.yml")
+        if os.path.exists(path):
+            return path
     
     # config.yml does not exist: find default or template
     path2 = os.path.join(configdir, 'config_default.yml')
     if os.path.exists(path2):
-        shutil.copy2(path2, path)
-        return path
+        if not default:
+            shutil.copy2(path2, path)
+            return path
+        else:
+            return path2
     else:
         path2 = os.path.join(configdir, 'config_template.yml')
         if os.path.exists(path2):
-            shutil.copy2(path2, path)
-            return path
+            if not default:
+                shutil.copy2(path2, path)
+                return path
+            else:
+                return path2
             
     # no config_default or config_template either: find any file that looks like a config file
     llist = os.listdir(configdir)
@@ -87,10 +94,35 @@ def loadConfigFile(path:str) -> Box:
         else:
             cfg = Box(y)
         return cfg
+    
+def combineConfig(cfg:Box, cfgDefault:Box):
+    '''if there are any values in cfgDefault that aren't in cfg, bring them into cfg'''
+    for i,ival in cfgDefault.items():
+        if not i in cfg:
+            cfg[i] = ival
+        if type(ival) is Box:
+            # recurse
+            cfgvali = cfg[i]
+            for j,jval in ival.items():
+                if not j in cfgvali:
+                    cfg[i][j] = jval
+                if type(jval) is Box:
+                    # recurse
+                    cfgvalj = cfgvali[j]
+                    for k,kval in jval.items():
+                        if not k in cfgvalj:
+                            cfg[i][j][k] = kval
+    if 'appid' in cfgDefault and 'appid' in cfg:
+        cfg['appid']=cfgDefault['appid']
+    return cfg
 
 def loadConfig() -> Box:
     path = findConfigFile()
+    defaultpath = findConfigFile(default=True)
     cfg = loadConfigFile(path)
+    if not defaultpath==path:
+        cfgdefault = loadConfigFile(defaultpath)
+        cfg=combineConfig(cfg, cfgdefault)
     return cfg
 
         

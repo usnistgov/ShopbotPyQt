@@ -1,0 +1,119 @@
+<html>
+<head>
+  <link rel="stylesheet" href="user_guide.css">
+</head>
+<body>
+
+    
+
+<h1>Software</h1>
+    
+   <div class="header">
+        <p>Last updated Dec 15, 2022 by Leanne Friedrich, B. Leigh Vining<p>
+
+        <p><i>Certain commercial equipment, instruments, or materials are identified in this user guide in order to describe a specific device. Such identification is not intended to imply recommendation or endorsement by the National Institute of Standards and Technology, nor is it intended to imply that the materials or equipment identified are necessarily the best available for the purpose.</i></p>
+
+       <p> <a href="user_guide.html">Home</a><p>
+        <p> <a href="software.html">Software</a> || <a href='getting_started.html'>Getting started</a> || <a href="using_GUI.html">Using the GUI</a> || <a href="writing_SBP.html">Writing SBP files</a> 
+        </p>
+        <p>
+            <b><a href="hardware.html">Hardware</a></b> || <a href="parts_list.html">Parts list</a> || <a href="stage_assembly.html">Stage</a> || <a href="nozzle_assembly.html">Nozzle</a> || <a href="imaging_assembly.html">Imaging</a> || <a href="UV_assembly.html">UV curing</a> || <a href="enclosure.html">Enclosure</a>
+        </p>
+        
+        <hr>
+    </div>
+
+    
+    <h3>Writing SBP Files</h3>
+    <details>
+      <summary>
+          <span class="icon">▼</span><span class="open_text">Open</span><span class="close_text">Close</span>
+      </summary>
+        
+        <h4>Using output flags to control devices</h4>
+            <img src="img/shopbot_flags.png" alt="Flags within shobpot and their designated variables">
+
+            <li>The Shopbot Desktop has 12 output flags that this GUI can watch in order to trigger actions like turning on pressures or snapping images. Each flag can be assigned to a device such as a camera, a pressure channel, or the shopbot itself. In this image:</li>
+            <ul>
+                <li>Flags 1 and 2 are connected to pressure channels</li>
+                <li>Flags 3, 5, and 6 are connected to cameras</li>
+                <li>Flag 12 tells the GUI that the shopbot is running a file.</li>
+            </ul>
+
+            <li>To turn pressure on for a channel, insert a line into your .sbp file turning on the flag for that channel. For example, if your pressure channel is assigned to flag 1 (where the flags are 1-indexed), insert <span class="code">SO, 1, 1</span> when you want the pressure to turn on. When you want to turn the pressure off, insert <span class="code">SO, 1, 0</span>.</li>
+
+            <li>The shopbot allows for another mode where it is only taking pictures, not extruding fluid. If your camera is assigned to flag 3, insert <span class="code">SO, 3, 1</span> into your .sbp file when you want the camera to take a snapshot. It is useful to add a wait, to allow the GUI enough time to see that the flag has changed. To wait one second, add <span class="code">PAUSE 1</span> into your code. Then, turn the camera flag off, so it knows to start waiting for snapshot signals again, insert <span class="code">SO, 3, 0</span>. </li>
+            
+        <h4>Writing .sbp headers</h4>
+                
+        Here is an example of an .sbp file.
+        <span>
+            <pre>
+                VD , , 1
+                VU, 157.480315, 157.480315, -157.480315
+                SA
+                MH
+                MS, 40, 40
+                JS, 40, 40
+                VR,10.06, 10.06, , , 10.06, 10.06, , , 5.08, 5.08, 100, 3.81, 65, , , 5.08
+                SO, 12, 1
+                SO, 2, 1
+                SO, 2, 0
+                M3, 0, 0, 15.0
+                SO, 1, 1
+                'ink_speed_0=3.33
+                MS, 3.33, 3.33
+                M3, 0, 0, 15.0
+                SO, 1, 0
+                'ink_speed_0=25.0
+                MS, 25.0, 25.0
+                M3, 0, 0, 15.0
+                JS, 40, 40
+                J3, 3.861, -8.673, 0.3
+                J3, -8.804, -3.58
+                SO, 1, 1
+                'ink_speed_0=25.0
+                MS, 25.0, 25.0
+                M3, -8.804, -3.58, 0.3
+                SO, 1, 0
+                'ink_speed_0=5.0
+                MS, 5.0, 5.0
+                M3, -.156, 0.369, 12.7
+                MH
+                SA
+                SO, 12, 0
+            </pre>
+        </span>
+
+        <li>Lines 1 to 10 in this file are considered the header</li>
+        <ul>
+            <li>Each file must have the VD and VU commands placed first in the header. These commands designate Values for Display and Values for Values for Units. VU in simplicity tells the printer which way is up, with a negative Z value being considered positive/up.</li>
+            <li>Move speed (MS) and Jump speed (JS) must also be assigned values within the header</li>
+            <li>Then the values of ramp (VR) must be assigned</li>
+            <li>For lines 9 and 10 in the example, an unused flag is being turned on/off to activate the system. This is needed after shopbot has started the run to close a pop-up that opens because shopbot thinks a drill is attached.</li>
+            <li>'SO, 12, 1' is needed to actually start the shopbot. If it is not included, your file will never run.</li>
+            <li>The end of header is indicated by the closing of the pop-up that stalls the run, 'SO, 2, 0'</li>
+        </ul>
+        
+        
+        <li>Each command must have a comma separating each variable. 'M3 3, 5, 6' will not work because there is a missing comma between the M3 and 3.</li> 
+        <ul>
+            <li>If a command starts with an M, it is a move. So M3 moves to the designated X, Y, and Z coordinates.</li>
+            <li>If a command starts with a J, it is a jump. So J2 jumps to the designated X and Y coordinates</li>
+            <li>If a command starts with a V, it is a value setup.</li>
+            <li>MH is the command for move home, or where the stage is considered to be (0, 0, 0)</li>
+            <li>SA sets the file to be done in absolute distances/ absolute mode </li>
+        </ul>  
+        
+        
+        <li>Ink speed is a comment (started with ') to let you know the flow rate of the extrudant</li>
+        <ul>
+            <li>Ink speed lets you know what the speed of flow is at for the following moves.</li>
+        </ul>
+        
+    </details>
+    
+    <div style="height:100px"></div>
+    
+    
+    </body>
