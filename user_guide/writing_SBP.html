@@ -1,119 +1,174 @@
 <html>
 <head>
+    <title>Writing SBP Files</title>
   <link rel="stylesheet" href="user_guide.css">
 </head>
 <body>
 
+ <iframe src="header.html" class="headerframe"></iframe>   
+
+<h1>Writing SBP Files</h1>
     
+<h2>Notes</h2>
 
-<h1>Software</h1>
+<ul>
+    <li>Although the Shopbot control software SB3.exe accepts .gcode files, this GUI will not be able to coordinate with the Shopbot if the Shopbot is running a .gcode file. To enable coordination of Shopbot movements with other devices such as pressure controllers and cameras, and to allow the GUI to save metadata and print data during prints, convert .gcode files to .sbp files using the <i>convert</i> dialog. If you want to run a .gcode file without coordinating with the GUI, you can load it directly into the Shopbot control software whether or not the GUI is open.</li>
+    <li>Although you can use the Shopbot control software to generate .sbp files, the files lack some of the signals that you need to coordinate the Shopbot with the GUI. If you are writing your sbp files from scratch or using Shopbot's VCarve software, use this guide to write headers that are compatible with the GUI. If you want to run an .sbp file without coordinating with the GUI, you can load it directly into the Shopbot control software whether or not the GUI is open.</li>
+    <li>When the GUI runs a .sbp file, it creates a .csv of all of the points in the file, the pressure changes, and the ink speed changes. This .csv file will be saved to the same place as the .sbp file, which can reduce processing time if you run the same file repeatedly. The GUI steps through the points in the .csv file during the print to ensure that pressures are turned on and off at the correct time and to track changes in ink pressure. You can turn off this point tracking and only use flags to trigger changes in pressure by going into the Shopbot tab of settings and unchecking "SB3 timing error correction".</li>
+</ul>
+
+<h2>Using output flags to control devices</h2>
+
+    <img src="img/shopbot_flags.png" alt="A portion of the GUI window that shows the shopbot flag numbers and what devices they are assigned to.">
+
+    <li>The Shopbot Desktop has 12 output flags that this GUI can watch in order to trigger actions like turning on pressures or snapping images. Each flag can be assigned to a device such as a camera, a pressure channel, or the Shopbot itself. Note that these flags are 1-indexed in this window, in .sbp files, and on the Shopbot control software. In this image:</li>
+    <ul>
+        <li>Flags 1 and 2 are connected to pressure channels</li>
+        <li>Flags 3, 5, and 6 are connected to cameras</li>
+        <li>Flag 12 tells the GUI that the Shopbot is running a file.</li>
+    </ul>
+
+    <li>To turn pressure on for a channel, insert a line into your .sbp file turning on the flag for that channel. For example, if your pressure channel is assigned to flag 1 (where the flags are 1-indexed), insert <span class="code">SO, 1, 1</span> when you want the pressure to turn on. Insert <span class="code">SO, 1, 0</span> when you want to turn the pressure off.</li>
+
+    <li>The Shopbot allows for another mode where it is only taking pictures, not extruding fluid. If your camera is assigned to flag 3, insert <span class="code">SO, 3, 1</span> into your .sbp file when you want the camera to take a snapshot. It is useful to add a wait, to allow the GUI enough time to see that the flag has changed. To wait one second, add <span class="code">PAUSE 1</span> into your code. Then, turn the camera flag off, <span class="code">SO, 3, 0</span>, so it knows to start waiting for snapshot signals again. </li>
+
+<h2>Writing .sbp files</h2>
+
+Here is an example of an .sbp file.
+<pre class='code'>
+<code>&runFlag=12</code>
+<code>&pressureFlag=1</code>
+<code>&emptyFlag=7</code>
+<code>VD , , 1</code>
+<code>VU, 157.480315, 157.480315, -157.480315</code>
+<code>SA</code>
+<code>MH</code>
+<code>MS, 40, 40</code>
+<code>JS, 40, 40</code>
+<code>VR,10.06, 10.06, , , 10.06, 10.06, , , 5.08, 5.08, 100, 3.81, 65, , , 5.08</code>
+<code>SO, &runFlag, 1</code>
+<code>SO, &emptyFlag, 1</code>
+<code>SO, &emptyFlag, 0</code>
+<code>M3, 0, 0, 15.0</code>
+<code>SO, &pressureFlag, 1</code>
+<code>'ink_speed_0=3.33</code>
+<code>MS, 3.33, 3.33</code>
+<code>M3, 0, 0, 15.0</code>
+<code>SO, &pressureFlag, 0</code>
+<code>'ink_speed_0=25.0</code>
+<code>MS, 25.0, 25.0</code>
+<code>M3, 0, 0, 15.0</code>
+<code>JS, 40, 40</code>
+<code>J3, 3.861, -8.673, 0.3</code>
+<code>J3, -8.804, -3.58</code>
+<code>SO, &pressureFlag, 1</code>
+<code>'ink_speed_0=25.0</code>
+<code>MS, 25.0, 25.0</code>
+<code>M3, -8.804, -3.58, 0.3</code>
+<code>SO, &pressureFlag, 0</code>
+<code>MS, 5.0, 5.0</code>
+<code>M3, -.156, 0.369, 12.7</code>
+<code>SO, &runFlag, 0</code>
+</pre>
+
     
-   <div class="header">
-        <p>Last updated Dec 15, 2022 by Leanne Friedrich, B. Leigh Vining<p>
+<h3>Header</h3>
 
-        <p><i>Certain commercial equipment, instruments, or materials are identified in this user guide in order to describe a specific device. Such identification is not intended to imply recommendation or endorsement by the National Institute of Standards and Technology, nor is it intended to imply that the materials or equipment identified are necessarily the best available for the purpose.</i></p>
+The GUI reads lines in the file until it has found a line that starts with MS and hits a line that does not start with &, MS, JS, VD, VO, VR, VS, VU, VL, SA, or MH. It considers these top lines to be the header. Lines 1 to 10 in this file are read into the GUI as the header. The header lines can be placed in any order.
 
-       <p> <a href="user_guide.html">Home</a><p>
-        <p> <a href="software.html">Software</a> || <a href='getting_started.html'>Getting started</a> || <a href="using_GUI.html">Using the GUI</a> || <a href="writing_SBP.html">Writing SBP files</a> 
-        </p>
-        <p>
-            <b><a href="hardware.html">Hardware</a></b> || <a href="parts_list.html">Parts list</a> || <a href="stage_assembly.html">Stage</a> || <a href="nozzle_assembly.html">Nozzle</a> || <a href="imaging_assembly.html">Imaging</a> || <a href="UV_assembly.html">UV curing</a> || <a href="enclosure.html">Enclosure</a>
-        </p>
-        
-        <hr>
-    </div>
+<pre class='code'>
+<code>&runFlag=12</code>    *optional
+<code>&pressureFlag=1</code>   *optional
+<code>&emptyFlag=7</code>   *optional
+</pre>
 
+Lines starting with "&" are variable definitions. Here, we defined variables for the run flag, pressure flag, and an empty flag that we'll use to take care of the spindle warning. This makes it easier to update your .sbp file later if you change a flag definition. You can see these variables used later in the file, where we turn flags on and off.
+
+<pre class='code'>    
+<code>VD , , 1</code>  *required
+<code>VU, 157.480315, 157.480315, -157.480315</code>    *required
+<code>SA</code>      *required
+</pre>
     
-    <h3>Writing SBP Files</h3>
-    <details>
-      <summary>
-          <span class="icon">▼</span><span class="open_text">Open</span><span class="close_text">Close</span>
-      </summary>
-        
-        <h4>Using output flags to control devices</h4>
-            <img src="img/shopbot_flags.png" alt="Flags within shobpot and their designated variables">
-
-            <li>The Shopbot Desktop has 12 output flags that this GUI can watch in order to trigger actions like turning on pressures or snapping images. Each flag can be assigned to a device such as a camera, a pressure channel, or the shopbot itself. In this image:</li>
-            <ul>
-                <li>Flags 1 and 2 are connected to pressure channels</li>
-                <li>Flags 3, 5, and 6 are connected to cameras</li>
-                <li>Flag 12 tells the GUI that the shopbot is running a file.</li>
-            </ul>
-
-            <li>To turn pressure on for a channel, insert a line into your .sbp file turning on the flag for that channel. For example, if your pressure channel is assigned to flag 1 (where the flags are 1-indexed), insert <span class="code">SO, 1, 1</span> when you want the pressure to turn on. When you want to turn the pressure off, insert <span class="code">SO, 1, 0</span>.</li>
-
-            <li>The shopbot allows for another mode where it is only taking pictures, not extruding fluid. If your camera is assigned to flag 3, insert <span class="code">SO, 3, 1</span> into your .sbp file when you want the camera to take a snapshot. It is useful to add a wait, to allow the GUI enough time to see that the flag has changed. To wait one second, add <span class="code">PAUSE 1</span> into your code. Then, turn the camera flag off, so it knows to start waiting for snapshot signals again, insert <span class="code">SO, 3, 0</span>. </li>
-            
-        <h4>Writing .sbp headers</h4>
-                
-        Here is an example of an .sbp file.
-        <span>
-            <pre>
-                VD , , 1
-                VU, 157.480315, 157.480315, -157.480315
-                SA
-                MH
-                MS, 40, 40
-                JS, 40, 40
-                VR,10.06, 10.06, , , 10.06, 10.06, , , 5.08, 5.08, 100, 3.81, 65, , , 5.08
-                SO, 12, 1
-                SO, 2, 1
-                SO, 2, 0
-                M3, 0, 0, 15.0
-                SO, 1, 1
-                'ink_speed_0=3.33
-                MS, 3.33, 3.33
-                M3, 0, 0, 15.0
-                SO, 1, 0
-                'ink_speed_0=25.0
-                MS, 25.0, 25.0
-                M3, 0, 0, 15.0
-                JS, 40, 40
-                J3, 3.861, -8.673, 0.3
-                J3, -8.804, -3.58
-                SO, 1, 1
-                'ink_speed_0=25.0
-                MS, 25.0, 25.0
-                M3, -8.804, -3.58, 0.3
-                SO, 1, 0
-                'ink_speed_0=5.0
-                MS, 5.0, 5.0
-                M3, -.156, 0.369, 12.7
-                MH
-                SA
-                SO, 12, 0
-            </pre>
-        </span>
-
-        <li>Lines 1 to 10 in this file are considered the header</li>
-        <ul>
-            <li>Each file must have the VD and VU commands placed first in the header. These commands designate Values for Display and Values for Values for Units. VU in simplicity tells the printer which way is up, with a negative Z value being considered positive/up.</li>
-            <li>Move speed (MS) and Jump speed (JS) must also be assigned values within the header</li>
-            <li>Then the values of ramp (VR) must be assigned</li>
-            <li>For lines 9 and 10 in the example, an unused flag is being turned on/off to activate the system. This is needed after shopbot has started the run to close a pop-up that opens because shopbot thinks a drill is attached.</li>
-            <li>'SO, 12, 1' is needed to actually start the shopbot. If it is not included, your file will never run.</li>
-            <li>The end of header is indicated by the closing of the pop-up that stalls the run, 'SO, 2, 0'</li>
-        </ul>
-        
-        
-        <li>Each command must have a comma separating each variable. 'M3 3, 5, 6' will not work because there is a missing comma between the M3 and 3.</li> 
-        <ul>
-            <li>If a command starts with an M, it is a move. So M3 moves to the designated X, Y, and Z coordinates.</li>
-            <li>If a command starts with a J, it is a jump. So J2 jumps to the designated X and Y coordinates</li>
-            <li>If a command starts with a V, it is a value setup.</li>
-            <li>MH is the command for move home, or where the stage is considered to be (0, 0, 0)</li>
-            <li>SA sets the file to be done in absolute distances/ absolute mode </li>
-        </ul>  
-        
-        
-        <li>Ink speed is a comment (started with ') to let you know the flow rate of the extrudant</li>
-        <ul>
-            <li>Ink speed lets you know what the speed of flow is at for the following moves.</li>
-        </ul>
-        
-    </details>
+These three lines are required. If you do not include these lines, the Shopbot will adopt whatever setting the last user was using.
+<ul>    
+    <li><span class="code">VD</span> sets the display units to mm. This GUI has been developed to work only in mm and will mislabel your data if you try to run it in inches.</li>
+    <li><span class="code">VU</span> tells the Shopbot that the numbers in this file are in mm. The negative Z value indicates that negative values pull the stage up towards the nozzle. If you are printing with a moving nozzle and want it to move down for negative Z values, use <span class="code">VU, 157.480315, 157.480315, 157.480315</span>.</li>
+    <li><span class="code">SA</span> tells the Shopbot that the numbers in this file are absolute measurements. This GUI assumes that all values are absolute. If you use relative values, do not run your .sbp file through the GUI. (An absolute movement of M3,1,2,3 goes to X=1, Y=2, Z=3. A relative movement of M3,1,2,3 goes 1 unit to the left in X, 2 units forward in Y, and 3 units up in Z.) </li>
+</ul>
     
-    <div style="height:100px"></div>
+<pre class='code'>    
+<code>MH</code>      *optional
+</pre>   
     
+    <span class="code">MH</span> moves the nozzle home. Many gcode files start with a move home, so the conversion program will often put this line into the header. Do not include this line unless you want the nozzle to move home.
     
-    </body>
+<pre class='code'>   
+<code>MS, 40, 40</code>  *required
+<code>JS, 40, 40</code>  *required
+</pre>
+    
+    <span class="code">MS</span> and <span class="code">JS</span> set the move and jump speeds, respectively. <b>These lines must contain 2 values</b>, the first for XY speed and the second for Z speed. If you only list one number, you will only change the XY speed. If you never set the speeds in this file, the Shopbot will adopt whatever setting the last user was using.
+
+<pre class='code'>     
+<code>VR,10.06, 10.06, , , 10.06, 10.06, , , 5.08, 5.08, 100, 3.81, 65, , , 5.08</code>  *required
+</pre>
+    
+    <span class="code">VR</span> sets the ramp values. See the <a href="https://www.shopbottools.com/ShopBotDocs/files/ComRef.pdf">Shopbot command reference </a> for more information on ramps.
+    
+<h3>Printer preparation</h3>
+    
+The next few lines prepare the software for printing.
+    
+<pre class='code'>
+<code>SO, &runFlag, 1</code>  *required
+</pre>
+    
+This <span class="code">SO</span> line turns the run flag on. You can also use the actual value of the run flag, e.g. <span class="code">SO, 12, 1</span>, if you prefer not to use variables. This tells the GUI that we're printing something.
+    
+<pre class='code'>
+<code>SO, &emptyFlag, 1</code>   *recommended
+<code>SO, &emptyFlag, 0</code>   *recommended
+</pre>
+    
+These <span class="code">SO</span> lines take a flag that is not assigned to any devices, and they turn the flag on and off. The first time the shopbot turns on one of these flags, the control software opens a warning dialog telling us that the spindle is about to start. Because we do not have a spindle, we don't need this warning. By turning this empty flag on and off, we trigger the spindle warning before we start printing, and the GUI catches that warning and closes it. If you do not include this line, the spindle warning will trigger on the first flag that's turned on in your file, which could cause poor coordination between the Shopbot and the pressure lines.
+    
+<h3>Body</h3>
+    
+This section includes the actual printing process.
+    
+<pre class='code'>
+<code>M3, 0, 0, 15.0</code> 
+</pre>
+    
+    <span class="code">M3</span> tells the Shopbot to move in 3 dimensions. 
+    <li>Each command must have a comma separating each variable. 'M3 3, 5, 6' will not work because there is a missing comma between the M3 and 3.</li> 
+    <ul>
+        <li>If a command starts with an M, it is a move. M3 moves to the designated X, Y, and Z coordinates.</li>
+        <li>If a command starts with a J, it is a jump. J2 jumps to the designated X and Y coordinates</li>
+        <li>The only difference between a jump and a move is speed.</li>
+    </ul>  
+    
+<pre class="code">
+<code>SO, &pressureFlag, 1</code>
+</pre>
+    
+    This <span class="code">SO</span> line tells the Shopbot software to turn on the pressure flag that we defined in the header. The GUI will read that flag and use it as an indication to turn the pressure on for the channel that is assigned to that flag.
+    
+<pre class="code">
+<code>'ink_speed_0=3.33</code>
+</pre>
+    
+Any line that starts with a ' is a comment. The Shopbot will not do anything with this line. However, when the GUI hits this point, it will change the ink run pressure for channel 0 to correspond to this speed <b>in mm/s</b>. Note that this does not turn the pressure on and off. If the pressure is off, this will only change the pressure that the channel goes to when it's turned on next. If the pressure is on, this will change the pressure. Pressure calibration must be performed or loaded in the calibration window of the GUI for this channel before printing. If no values are present, the pressure will be set to 0. 
+    
+<h3>Footer</h3>
+<pre class="code">
+<code>SO, &runFlag, 0</code>  *optional
+</pre>
+
+This <span class="code">SO</span> line turns the run flag off. The GUI will usually stop recording values before this flag turns off. If we've set the origin at the top of the bath, and we have points inside the bath, then the GUI will stop recording after we've started printing, when the nozzle is 2 mm above the highest point in the point list that is in the bath. This prevents us from recording wasteful video of the nozzle moving out of the bath after it's done printing. If all points have positive Z values, the GUI will stop recording when we hit the last point. 
+
+<iframe src="footer.html" class="footerframe"></iframe>
+
+</body>
+</html>

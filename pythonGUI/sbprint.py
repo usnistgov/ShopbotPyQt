@@ -412,7 +412,11 @@ class printLoop(QObject):
         self.points = sp
         self.pointsi = -1
         self.printi = -1
-        self.zmax = self.points[self.points.z<=0].z.max() + 2
+        negpoints = self.points[self.points.z<=0]
+        if len(negpoints)>0:
+            self.zmax = negpoints.z.max() + 2
+        else:
+            self.zmax = self.points.z.max()
         self.fillTable()    # fill empty entries with current position
         self.decideIfSimple()
 

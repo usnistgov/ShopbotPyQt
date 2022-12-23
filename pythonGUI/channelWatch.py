@@ -156,6 +156,9 @@ class channelWatch(QObject):
     def updateSpeed(self, speed:float) -> None:
         '''send new extrusion speed to fluigent'''
         self.signals.updateSpeed.emit(speed)
+        if self.on:
+            # if pressure is on, go to that pressure
+            self.signals.goToPressure.emit(1)
         
     def defineState(self, targetPoint:pd.Series, nextPoint:pd.Series, lastPoint:pd.Series) -> None:
         '''determine when to turn on, turn off'''

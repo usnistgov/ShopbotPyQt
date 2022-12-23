@@ -10,9 +10,10 @@ To view the user guide in browser, visit https://htmlpreview.github.io/?https://
     - Leanne.Friedrich@nist.gov
     - https://github.com/leanfried
     - ORCID: 0000-0002-0382-3980
-- Jonathan E. Seppala
+- B. Leigh Vining
+    - Montgomery College
     - National Institute of Standards and Technology, MML
-    - ORCID: 0000-0002-5937-8716
+    - /https://github.com/bilevi
 
 ## Contact
 - Leanne Friedrich
@@ -37,45 +38,39 @@ The GUI contains boxes for the following functions:
 4. Preview, record, and snap frames for two webcams using OpenCV (https://pypi.org/project/opencv-python/)
 5. Control Fluigent pressure controller with a variable number of channels. Includes a running display of the pressures coming out of each channel. Repo includes files for Fluigent SDK (https://github.com/Fluigent/fgt-SDK)
 
-This GUI enables the user to coordinate Fluigent, Shopbot, and camera functions. For example, if you want to turn on the first Fluigent channel at some point in the print, insert a line into the .sbp file: 'SO, 1, 1'. To turn off the channel, insert 'SO, 1, 0'. To turn on channel 2, insert 'SO, 2, 1'. The GUI will watch for those signals and automatically turn the pressure on and off during printing. 
+This GUI enables the user to coordinate Fluigent, Shopbot, and camera functions. This build is written specifically for Windows. To run this code on another OS, you will need to make changes to flags.py and general.py, at the very least. Coordinating the Shopbot with the cameras and Fluigent relies on the output flags that you can see in the Sb3 software. These flags are stored as windows registry keys, usually held in 'Software\\VB and VBA Program Settings\\Shopbot\\UserData'. This is designed for a Shopbot with 12 output flags, a Fluigent with two channels, and three cameras. 
 
-If you want to record videos during a print, use the appropriate checkboxes in the camera sections. Cameras will automatically start recording when the first pressure channel is turned on and stop recording when the last pressure channel is turned off. Alternatively, if you don't use the pressure channels at all, the cameras will start and end when the Shopbot starts and stops running the file. 
-
-This build is written specifically for Windows. To switch to a different OS, you will at the very least need to modify the functions sbBox.connectKeys() and sbBox.getSBFlag(), where python querying a specific windows registry key that allows the GUI to talk to the Shopbot software.
-
-Coordinating the shopbot with the cameras and Fluigent relies on the output flags that you can see in the Sb3 software. These flags are stored as windows registry keys, usually held in 'Software\\VB and VBA Program Settings\\Shopbot\\UserData'. This is designed for a shopbot with four output flags, a Fluigent with two channels, and three cameras. 
-
-When the shopbot runs a program that sets the output flags, it first turns on output flag 4 (1-indexed). Then, it asks the user to let it turn on the spindle. (You should say yes.) This python GUI will watch those output flags for commands. If flag 3 (1-indexed) is turned on, the checked cameras will take a picture. If flag 1 is turned on, Fluigent channel 1 (1-indexed) will turn on to whatever is inserted into "Run Pressure". If there is a second channel, flag 2 will turn on Fluigent channel 2. When the shopbot is done with the whole file, it will turn off all output flags, and the python GUI will take that as a sign that it is time to stop recording.
-
+For instructions on interacting with the GUI, see the user_guide folder in this repo, or https://htmlpreview.github.io/?https://github.com/usnistgov/ShopbotPyQt/blob/main/user_guide/index.html.
 
 
 ## Data Use Notes
-
 
 This code is publicly available according to the NIST statements of copyright,
 fair use and licensing; see 
 https://www.nist.gov/director/copyright-fair-use-and-licensing-statements-srd-data-and-software
 
 You may cite the use of this code as follows:
-> Friedrich, L., & Seppala, J.E. (2022), ShopbotPyQt, Version 1.0.4, National Institute of Standards and Technology (Accessed XXXX-XX-XX)
+> Friedrich, L., & Vining, B.L. (2022), ShopbotPyQt, Version XXX, National Institute of Standards and Technology (Accessed XXXX-XX-XX)
 
 
 ## File Overview
 
 
-- *README.md*
+- `README.md`
 
-- *LICENSE*
+- `LICENSE`
+
+- `requirements.txt`
 
 - **pythonGUI**
     Python files for the GUI
     
     - **configs**
         - `config.yml`
-            Define settings that are saved from session to session, like file locations, camera frame rate, etc.
+            Define settings that are saved from session to session, like file locations, camera frame rate, etc. This should be unique to your computer, not updated from the main Github repo. To save time, you may want to copy config_default.yml to config.yml on the first run and update file paths and variables as needed.
             
         - `config_default.yml`
-            Default settings. This file is copied to `config.yml` if there is no `config.yml` file. Note: here, you can assign Shopbot output flags to each device in your GUI. These flags are 1-indexed, to match the Shopbot nomenclature. 
+            Default settings. This file is copied to `config.yml` if there is no `config.yml` file.
             
         - `densities.yml`
             List of saved densities for saved fluids. 
@@ -86,51 +81,90 @@ You may cite the use of this code as follows:
     - **icons**
         Images used in the GUI
         
+    - **pypylon**
+        This is the Pylon SDK for Python, which allows the GUI to talk to Basler cameras.
+        
+    - **testResults**
+        This holds results from performance tests.
+        
+    - **tests**
+        This holds stripped-down versions of the GUI for testing the GUI one piece at a time.
+        
     - `\__init\__.py`
         Metadata about this repo
+        
+    - `calibration.py`
+        Window for calibrating ink speeds against ink pressures.
+        
+    - `cam_bascam.py`
+        Communicate with Basler cameras.
+        
+    - `cam_webcam.py`
+        Communicate with webcams.
+        
+    - `cameras.py`
+        Set up GUI elements for cameras.
+        
+    - `camObj.py`
+        Set up general functions for cameras.
+        
+    - `camThreads.py`
+        Set up external threading for camera recording and previewing
+        
+    - `channelWatch.py`
+        Set up external threading for watching changes to pressures during printing.
 
     - `config.py`
         Import saved settings
         
-    -  'convert.py'
+    -  `convert.py`
         Functions for converting a .gcode file to .sbp format.
         
-    - `pypylon-1.7.4rc1-cp38-cp38-win_amd64.whl`
-        Wheel for pypylon version that this GUI was developed on.
+    - `files.py`
+        File handling
+        
+    - `flags.py`
+        Interacting with Shopbot flags and windows registry keys
+        
+    - `fluigent.py`
+        Interacting with the Fluigent pressure controller
+        
+    - `fluThreads.py`
+        Set up external threading for the live pressure graph in the GUI
+        
+    - `general.py`
+        Tools used across the GUI. Shortcuts for creating GUI elements.
+        
+    - `layout.py`
+        Set up the overall layout of the GUI
+        
+    - `log.py`
+        Log messages created by the GUI
 
     - `sbgui.py`
         The main module for the GUI. Run this to launch the GUI.
         
-    - `sbgui_calibration.py`
-        Functions for calibrating flow rates
-
-    - `sbgui_cameras.py`
-        Functions for controlling the cameras
-
-    - `sbgui_files.py`
-        Functions for file handling
-
-    - `sbgui_fluigent.py`
-        Functions for controlling the Fluigent
-
-    - `sbgui_general.py`
-        Functions for setting up common layout elements
-
-    - `sbgui_layout.py`
-        Functions for establishing the overall layout of the GUI
+    - `sbList.py`
+        Tools for the .sbp file queue and run buttons
         
-    - `sbgui_print.py`
-        Functions for controlling cameras and Fluigent during the print. This corrects for the timing errors in SB3.exe
-
-    - `sbgui_shopbot.py`
-        Functions for controlling the shopbot.
+    - `sbpConvert.py`
+        Tools for converting text values to numerical values in .sbp files
+        
+    - `sbpRead.py`
+        Tools for converting .sbp files to .csv lists of points
+        
+    - `sbprint.py`
+        Loop that runs during a print
+        
+    - `settings.py`
+        Sets up the settings window
+        
+    - `shopbot.py`
+        Sets up the shopbot portion of the GUI.
 
 
 - **SBP files**
-    The Shopbot control software is Sb3, which can take .gcode or .sbp files as inputs. We have chosen to use .sbp files for their ease of use and compatibility with Shopbot accessories. More info about .sbp files can be found here: https://www.shopbottools.com/ShopBotDocs/files/ComRef.pdf and here: https://www.shopbottools.com/ShopBotDocs/files/SBG00314150707ProgHandWin.pdf
-
-    - *sbpConvert.py*
-        Tools for converting text values to numerical values in .sbp files
+    The Shopbot control software is Sb3, which can take .gcode or .sbp files as inputs. We have chosen to use a custom format for .sbp files for their ease of use and compatibility with Shopbot accessories. More info about .sbp files can be found here: https://www.shopbottools.com/ShopBotDocs/files/ComRef.pdf and here: https://www.shopbottools.com/ShopBotDocs/files/SBG00314150707ProgHandWin.pdf
         
     - *sbpcreator_programmatic.ipynb*
         (Under development) Jupyter notebook for generating sbp files composed of loops
@@ -144,22 +178,19 @@ You may cite the use of this code as follows:
     - *sbpcreator.py*
         Functions for generating sbp files containing simple shapes: zigzags, vertical lines, etc. It also programs in output flag handling, which lets the Shopbot tell the GUI when to change the Fluigent pressure, start/stop videos, and capture images. 
         
-    - *sbpRead.py*
-        Functions for reading .sbp files and converting them to tables of values
-        
     - **Folders**
     
         - *XXXX.LOG*
             A log file that describes what happened the last time you ran XXXX.sbp
 
         - *XXXX.sbp* 
-            A shopbot input file.
+            A Shopbot input file.
 
         - *XXXX.csv* 
             A table of points and pressure indicators that ShopbotPyQt uses to time changes in state.
             
         - *XXXXList.txt*
-            A list of files in this folder and breakpoints to load into the GUI all at once.
+            A list of files in this folder and breakpoints that lets us load many files into the GUI all at once.
             
             
             

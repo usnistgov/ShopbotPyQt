@@ -15,10 +15,6 @@ from sbpConvert import *
 
 #-----------------------------------------------------
 
-
-    
-
-
 class SBPHeader:
     '''read header data from the current shopbot file and return an object'''
     
@@ -179,10 +175,19 @@ class SBPHeader:
             self.readVL(l)
         elif l.startswith('SA') or l.startswith('MH'):
             return True
+        elif l.startswith('\''):
+            return True
         
         else:
-            return False
+            # line is not an expected header line
+            if not hasattr(self, 'speed_move_xy'):
+                # keep reading if we haven't defined a move speed
+                return True
+            else:
+                # stop reading
+                return False
 
+        # keep reading
         return True
     
     #------
@@ -255,7 +260,7 @@ class SBPPoints:
         if hasattr(self.header, 'speed_jog_xy'):
             self.js = self.header.speed_jog_xy
         else:
-            self.js = 40
+            self.js = np.nan
         self.file = file
         self.channels = channelsTriggered(file)
         self.cp = ['','','']
