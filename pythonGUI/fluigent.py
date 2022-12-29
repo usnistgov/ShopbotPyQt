@@ -342,10 +342,12 @@ class fluSettingsBox(QWidget):
     def __init__(self, fluBox:connectBox):
         '''parent is the connectBox that this settings dialog belongs to.'''
         
-        super().__init__(fluBox)  
+        super().__init__(fluBox) 
+
         self.fluBox = fluBox
         
         layout = QVBoxLayout()
+    
         
         self.savePressureCheck = fCheckBox(layout, title='Save pressure graph during print'
                                            , checked=fluBox.savePressure
@@ -514,8 +516,7 @@ class fluSettingsBox(QWidget):
             self.fluBox.pchannels[chanNum0].flag1 = newflag1
             self.fluBox.sbWin.flagBox.labelFlags()
             self.fluBox.updateStatus(f'Changing flag of channel {chanNum0} to {newflag1}', True)
-            
-        
+
         
 #--------------------------------------
 
