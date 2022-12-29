@@ -44,6 +44,7 @@ class windowFinder:
                 
     def getChildText(self, hwnd, param):
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         print(hex(hwnd))
         title = win32gui.GetWindowText(hwnd)
         
@@ -55,20 +56,34 @@ class windowFinder:
         
         title = win32gui.GetWindowText(hwnd)
         
+=======
+        
+        title = win32gui.GetWindowText(hwnd)
+        
+>>>>>>> Stashed changes
         t2 = self.getText(hwnd, diag=True)
         print(t2)
         print(f'{title}:{hex(hwnd)}')
         if len(title)>0:
             self.child_handles[hwnd]=title
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
         
     def getText(self, hnd, diag:bool=False):
         if hnd>0:
             buf = win32gui.PyMakeBuffer(255)
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
             length = win32gui.SendMessage(btnHnd, win32con.WM_GETTEXT, 255, buf)
             result = buf[0:length*2]
             text = bytes(result)
+=======
+            length = win32gui.SendMessage(hnd, win32con.WM_GETTEXT, 255, buf)
+            result = buf[0:length*2]
+            text = result.tobytes().replace(b'\x00', b'').decode('utf-8')
+>>>>>>> Stashed changes
 =======
             length = win32gui.SendMessage(hnd, win32con.WM_GETTEXT, 255, buf)
             result = buf[0:length*2]
@@ -84,6 +99,10 @@ class windowFinder:
             self.child_handles = {}
             # win32gui.EnumChildWindows(self.window, lambda hwnd,ctx:self.getChildText(hwnd,ctx), None)
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+            print('window:', hex(self.window))
+>>>>>>> Stashed changes
 =======
             print('window:', hex(self.window))
 >>>>>>> Stashed changes
@@ -95,6 +114,7 @@ class windowFinder:
             win32gui.EnumChildWindows(btnHnd, lambda hwnd,ctx:self.getChildText(hwnd,ctx), None)
             
             # # find text box
+<<<<<<< Updated upstream
             # boxHnd= win32gui.FindWindowEx(btnHnd, 1 , "ThunderRT6UserControlDC", "")
             # print(hex(boxHnd))
 =======
@@ -104,6 +124,10 @@ class windowFinder:
             boxHnd1= win32gui.FindWindowEx(btnHnd, 0 , "ThunderRT6UserControlDC", "")
             boxHnd= win32gui.FindWindowEx(btnHnd, boxHnd1 , "ThunderRT6UserControlDC", "")
             print('box:', hex(boxHnd))
+>>>>>>> Stashed changes
+=======
+            # boxHnd= win32gui.FindWindowEx(btnHnd, 0 , None, "")
+            # print('box:', hex(boxHnd))
 >>>>>>> Stashed changes
             
             
