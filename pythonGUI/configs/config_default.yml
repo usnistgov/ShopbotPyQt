@@ -5,9 +5,10 @@ camera:
     checked: false
     diag: 1
     flag1: 3
-    fps: 30
+    fps: 120
     name: Basler camera
     previewFPS: 15
+    recFPS: 30
     type: bascam
   cam1:
     checked: false
@@ -16,6 +17,7 @@ camera:
     fps: 15
     name: Nozzle camera
     previewFPS: 15
+    recFPS: 15
     type: webcam
   cam2:
     checked: false
@@ -24,6 +26,7 @@ camera:
     fps: 15
     name: Webcam 2
     previewFPS: 15
+    recFPS: 15
     type: webcam
 convert:
   addToQueue: true

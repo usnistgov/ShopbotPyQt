@@ -32,7 +32,7 @@ class SBPHeader:
                 l = f.readline()
                 self.hrows+=1
                 cont = self.readLine(l)
-            self.hrows-=1
+            # self.hrows-=1
                 
     def readToDict(self, spl:List[str], idict:dict) -> dict:
         '''given a dictionary of indices and names, read values into the dictionary'''
@@ -252,7 +252,7 @@ class SBPPoints:
         if not file.endswith('.sbp'):
             raise ValueError('Input to SBPPoints must be an SBP file')
         self.header = SBPHeader(file)  # scrape variables
-        self.line = 0
+        self.line = 0 
         if hasattr(self.header, 'speed_move_xy'):
             self.ms = self.header.speed_move_xy 
         else:
@@ -278,15 +278,14 @@ class SBPPoints:
         # read the header into the dictionary
         with open(self.file, mode='r') as f:
             for i in range(self.header.hrows):
-                f.readline()
                 self.line+=1
-            l = f.readline()
-            self.line+=1
+                l = f.readline()
             while len(l)>0:
                 self.readLine(l)    # interpret the line
                 self.lastLine = l   # store the line
-                l = f.readline()    # get a new line
                 self.line+=1
+                l = f.readline()    # get a new line
+                
                 
                 
     def floatSC(self, vi:Union[str, float]) -> float:

@@ -59,12 +59,19 @@ class camSettingsBox(QWidget):
                                 , width=w)
 
         fpsRow = QHBoxLayout()
-        self.fpsBox = fLineCommand(layout=fpsRow, text=str(self.camObj.fps), func = self.updateVars, width=w)
+        self.fpsBox = fLineCommand(layout=fpsRow, text=str(self.camObj.fps), func = self.updateVars, width=w
+                                  , tooltip='How many frames are collected per second')
         self.fpsAutoButt = fButton(fpsRow, title='Auto', func=self.fpsAuto, width=w)
-        form.addRow('Frame rate (fps)', fpsRow)
+        form.addRow('Collection frame rate (fps)', fpsRow)
+        
+        recfpsRow = QHBoxLayout()
+        self.recfpsBox = fLineCommand(layout=recfpsRow, text=str(self.camObj.recFPS), func=self.updateVars, width=w
+                                         , tooltip='Frame rate for saved videos. Downsamples if less than fps')
+        form.addRow('Export frame rate (fps)', recfpsRow)
         
         pfpsRow = QHBoxLayout()
-        self.pfpsBox = fLineCommand(layout=pfpsRow, text=str(self.camObj.previewFPS), func=self.updateVars, width=w)
+        self.pfpsBox = fLineCommand(layout=pfpsRow, text=str(self.camObj.previewFPS), func=self.updateVars, width=w
+                                   , tooltip='How many times per second the display is updated')
         form.addRow('Preview frame rate (fps)', pfpsRow)
         
         exposureRow = QHBoxLayout()
@@ -135,19 +142,52 @@ class camSettingsBox(QWidget):
         '''Log the change in fps'''
         if self.camObj.diag>0:
             self.camObj.updateStatus(f'Changed preview frame rate to {self.camObj.previewFPS} fps', True)
+            
+    def recfpsStatus(self):
+        '''Log the change in recording fps'''
+        if self.camObj.diag>0:
+            self.camObj.updateStatus(f'Changed export frame rate to {self.camObj.recFPS} fps', True)
         
     def updateFPS(self):
         '''Update the frame rate used by the GUI to the given frame rate'''
-        out = self.camObj.setPFrameRate(float(self.pfpsBox.text()))   # update preview fps
-        if out==0:
-            self.pfpsStatus()
+        
+        # preview
+        pfps = float(self.pfpsBox.text())
+        if pfps>self.camObj.fps:
+            logging.warning('Preview frame rate must be less than or equal to collection frame rate')
+            self.pfpsBox.setText(str(self.camObj.previewFPS))
+        else:
+            out = self.camObj.setPFrameRate(pfps)   # update preview fps
+            if out==0:
+                self.pfpsStatus()
+                
+        # collection
         out = self.camObj.setFrameRate(float(self.fpsBox.text())) # update fps
         if out==0:
             self.fpsStatus()
             
-    def resetFPS(self, fps:int):
+        # recording
+        recFPS = float(self.recfpsBox.text())
+        if recFPS>self.camObj.fps:
+            logging.warning('Recording frame rate must be less than or equal to collection frame rate')
+            self.recfpsBox.setText(str(self.camObj.recFPS))
+        else:
+            recFPS2 = self.camObj.fps/max(np.ceil(self.camObj.fps/recFPS),1)
+            if not recFPS2==recFPS:
+                logging.info(f'FPS must be divisible by recording fps. Changing recording fps to {recFPS2}')
+                self.recfpsBox.setText(str(recFPS2))
+            out = self.camObj.setRecFrameRate(recFPS2) # update fps
+            if out==0:
+                self.fpsStatus()
+            
+    def resetFPS(self, fps:float):
         '''reset the displayed frame rate to the given frame rate'''
         self.fpsBox.setText(str(fps))
+        
+    def resetRecFPS(self, recFPS:float):
+        '''reset the displayed frame rate to the given frame rate'''
+        self.recfpsBox.setText(str(recFPS))
+        
             
     def fpsAuto(self):
         '''Automatically adjust the frame rate to the frame rate of the camera'''
@@ -211,6 +251,9 @@ class cameraBox(connectBox):
         
     def resetFPS(self, fps:int):
         self.settingsBox.resetFPS(fps)
+        
+    def resetRecFPS(self, fps:int):
+        self.settingsBox.resetRecFPS(fps)
 
     
     def connect(self) -> None:

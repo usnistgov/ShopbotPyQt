@@ -274,6 +274,8 @@ class printLoop(QObject):
         self.runSimple = False
         self.printStarted = False
         self.hitRead = False
+        self.forced = False
+        self.waitingForLastRead = False
         self.lastRead = 0 # last line read 
         self.targetPoint = {}
         self.nextPoint = {}
@@ -331,7 +333,7 @@ class printLoop(QObject):
                     cw.signals.finished.connect(camBox.resetCheck)  # reset the checkbox when done
                     cw.signals.snap.connect(camBox.cameraPic)   # connect signal to snap function
        
-        self.pointTime = datetime.datetime.now()
+        self.resetPointTime()
         self.changePoint = self.readLoc
         if len(self.points)>1:  
             on = False
@@ -443,18 +445,23 @@ class printLoop(QObject):
             if targetPoint[f'p{flag0}_before']<0 and targetPoint[f'p{flag0}_after']>0:
                 # change speed
                 cw.updateSpeed(float(targetPoint[f'p{flag0}_after']))
+                
+
+        
+            
            
     @pyqtSlot()
     def readPoint(self) -> None:
         '''read the next point from the points list'''
         if self.pointsi>0 and self.lastRead>0 and self.points.iloc[self.pointsi]['line']>self.lastRead:
             # don't read the point if we're ahead of the file
+            self.waitingForLastRead = True
             return
         self.lastTime = self.pointTime    # store the time when we got the last point
-        self.pointTime = datetime.datetime.now()
         self.changePoint = self.readLoc
         self.timeTaken = False
         self.hitRead = False
+        self.waitingForLastRead = False
         self.pointsi+=1
         self.printi+=1
         if self.pointsi>=0 and self.pointsi<len(self.points):
@@ -574,6 +581,7 @@ class printLoop(QObject):
                 pt = toXYZ(self.lastPoint, listOut=True)
                 vec = self.targetVec
                 distTraveled = self.speed*dt # distance traveled since we hit the last point
+                # print(f'{self.pointTime}\t{dnow}\t{self.speed}\t{dt:2.3f}\t{distTraveled:2.3f}')
                 self.estLoc = [pt[i]+distTraveled*vec[i] for i in range(3)]  # estimated position
         self.signals.estimate.emit(self.estLoc[0], self.estLoc[1], self.estLoc[2])
         
@@ -676,6 +684,7 @@ class printLoop(QObject):
     
     def evalAngle(self, d:dict) -> Tuple[bool, float]:
         '''evaluate whether the angle of travel agrees with the intended angle of travel'''
+
         if self.timeTaken and not 2 in self.modes:
             # determine if we've changed direction. don't do this for camera runs or if we haven't started moving yet
             readStepDist = ppDist(self.oldReadLoc, self.readLoc)   # distance traveled between this step and last step
@@ -687,13 +696,20 @@ class printLoop(QObject):
                 angle = 0
         else:
             angle = 0
+            
+        return False, angle
+            
+#         for flag0, cw in self.channelWatches.items():
+#             # do not force if there are any channels on
+#             if cw.on:
+#                 return False, angle
 
-        if angle>np.pi/4 and self.hitRead:
-            # we've changed directions and already hit the read point
-            return True, angle
-        else:
-            # we've changed directions to the new direction
-            return (angle>np.pi/4 and angle<np.pi*3/4 and nextAngle<np.pi/16), angle
+#         if angle>np.pi/4 and self.hitRead:
+#             # we've changed directions and already hit the read point
+#             return True, angle
+#         else:
+#             # we've changed directions to the new direction
+#             return (angle>np.pi/4 and angle<np.pi*3/4 and nextAngle<np.pi/16), angle
     
     def checkHitRead(self, d:dict):
         '''check if the read point has hit the target point'''
@@ -701,20 +717,25 @@ class printLoop(QObject):
             if d['trd']<self.zeroDist or d['lrd']+d['trd'] > d['tld']+self.zeroDist:
                 self.hitRead = True    # indicate we've hit the read point and are ready to move on
                 
+    def resetPointTime(self):
+        '''reset the time of the start of the last move'''
+        self.pointTime = datetime.datetime.now()-datetime.timedelta(seconds=self.dt/1000)
+        # print('new point time', self.pointTime)
+                
     def checkTimeTaken(self, d:dict):
         '''check if the time has started to write estimate points'''
         if not self.timeTaken and d['lrd']>self.zeroDist:
             # reset the time when the stage actually starts moving
-            self.pointTime = datetime.datetime.now()
+            self.resetPointTime()
             self.timeTaken = True
             
     def checkEstimate(self, d:dict, diagStr:str) -> str:
         '''check if the estimate position is at the right speed'''
-        if d['led']>d['lrd'] and self.speed>0.8*self.speed0:
-            # estimate has gone past read point: slow down estimate
-            self.speed = 0.95*self.speed  
-            if self.diag>2:
-                diagStr = diagStr + f' Reduce speed to {self.speed:2.2f}'
+        # if d['led']>d['lrd'] and self.speed>0.8*self.speed0:
+        #     # estimate has gone past read point: slow down estimate
+        #     self.speed = 0.95*self.speed  
+        #     if self.diag>2:
+        #         diagStr = diagStr + f' Reduce speed to {self.speed:2.2f}'
         return diagStr
 
     def evalState(self) -> bool:
@@ -741,11 +762,14 @@ class printLoop(QObject):
         
             readyForNextPoint = {}
             ready = False
+            force = False
             force, angle = self.evalAngle(d)
             if force:
                 ready = True
+                self.resetPointTime()
                 for flag0 in self.channelWatches:
                     readyForNextPoint[flag0] = False
+                self.forced = True
             else:
                 # still going in the same direction
                 for flag0, cw in self.channelWatches.items():
@@ -753,14 +777,19 @@ class printLoop(QObject):
                     readyForNextPoint[flag0] = cw.assessPosition(d, self.flag, diagStr)
                     if readyForNextPoint[flag0]:
                         ready = True
+                        self.forced = False
+                        self.resetPointTime()
                 
             if ready:
+                # print('ready')
                 # if only some of the channels have moved on, force the action for the rest of them
                 for flag0, r0 in readyForNextPoint.items():
                     if not r0:
-                        self.channelWatches[flag0].forceAction(diagStr, angle)
+                        self.channelWatches[flag0].forceAction(diagStr, angle, self.flag)
                 # move onto the next point
                 self.readPoint()
+                if force:
+                    self.timeTaken = True
                 if self.tableDone:
                     return True
             

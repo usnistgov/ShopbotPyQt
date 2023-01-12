@@ -37,8 +37,8 @@ except:
 class bascamVC(vc):
     '''holds a videoCapture object that reads frames from a basler cam'''
     
-    def __init__(self, cameraName:str, diag:int, fps:int):
-        super(bascamVC, self).__init__(cameraName, diag, fps)
+    def __init__(self, cameraName:str, diag:int, fps:int, prevFPS:int, recFPS:int):
+        super(bascamVC, self).__init__(cameraName, diag, fps, prevFPS, recFPS)
         self.errorStatus = 0     # 0 means we have no outstanding errors. This prevents us from printing a ton of the same error in a row.
         self.connectVC()
         
@@ -146,6 +146,7 @@ class bascamVC(vc):
             pass
         if type(img)==np.ndarray:
             self.errorStatus=0
+            self.frame = img
             return img  
         else:
             return self.grabError('Error: Frame is not array', 6, True)
@@ -217,7 +218,7 @@ class bascam(camera):
         
     def createVC(self):
         '''connect to the videocapture object'''
-        return bascamVC(self.guiBox.bTitle, self.diag, self.fps)
+        return bascamVC(self.guiBox.bTitle, self.diag, self.fps, self.previewFPS, self.recFPS)
 
     def setExposure(self, val:float) -> int:
         '''Set the exposure time to val. Returns 0 if the value was changed, 1 if not.'''

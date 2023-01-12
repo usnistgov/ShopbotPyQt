@@ -115,6 +115,7 @@ class channelWatch(QObject):
         self.mode = 1
         self.turningDown = False
         self.diag = diag
+        self.refused = False
         # store burstScale, burstLength, zero, critTimeOn, critTimeOff
         for s,val in pSettings.items():
             setattr(self, s, val)
@@ -226,12 +227,16 @@ class channelWatch(QObject):
                 self.state = 0
 
     @pyqtSlot(str, float, float)          
-    def forceAction(self, diagStr:str, angle:float) -> None:
+    def forceAction(self, diagStr:str, angle:float, sbFlag:int) -> None:
         '''force the current action'''
         sadd = ''
         if self.state==4 or self.state==1:
-            self.turnOn()
-            sadd = sadd + 'ON'
+            flagOn0 = flagOn(sbFlag, self.flag0)
+            if flagOn0:
+                self.turnOn()
+                sadd = sadd + 'ON'
+            else:
+                self.refused = True
         elif self.state==5:
             self.turnOff() 
             sadd = sadd + 'OFF'
@@ -328,7 +333,8 @@ class channelWatch(QObject):
             # turn off after end of line
             atTarget = d['led']>d['tld']+self.critDistance
             radTarget = self.hitRead
-            outsidePath = ((d['lrd']+d['trd'] > d['tld']+self.zeroDist) and d['trd']>self.critDistance and d['lrd']>self.zeroDist)
+            # outsidePath = ((d['lrd']+d['trd'] > d['tld']+self.zeroDist) and d['trd']>self.critDistance and d['lrd']>self.zeroDist)
+            outsidePath = False
             if (atTarget and radTarget) or outsidePath:
                 self.getSadd('OFF', {'est at target and hit read':(atTarget and radTarget), 'read outside path and read past crit':outsidePath}, diagStr)
                 self.turnOff() 
@@ -348,6 +354,12 @@ class channelWatch(QObject):
         
         readyForNextPoint = False
         flagOn0 = flagOn(sbFlag, self.flag0)
+        
+        if self.refused and flagOn0 and not self.on:
+            self.getSadd('ON', {'flag on':True}, diagStr)
+            self.turnOn()
+            self.refused = False
+            return True
         
         # turn down from burst
         if self.turningDown:

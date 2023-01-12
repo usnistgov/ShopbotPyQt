@@ -643,7 +643,7 @@ class pCalibrationTab(QWidget):
                     pass
                 elif row[0]=='':
                     pass
-                elif len(row)>3:
+                elif len(row)>3 and len(row[-1])>0:
                     # we're in the table
                     try:
                         f = float(row[0])

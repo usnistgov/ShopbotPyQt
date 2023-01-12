@@ -323,9 +323,13 @@ class convertDialog(QDialog) :
                                  , checked=self.closeWhenDone, func=self.updateCloseWhenDone)
         appendForm.addRow('Close', self.closeWhenDoneBox)
 
+        if self.sbWin.fluBox.numChans>0:
+            nc = self.sbWin.fluBox.numChans
+        else:
+            nc = 2
         self.channelRow = fRadioGroup(None, '', 
-                              dict([[i,f'Channel {i}'] for i in range(self.sbWin.fluBox.numChans)]), 
-                              dict([[i,i] for i in range(self.sbWin.fluBox.numChans)]),
+                              dict([[i,f'Channel {i}'] for i in range(nc)]), 
+                              dict([[i,i] for i in range(nc)]),
                              0, col=False, headerRow=False,
                               func=self.changeChannel)
         appendForm.addRow('Flow channel', self.channelRow.layout)
@@ -465,7 +469,10 @@ class sharedConvert :
         self.pathway = ""
         self.finished = False
         self.newName = ""
-        self.channelNum = self.sbWin.fluBox.pchannels[0]
+        if len(self.sbWin.fluBox.pchannels)>0:
+            self.channelNum = self.sbWin.fluBox.pchannels[0]
+        else:
+            self.channelNum =  0
         self.channel = 0
                                                       
     def getFluFlag(self) :
