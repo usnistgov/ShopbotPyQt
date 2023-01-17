@@ -102,9 +102,6 @@ class SBwindow(QMainWindow):
         if self.flu and hasattr(self, 'fluBox'):
             print('Connecting Fluigent box')
             self.fluBox.connect()          # fluigent box
-        else:
-            print('Loading Fluigent test layout')
-            self.fluBox.testLayout()
             
         if self.cam and hasattr(self, 'camBoxes'):
             print('Connecting camera boxes')

@@ -157,7 +157,7 @@ class vidReader(QObject):
             self.close()
             return
         self.sendNewFrame(frame) # send back to window
-        # self.checkDrop(frame)   # check for dropped frames
+        self.checkDrop(frame)   # check for dropped frames
 
     @pyqtSlot()
     def readFrame(self):

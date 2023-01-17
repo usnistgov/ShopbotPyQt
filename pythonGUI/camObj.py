@@ -265,9 +265,10 @@ class camera(QObject):
     def stopPreview(self) -> None:
         '''stop live preview. This freezes the last frame on the screen.'''
         self.previewing = False
-        self.vc.lock()
-        self.vc.previewing = False
-        self.vc.unlock()
+        if hasattr(self, 'vc'):
+            self.vc.lock()
+            self.vc.previewing = False
+            self.vc.unlock()
         self.stopReader()       # this only stops the reader if we are neither recording nor previewing
         self.stopPreviewer()
  

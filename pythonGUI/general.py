@@ -3,7 +3,7 @@
 
 # external packages
 from PyQt5.QtCore import pyqtSlot, QDir, Qt, QPoint, QRect
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QPixmap
 from PyQt5.QtWidgets import QButtonGroup, QCheckBox, QDialog, QFileDialog, QFormLayout, QFrame, QGridLayout, QGroupBox, QHBoxLayout, QLabel,  QLayout, QLineEdit, QProxyStyle, QPushButton, QRadioButton, QSpacerItem, QStyle, QStyleOptionTab, QStylePainter, QTabBar, QToolBar, QToolButton, QVBoxLayout, QWidget
 import sip
 import os, sys
@@ -21,8 +21,8 @@ def checkPath(path:str) -> str:
         path = r'C:\\'
     return path
 
-def icon(name:str) -> QIcon:
-    '''Get a QtGui icon given an icon name'''
+def iconpath(name:str) -> str:
+    '''get the path to the actual icon in our project folder'''
     currentdir = os.path.dirname(os.path.realpath(__file__))
     iconfolder = os.path.join(currentdir, 'icons')
     if not os.path.exists(iconfolder):
@@ -32,7 +32,20 @@ def icon(name:str) -> QIcon:
     iconpath = os.path.join(iconfolder, name)
     if not os.path.exists(iconpath):
         raise NameError('No icon with that name')
-    return QIcon(iconpath)
+    return iconpath
+
+def imlabel(name:str, size:int=0) -> QLabel:
+    label = QLabel()
+    pixmap = QPixmap(iconpath(name))
+    label.setPixmap(pixmap)
+    # label.setScaledContents(True)
+    if size>0:
+        label.resize(size, int(round(size*pixmap.width()/pixmap.height())))
+    return label
+
+def icon(name:str) -> QIcon:
+    '''Get a QtGui icon given an icon name'''
+    return QIcon(iconpath(name))
 
 
 def fileDialog(startDir:str, fmt:str, isFolder:bool, opening:bool=True) -> str:

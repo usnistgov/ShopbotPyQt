@@ -5,9 +5,9 @@
 &nid = 0.603
 &nd = 0.907
 &downdisp = 0.000
-&wait1 = 1.500
-&wait2 = 0.500
-&wait3 = 3.000
+&waitDPic = 0.750
+&waitDSnap = 0.250
+&waitDO = 3.000
 &runFlag1 = 12.000
 &basFlag1 = 3.000
 &flowFlag1 = 1.000
@@ -41,7 +41,7 @@ PAUSE 0.25
 SO, &basFlag1, 0
 MX, 1.5*&margin + &slideW/2
 M3, 1.5*&margin + &slideW/2, 97.249999999999998*&nid + 3, -0.9*&slideW
-M3, -1.5*&margin + &slideW/2, 97.249999999999998*&nid + 3, -0.9*&slideW
+M3, -1.5*&margin + &slideW/2 - 2.0, 97.249999999999998*&nid + 3, -0.9*&slideW
 MY, 98.999999999999998*&nid + 3
 M3, 0.5*&slideW, 98.999999999999998*&nid + 3, -0.9*&slideW
 PAUSE 0.25
@@ -73,7 +73,7 @@ PAUSE 0.25
 SO, &basFlag1, 0
 MX, 1.5*&margin + &slideW/2
 M3, 1.5*&margin + &slideW/2, 102.25*&nid + 3, -0.7*&slideW
-M3, -1.5*&margin + &slideW/2, 102.25*&nid + 3, -0.7*&slideW
+M3, -1.5*&margin + &slideW/2 - 2.0, 102.25*&nid + 3, -0.7*&slideW
 MY, 104.0*&nid + 3
 M3, 0.5*&slideW, 104.0*&nid + 3, -0.7*&slideW
 PAUSE 0.25
@@ -105,7 +105,7 @@ PAUSE 0.25
 SO, &basFlag1, 0
 MX, 1.5*&margin + &slideW/2
 M3, 1.5*&margin + &slideW/2, 107.25*&nid + 3, -0.5*&slideW
-M3, -1.5*&margin + &slideW/2, 107.25*&nid + 3, -0.5*&slideW
+M3, -1.5*&margin + &slideW/2 - 2.0, 107.25*&nid + 3, -0.5*&slideW
 MY, 109.0*&nid + 3
 M3, 0.5*&slideW, 109.0*&nid + 3, -0.5*&slideW
 PAUSE 0.25
@@ -137,7 +137,7 @@ PAUSE 0.25
 SO, &basFlag1, 0
 MX, 1.5*&margin + &slideW/2
 M3, 1.5*&margin + &slideW/2, 112.25*&nid + 3, -0.3*&slideW
-M3, -1.5*&margin + &slideW/2, 112.25*&nid + 3, -0.3*&slideW
+M3, -1.5*&margin + &slideW/2 - 2.0, 112.25*&nid + 3, -0.3*&slideW
 MY, 114*&nid + 3
 M3, 0.5*&slideW, 114*&nid + 3, -0.3*&slideW
 PAUSE 0.25
@@ -152,4 +152,4 @@ SO, &basFlag1, 0
 JZ, -0.19999999999999998*&slideW
 JX, 1.5*&margin + &slideW/2
 JZ, 10.000
-SO, 12, 0
+SO, &runFlag1, 0

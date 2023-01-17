@@ -1,0 +1,13 @@
+Basler camera_prev,Basler camera_rec,Nozzle camera_prev,Nozzle camera_rec,Webcam 2_prev,Webcam 2_rec,Basler camera_fps,Basler camera_recfps,Basler camera_prevfps,Basler camera_time,Basler camera_frames,Basler camera_dropped,Basler camera_pct_dropped,Basler camera_realtime,Basler camera_realframes,Nozzle camera_fps,Nozzle camera_recfps,Nozzle camera_prevfps,Nozzle camera_time,Nozzle camera_frames,Nozzle camera_dropped,Nozzle camera_pct_dropped,Nozzle camera_realtime,Nozzle camera_realframes,Webcam 2_fps,Webcam 2_recfps,Webcam 2_prevfps,Webcam 2_time,Webcam 2_frames,Webcam 2_dropped,Webcam 2_pct_dropped,Webcam 2_realtime,Webcam 2_realframes
+False,False,False,True,False,False,,,,,,,,,,15.0,15.0,15.0,19.698000000000043,294.0,98.0,0.3333333333333333,0.0,0.0,,,,,,,,,
+True,True,False,True,False,True,120.0,30.0,15.0,20.175999999998666,2522.0,18.0,0.007137192704203013,0.0,0.0,15.0,15.0,15.0,19.698000000000043,294.0,98.0,0.3333333333333333,0.0,0.0,15.0,15.0,15.0,19.698000000000043,294.0,98.0,0.3333333333333333,0.0,0.0
+True,False,True,True,True,False,120.0,30.0,15.0,,,,,,,15.0,15.0,15.0,19.966000000000044,298.0,100.0,0.33557046979865773,0.0,0.0,15.0,15.0,15.0,,,,,,
+True,True,False,True,False,False,120.0,30.0,15.0,20.13599999999867,2517.0,17.0,0.006754072308303536,0.0,606.0,15.0,15.0,15.0,19.698000000000043,294.0,98.0,0.3333333333333333,0.0,0.0,,,,,,,,,
+False,True,False,True,False,True,120.0,30.0,15.0,20.015999999998684,2502.0,0.0,0.0,0.0,0.0,15.0,15.0,15.0,19.698000000000043,294.0,98.0,0.3333333333333333,0.0,0.0,15.0,15.0,15.0,19.698000000000043,294.0,98.0,0.3333333333333333,0.0,0.0
+True,True,True,False,True,False,120.0,30.0,15.0,20.41599999999864,2552.0,49.0,0.01920062695924765,0.0,0.0,15.0,15.0,15.0,,,,,,,15.0,15.0,15.0,,,,,,
+True,True,False,False,False,False,120.0,30.0,15.0,20.14399999999867,2518.0,19.0,0.007545671167593328,0.0,0.0,,,,,,,,,,,,,,,,,,
+True,True,True,True,True,True,120.0,30.0,15.0,20.647999999998614,2581.0,59.0,0.022859356838434715,0.0,0.0,15.0,15.0,15.0,20.234000000000044,302.0,102.0,0.33774834437086093,0.0,302.0,15.0,15.0,15.0,20.100000000000044,300.0,102.0,0.34,0.0,0.0
+True,False,False,True,False,False,120.0,30.0,15.0,,,,,,,15.0,15.0,15.0,19.698000000000043,294.0,98.0,0.3333333333333333,0.0,0.0,,,,,,,,,
+False,True,False,True,False,False,120.0,30.0,15.0,19.999999999998685,2500.0,0.0,0.0,0.0,0.0,15.0,15.0,15.0,19.698000000000043,294.0,98.0,0.3333333333333333,0.0,0.0,,,,,,,,,
+True,True,True,True,True,False,120.0,30.0,15.0,20.48799999999863,2561.0,48.0,0.018742678641155797,0.0,617.0,15.0,15.0,15.0,20.033000000000044,299.0,100.0,0.33444816053511706,0.0,0.0,15.0,15.0,15.0,,,,,,
+False,True,False,False,False,False,120.0,30.0,15.0,19.983999999998687,2498.0,0.0,0.0,0.0,0.0,,,,,,,,,,,,,,,,,,
