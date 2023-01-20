@@ -1,5 +1,12 @@
 ---
 appid: usnistgov.sbgui.v1.1.0
+arduino:
+  port: COM4
+  flag1pins:
+    f5: 5
+    f6: 6
+    f7: 7
+    f8: 8
 camera:
   cam0:
     checked: false

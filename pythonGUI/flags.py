@@ -13,6 +13,9 @@ import csv
 import re
 import time
 import win32gui, win32api, win32con
+import pyfirmata
+from pyfirmata import util, Arduino
+
 
 # local packages
 from config import cfg
@@ -34,6 +37,8 @@ class flagGrid(QGridLayout):
         self.flag1min = cfg.shopbot.flag1min
         self.flag1max = cfg.shopbot.flag1max
         self.numFlags = self.flag1max-self.flag1min+1
+        self.pins = {}
+        
         self.resetFlagLabels()
             
         self.successLayout(tall=tall)
@@ -52,7 +57,8 @@ class flagGrid(QGridLayout):
             if self.flagLabels0[i]=='':
                 return i
             i+=1
-        raise ValueError('All flags are taken')
+        raise ValueError('All flags are taken')       
+
         
     def successLayout(self, tall:bool=True) -> None:
         # coords
@@ -158,7 +164,10 @@ class flagGrid(QGridLayout):
             # missing attribute, can't update flag label
             return
         flagObj = getattr(self, fname)
-        flagObj.setStyleSheet("background-color: #a3d9ba; border-radius: 3px")
+        style = "background-color: #a3d9ba; border-radius: 3px"
+        if flag0+1 in self.pins:
+            style = style + '; font-weight: bold;'
+        flagObj.setStyleSheet(style)
         
     def unhighlightFlag(self, flag0:int) -> None:
         '''unhighlight the flag on the shopbot flag panel'''
@@ -167,7 +176,10 @@ class flagGrid(QGridLayout):
             # missing attribute, can't update flag label
             return
         flagObj = getattr(self, fname)
-        flagObj.setStyleSheet("background-color: none")
+        style = "background-color: none"
+        if flag0+1 in self.pins:
+            style = style + '; font-weight: bold;'
+        flagObj.setStyleSheet(style)
         
     def update(self, sbFlag:int) -> None:
         '''update the highlight status based on sbFlag'''
@@ -211,7 +223,12 @@ class flagGrid(QGridLayout):
             labelObj = getattr(self, labelname)
             labelObj.setText('Run')
             self.flagLabels0[runFlag1-1] = 'Run'
-        
+            
+    def boldFlags(self, pins:dict) -> None:
+        '''bold the labels for flags that are going through the arduino'''
+        self.pins = pins
+        for flag0 in range(self.numFlags):
+            self.unhighlightFlag(flag0)
         
         
 ######################################
@@ -224,7 +241,7 @@ class SBKeySignals(QObject):
     
 
 class SBKeys(QMutex):
-    '''class the holds information and functions about connecting to the shopbot'''
+    '''class the holds information and functions about connecting to the shopbot and the arduino'''
     
     def __init__(self, diag:int):
         super(SBKeys,self).__init__()
@@ -241,10 +258,48 @@ class SBKeys(QMutex):
         self.signals = SBKeySignals()
         self.connectKeys()   # connect to the keys and open SB3.exe
         self.ctr = 0
+        self.initializeArduino()
+        
         
     def updateStatus(self, message:str, log:bool) -> None:
         '''send the status back to the SBbox'''
         self.signals.status.emit(message, log)
+        
+            
+    def initializeArduino(self) -> None:
+        '''connect to the arduino'''
+        self.pins = {}
+        logging.info('Connecting to Arduino')
+        try:
+            self.board = Arduino(cfg.arduino.port)
+            it = util.Iterator(self.board)
+            it.start()
+        except:
+            logging.info('Failed to connect to Arduino')
+        logging.info('Connected to Arduino')
+        
+        # get the pin-flag correspondences from the config file
+        for f in [5,6,7,8]:
+            p = int(cfg.arduino.flag1pins[f'f{f}'])   # pin this 1-indexed flag is assigned to
+            self.pins[f] = p
+            self.board.digital[p].mode = pyfirmata.INPUT    # set this pin to receive input
+            self.board.digital[p].enable_reporting()        # set this pin to let us read it
+            
+    def readArduino(self, sbFlag:int) -> int:
+        '''read the flags from the arduino and update the sbFlag'''
+        for f1,p in self.pins.items():
+            status = self.board.digital[p].read()   # read the pin, returns a bool
+            on = flagOn(sbFlag, f1-1)
+            if status and not on:
+                # sb3 thinks the flag is off, but hardware says it's on
+                sbFlag = sbFlag + 2**(f1-1)
+                # logging.info(f'SB3 {p} {on} and Arduino {f1} {status}: disagree')
+            elif not status and on:
+                # sb3 thinks the flag is on, but hardware says it's off
+                sbFlag = sbFlag - 2**(f1-1)
+                # logging.info(f'SB3 {p} {on} and Arduino {f1} {status}: disagree')
+        return sbFlag
+        
         
     def connectKey(self, aReg, path:str, name:str):
         '''connect a single key'''
@@ -388,6 +443,7 @@ class SBKeys(QMutex):
             sbFlag, _ = self.queryValue('OutPutSwitches')
         except ValueError:
             return -1
+        sbFlag = self.readArduino(int(sbFlag))  # cross reference this result with arduino
         
         self.prevFlag = self.currentFlag
         sbFlag = int(sbFlag)

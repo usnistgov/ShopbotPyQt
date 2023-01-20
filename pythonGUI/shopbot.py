@@ -313,6 +313,7 @@ class sbBox(connectBox):
         self.keys.signals.lastRead.connect(self.updateLastRead) # connect lastline read to GUI
         if hasattr(self.sbWin, 'flagBox'):
             self.flagBox = self.sbWin.flagBox    # adopt the parent's flagBox for shorter function calls
+            self.flagBox.boldFlags(self.keys.pins)
         if not self.keys.connected:
              self.failLayout()
         else:
@@ -694,17 +695,21 @@ class sbBox(connectBox):
         self.printWorker.signals.targetLine.connect(self.updateXYZtline)
 
         # send the file to the shopbot via command line
-        self.keys.lock()
-        appl = self.keys.sb3File
-        self.keys.unlock()
-        arg = self.sbpName() + ', ,4, ,0,0,0"'
-        subprocess.Popen([appl, arg])
+        self.sendFileToShopbot(self.sbpName())
         
         # create a thread that waits for the start of flow
         waitRunnable = waitForStart(self.settingsBox.getDt(), self.keys, self.runFlag1, self.channelsTriggered)
         waitRunnable.signals.finished.connect(self.triggerWatch)
         waitRunnable.signals.status.connect(self.updateStatus)
         QThreadPool.globalInstance().start(waitRunnable) 
+        
+    def sendFileToShopbot(self, name:str):
+        '''send the sbp file to the shopbot'''
+        self.keys.lock()
+        appl = self.keys.sb3File
+        self.keys.unlock()
+        arg =  f'{name}, ,4, ,0,0,0"'
+        subprocess.Popen([appl, arg])
  
             
             

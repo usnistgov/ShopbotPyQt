@@ -9,9 +9,9 @@
 &waitDSnap = 0.250
 &waitDO = 3.000
 &runFlag1 = 12.000
-&basFlag1 = 3.000
-&flowFlag1 = 1.000
-&dummyFlag1 = 9.000
+&basFlag1 = 8.000
+&flowFlag1 = 5.000
+&dummyFlag1 = 1.000
 VD , , 1
 VU, 157.480315, 157.480315, -157.480315
 SA
