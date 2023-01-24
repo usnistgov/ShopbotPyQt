@@ -25,6 +25,7 @@ import cameras
 import calibration
 import sbprint
 import flags
+import convert
 from config import cfg
 
 currentdir = os.path.dirname(os.path.realpath(__file__))
@@ -38,7 +39,7 @@ from sbpRead import SBPHeader
 class SBwindow(QMainWindow):
     '''The whole GUI window'''
     
-    def __init__(self, parent=None, meta:bool=True, sb:bool=True, flu:bool=True, cam:bool=True, file:bool=True, test:bool=False):
+    def __init__(self, parent=None, meta:bool=True, sb:bool=True, flu:bool=True, cam:bool=True, file:bool=True, calib:bool=True, convert:bool=True, test:bool=False):
         super(SBwindow, self).__init__(parent)
         
         # initialize all boxes to empty value so if we hit an error during setup and need to disconnect, we aren't trying to call empty variables
@@ -52,6 +53,8 @@ class SBwindow(QMainWindow):
         self.flagBox = flags.flagGrid(self, tall=False)
         self.settingsDialog = QDialog()
         self.save = False
+        self.convertDialog = QDialog()   
+        self.calibDialog = QDialog()
         
         self.meta = meta
         self.sb = sb
@@ -59,6 +62,8 @@ class SBwindow(QMainWindow):
         self.cam = cam
         self.test = test
         self.file = file
+        self.calib = calib
+        self.convert = convert
 
         try:
             self.central_widget = QWidget()               
@@ -82,7 +87,8 @@ class SBwindow(QMainWindow):
         
     def boxes(self) -> List:
         b = []
-        for s in ['settingsDialog', 'logDialog','fileBox', 'sbBox', 'fluBox', 'calibDialog', 'metaBox']:
+
+        for s in ['settingsDialog', 'logDialog', 'convertDialog', 'fileBox', 'sbBox', 'fluBox', 'calibDialog', 'metaBox']:
             if hasattr(self, s):
                 b.append(getattr(self, s))
         if hasattr(self, 'camBoxes'):
@@ -96,9 +102,6 @@ class SBwindow(QMainWindow):
         if self.flu and hasattr(self, 'fluBox'):
             print('Connecting Fluigent box')
             self.fluBox.connect()          # fluigent box
-        else:
-            print('Loading Fluigent test layout')
-            self.fluBox.testLayout()
             
         if self.cam and hasattr(self, 'camBoxes'):
             print('Connecting camera boxes')
@@ -202,17 +205,36 @@ class SBwindow(QMainWindow):
     
     def setupCalib(self, menubar) -> None:
         '''Create the pressure calibration tool dialog'''
-        self.calibDialog = calibration.pCalibration(self)
-        self.calibButt = QAction('Speed calibration tool', self)
-        self.calibButt.setStatusTip('Tool for calibrating speed vs pressure')
-        self.calibButt.triggered.connect(self.openCalib)
-        menubar.addAction(self.calibButt)  # add button to open calibration window
+        if self.calib:
+            self.calibDialog = calibration.pCalibration(self)
+            self.calibButt = QAction('Speed calibration tool', self)
+            self.calibButt.setStatusTip('Tool for calibrating speed vs pressure')
+            self.calibButt.triggered.connect(self.openCalib)
+            menubar.addAction(self.calibButt)  # add button to open calibration window
         
     def openCalib(self) -> None:
         '''Open the calibration window'''
         self.calibDialog.show()
         self.calibDialog.raise_()
         
+    #----------------
+    # Convert
+
+    def setupConvert(self, menubar) -> None:
+        '''Create the convert dialog'''
+        if self.convert:
+            self.convertDialog = convert.convertDialog(self)
+            self.convertButt = QAction('Convert', self)
+            self.convertButt.setStatusTip('Convert .gcode file to .sbp')
+            self.convertButt.triggered.connect(self.openConvert)
+            menubar.addAction(self.convertButt) # add button to open convertion window
+        
+    def openConvert(self) -> None:
+        '''Open the conversion window'''
+        self.convertDialog.show()
+        self.convertDialog.raise_()
+    
+    
     #----------------
     # top menu
         
@@ -221,6 +243,7 @@ class SBwindow(QMainWindow):
         menubar = self.menuBar()
         self.setupLog(menubar)                  # create a log window, not open yet
         self.setupCalib(menubar)
+        self.setupConvert(menubar)
         self.setupSettings(menubar)                  # create a log window, not open yet
         if self.test:
             self.setupDropTest(menubar)
@@ -330,6 +353,7 @@ class SBwindow(QMainWindow):
                 for row in self.saveTable:
                     writer.writerow(row)
             self.sbBox.updateStatus(f'Saved {self.fileName}', True)
+            
     
     
     #----------------
@@ -354,12 +378,12 @@ class SBwindow(QMainWindow):
 class MainProgram(QWidget):
     '''The main application widget. Here, we can set fonts, icons, window info'''
     
-    def __init__(self, meta:bool=True, sb:bool=True, flu:bool=True, cam:bool=True, file:bool=True, test:bool=False): 
+    def __init__(self, meta:bool=True, sb:bool=True, flu:bool=True, cam:bool=True, file:bool=True, calib:bool=True, convert:bool=True, test:bool=False): 
         
         app = QApplication(sys.argv)
         sansFont = QFont("Arial", 9)
         app.setFont(sansFont)
-        self.sbwin = SBwindow(meta=meta, sb=sb, flu=flu, cam=cam, file=file, test=test)
+        self.sbwin = SBwindow(meta=meta, sb=sb, flu=flu, cam=cam, file=file, test=test, calib=calib, convert=convert)
 
         
         self.sbwin.show()

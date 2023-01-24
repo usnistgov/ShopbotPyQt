@@ -32,7 +32,7 @@ class DropTest(QWidget):
     def __init__(self): 
         
         app = QApplication(sys.argv)
-        self.sbwin = layout.SBwindow(meta=False, sb=False, flu=False, cam=True, file=True, test=True)
+        self.sbwin = layout.SBwindow(meta=False, sb=False, flu=False, cam=True, file=True, test=True, convert=False, calib=False)
     
         self.sbwin.show()
 

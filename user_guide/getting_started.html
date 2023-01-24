@@ -1,0 +1,134 @@
+<html>
+<head>
+    <title>Software installation</title>
+  <link rel="stylesheet" href="user_guide.css">
+</head>
+<body>
+<iframe src="header.html" class="headerframe" ></iframe>
+    
+    <h1>Software installation</h1>
+    
+    <h2>Software notes</h2>
+    
+    <ul>
+        <li>This software was written for Windows. Certain elements, like folder opening buttons <img src="../pythonGUI/icons/link.png" class="icon2"> and the system that tracks whether the pressure should be on or off during prints, will break outside of Windows.</li>
+        <li>This software is currently in development. Please report issues through Github or by emailing the maintainer.</li>
+    </ul>
+    
+    <h2>Getting started</h2>
+    
+    <ol>
+        <li>Install Python</li>
+        <ul>
+            <li>For example, install <a href="https://docs.conda.io/en/latest/miniconda.html" rel="noopener noreferrer" target="_blank">Miniconda</a></li>
+        </ul>
+        
+        <li>Install <a href="https://www.shopbottools.com/support/control-software">the Shopbot control software</a></li>
+        <ul>
+            <li>Open the Shopbot control software SB3.exe and load the settings for your Shopbot.</li>
+            <li>By default, the Shopbot control software shows 4 output flags, but it allows 12. To increase the number of visible output flags for signaling additional devices (e.g. pressure channels, lights, etc.), go into Move/Cut Mode. Once in Move/Cut - right click in the input/output section of the red position window. Here you can set the number of inputs/outputs displayed up to 12 in the red window</li>
+        </ul>
+        
+        <li>Download the software from <a href="https://github.com/usnistgov/ShopbotPyQt" rel="noopener noreferrer" target="_blank">Github</a>. Because this software is continually updated, you can keep the most updated version of the code by cloning the repository through Github. For beginners:</li>
+        <ul>
+            <li>Download <a href="https://desktop.github.com/" rel="noopener noreferrer" target="_blank">Github desktop</a></li>
+            <li>Create a <a href="https://github.com/join" rel="noopener noreferrer" target="_blank">Github account</a></li>
+            <li>In Github desktop, clone <a href="https://github.com/usnistgov/ShopbotPyQt" rel="noopener noreferrer" target="_blank">the ShopbotPyQt repository</a></li>
+            <li>To update your software to the latest version, click "Fetch Origin" in Github Desktop at any time.</li>
+        </ul>
+        
+        <li><a href="https://boscacci.medium.com/why-and-how-to-make-a-requirements-txt-f329c685181e">Install Python packages</a> listed in <i>requirements.txt</i>. </li>
+        
+        <li>Launch the GUI.</li>
+        <ul>
+            <li>In Miniconda: <span class="code">python "MyGithubPath\ShopbotPyQt\pythonGUI\sbgui.py"</span>, replacing "MyGitHubPath" with your full github path.</li>
+            <li>In a Jupyter console from the pythonGUI folder: <span class="code">run sbgui.py</span></li>
+        </ul>
+        
+        <li>OPTIONAL: If you are working with .stl files or other 3D model files, install a slicer.</li>
+        <ul>
+            <li>For example, install <a href="https://ultimaker.com/software/ultimaker-cura">Ultimaker Cura</a>. Save it to the system's 'program files' folder</li>
+            <li>Create a free ultimaker account</li>
+            <li>Once downloaded and opened, go to the setting tab and add printer. Under the 'add a non-networked printer', there should be a 'custom' option with a drop down menu. Click on the 'Custom FFF printer' and rename it to your preference.</li>
+            <li>A 'machine setting' window should pop up, where you will place corresponding variables to the printer. For the embedded 3D printing configuration using a 25 mm x 25 mm x 75 mm bath and a 20 gauge needle:</li>
+            <style>
+            table, th, td {
+            border:1px solid black;
+            }
+            </style>
+            <table>
+                <tr>
+                    <th colspan = "2">Printer Settings</th>
+                    <th colspan = "2">Printhead Settings</th>
+                    <th colspan = "2">Extruder/Nozzle Settings</th>
+                </tr>
+                <tr>
+                    <th> X (Width) </th>
+                    <td> 76.2 mm </td>
+                    <th> X Min </th>
+                    <td> -1 mm </td>
+                    <th> Nozzle Size </th>
+                    <td> 0.603 mm </td>
+                </tr>
+                  <tr>
+                    <th> Y (Depth) </th>
+                    <td> 25.4 mm </td>
+                    <th> Y Min </th>
+                    <td> -1 mm </td>
+                    <th> Compatible Material Diameter </th>
+                    <td> 0.603 mm </td>
+                </tr>
+                 <tr>
+                    <th> Z (Height) </th>
+                    <td> 25.4 mm </td>
+                    <th> X Max </th>
+                    <td> 1 mm </td>
+                    <th> Nozzle Offset X </th>
+                    <td> 0.0 mm </td>
+                </tr>
+                 <tr>
+                    <th> Build Plate Shape </th>
+                    <td> Rectangular </td>
+                    <th> Y Max </th>
+                    <td> 1 mm </td>
+                    <th> Nozzle Offset Y </th>
+                    <td> 0.0 mm </td>
+                </tr>
+                 <tr>
+                    <th> Origin at Center </th>
+                    <td> Checked </td>
+                    <th> Gantry Height </th>
+                    <td> 70.0 mm </td>
+                    <th> Cooling Fan Number </th>
+                    <td> 0 </td>
+                </tr>
+                 <tr>
+                    <th> Headed Bed </th>
+                    <td> Unchecked </td>
+                    <th> Number of Extruders </th>
+                    <td> 1 </td>
+                </tr>
+                 <tr>
+                    <th> Headed Build Volume </th>
+                    <td> Unchecked </td>
+                    <th> Apply Extruder Offsets to GCode </th>
+                    <td> Checked </td>
+                </tr>
+                <tr>
+                    <th> GCode Flavor </th>
+                    <td> Marlin </td>
+                </tr>
+            </table>
+            
+            <li>Set the print resolution to extra coarse - 0.6 mm and unclick the Adhesion box and Support box in the same window</li>
+            <li>Support and skirts are not necessary in embedded 3D printing. If printing into a bath, within the print settings 'Custom', make certain the 'Infill' section's density is set to 0.0, the 'Support' section's Generate Support box is unchecked, and the 'Build Plate Adhesion' type is set to None. </li>
+            <li>Note that the Cura slicer creates a 1/3 inch (8.47 mm) margin at the edges of the print bed where it will not allow you to place material. If you wish to print closer to the walls, you can increase the X/Y/Z measurements. 
+</li>
+            <li>When creating an STL file through <a href="https://www.onshape.com/en/">Onshape</a>, create measurements in millimeters, even if it states in inches. Cura assumes all measurements are in millimeters.</li>
+        </ul>
+    </ol>
+    
+   <iframe src="footer.html" class="footerframe"></iframe>
+
+</body>
+</html>

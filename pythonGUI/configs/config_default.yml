@@ -1,13 +1,21 @@
 ---
-appid: leanfried.sbgui.v1.0.5
+appid: usnistgov.sbgui.v1.1.0
+arduino:
+  port: COM4
+  flag1pins:
+    f5: 5
+    f6: 6
+    f7: 7
+    f8: 8
 camera:
   cam0:
     checked: false
     diag: 1
     flag1: 3
-    fps: 30
+    fps: 120
     name: Basler camera
     previewFPS: 15
+    recFPS: 30
     type: bascam
   cam1:
     checked: false
@@ -16,6 +24,7 @@ camera:
     fps: 15
     name: Nozzle camera
     previewFPS: 15
+    recFPS: 15
     type: webcam
   cam2:
     checked: false
@@ -24,7 +33,14 @@ camera:
     fps: 15
     name: Webcam 2
     previewFPS: 15
+    recFPS: 15
     type: webcam
+convert:
+  addToQueue: true
+  closeWhenDone: false
+  gcodeFolder: C://
+  sameFolder: false
+  sbpFolder: C://
 files:
   createSubfolders: true
   dateFormat: '%y%m%d'

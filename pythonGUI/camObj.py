@@ -30,7 +30,7 @@ class vcSignals(QObject):
 class vc(QMutex):
     '''holds the videoCapture object and surrounding functions'''
     
-    def __init__(self, cameraName:str, diag:int, fps:int):
+    def __init__(self, cameraName:str, diag:int, fps:int, prevFPS:int, recFPS:int):
         super(vc,self).__init__()
         self.cameraName = cameraName
         self.signals = vcSignals()
@@ -39,12 +39,20 @@ class vc(QMutex):
         self.previewing = False                   # is the live preview on?
         self.recording = False                    # are we collecting frames for a video?
         self.writing = False                       # are we writing video frames to file?
-        self.fps = fps
-        self.mspf = int(round(1000./self.fps))
+        self.updateFPS(fps)
+        self.updatePrevFPS(prevFPS)
         
     def updateStatus(self, msg:str, log:bool):
         '''update the status bar by sending a signal'''
         self.signals.status.emit(str(msg), log)
+        
+    def updateFPS(self, fps):
+        self.fps = fps
+        self.mspf = int(round(1000./self.fps))
+        
+    def updatePrevFPS(self, prevFPS):
+        self.previewFPS = prevFPS
+        self.prevmspf = int(round(1000./self.previewFPS))
 
 
 
@@ -60,6 +68,7 @@ class camera(QObject):
         self.vFilename = ''                       # name of the current video file
 
         self.readerRunning = False                 # is the timer that controls frame collection running?
+        self.prevRunning = False
         self.previewing = False                   # is the live preview on?
         self.recording = False                    # are we collecting frames for a video?
         self.writing = False                      # are we writing video frames to file?
@@ -72,6 +81,7 @@ class camera(QObject):
 #         self.diag = cfg.camera.diag             
         self.fps = 1              # this will be set during subclass init (webcam.__init__, bascam.__init__)
         self.previewFPS = 1
+        self.recFPS = 1  
         self.exposure = 0         # this will be set during subclass init (webcam.__init__, bascam.__init__)
         self.fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
         self.prevWindow = QLabel()                # the window that the live preview will be displayed in
@@ -83,11 +93,12 @@ class camera(QObject):
     def loadDict(self, d:dict) -> None:
         '''load current settings from a dictionary'''
         self.flag1 = int(d['flag1'])        # shopbot output flag this camera is attached to, 1-indexed
-        self.setFrameRate(int(d['fps']) )        # frames per second
+        self.setFrameRate(float(d['fps']) )        # frames per second
         self.type = d['type']        # type of camera, either bascam or webcam
         self.cameraName = d['name']  # full name of the camera (e.g. Basler camera)
         self.updateDiag(int(d['diag']))        # diag tells us which messages to log. 0 means none, 1 means some, 2 means a lot
         self.previewFPS = int(d['previewFPS'])
+        self.recFPS = float(d['recFPS'])
         
     def updateDiag(self, diag:int) -> None:
         '''update the diag value'''
@@ -109,6 +120,7 @@ class camera(QObject):
         cfg1.camera[self.guiBox.cname].name = self.cameraName
         cfg1.camera[self.guiBox.cname].diag = self.diag
         cfg1.camera[self.guiBox.cname].previewFPS = self.previewFPS
+        cfg1.camera[self.guiBox.cname].recFPS = self.recFPS
         return cfg1
     
     def writeToTable(self, writer) -> None:
@@ -134,6 +146,11 @@ class camera(QObject):
         else:
             self.previewFPS =  previewFPS
             self.updateFramesToPrev()
+            if hasattr(self, 'vc'):
+                # update the vc object
+                self.vc.lock()
+                self.vc.updatePrevFPS(self.previewFPS)
+                self.vc.unlock()
             
     def setFrameRate(self, fps:float) -> int:
         '''Set the frame rate of the camera. Return 0 if value changed, 1 if not'''
@@ -157,8 +174,24 @@ class camera(QObject):
             if hasattr(self, 'vc'):
                 # update the vc object
                 self.vc.lock()
-                self.vc.fps=self.fps
-                self.vc.mspf = self.mspf
+                self.vc.updateFPS(self.fps)
+                self.vc.unlock()
+            return 0
+        
+    def setRecFrameRate(self, fps:float) -> int:
+        '''set the recording frame rate of the camera. Return 0 if value changed, 1 if not'''
+        if self.recording:
+            logging.warning('Cannot change frame rate while recording.')
+            self.guiBox.resetRecFPS(self.recFPS)
+            return
+            
+        if self.recFPS==fps:
+            return 1
+        else:
+            if hasattr(self, 'vc'):
+                # update the vc object
+                self.vc.lock()
+                self.vc.recFPS=self.recFPS
                 self.vc.unlock()
             return 0
         
@@ -198,7 +231,9 @@ class camera(QObject):
         fullfn = self.getFilename('.png')
         if self.previewing or self.recording:
             # if we're currently collecting frames, we can use the last frame
-            cv2.imwrite(fullfn, self.lastFrame[0])
+            self.vc.lock()
+            cv2.imwrite(fullfn, self.vc.frame)
+            self.vc.unlock()
             self.updateStatus(f'File saved to {fullfn}', True)
         else:
             # if we're not currently collecting frames, we need to collect a new frame.
@@ -225,14 +260,17 @@ class camera(QObject):
         self.vc.previewing = True
         self.vc.unlock()
         self.startReader()      # this only starts the reader if we're not already recording
+        self.startPreviewer()
     
     def stopPreview(self) -> None:
         '''stop live preview. This freezes the last frame on the screen.'''
         self.previewing = False
-        self.vc.lock()
-        self.vc.previewing = False
-        self.vc.unlock()
+        if hasattr(self, 'vc'):
+            self.vc.lock()
+            self.vc.previewing = False
+            self.vc.unlock()
         self.stopReader()       # this only stops the reader if we are neither recording nor previewing
+        self.stopPreviewer()
  
     #---------------------------------
     
@@ -260,7 +298,7 @@ class camera(QObject):
         self.resetVidStats()                       # this resets the frame list, and other vars
         fn = self.getFilename('.avi')              # generate a new file name for this video
         self.vFilename = fn
-        vidvars = {'fourcc':self.fourcc, 'fps':self.fps, 'imw':self.imw, 'imh':self.imh, 'cameraName':self.cameraName}
+        vidvars = {'fourcc':self.fourcc, 'fps':self.fps, 'recFPS':self.recFPS, 'imw':self.imw, 'imh':self.imh, 'cameraName':self.cameraName}
         
         # https://realpython.com/python-pyqt-qthread/
         self.writeThread = QThread()
@@ -279,7 +317,6 @@ class camera(QObject):
         # Step 6: Start the thread
         self.writeThread.start()
 
-        
         self.updateStatus(f'Recording {self.vFilename} ... ', True) 
         # QThreadPool.globalInstance().start(recthread)          # start writing in a background thread
         self.startReader()                          # this only starts the reader if we're not already previewing
@@ -339,10 +376,35 @@ class camera(QObject):
             self.readThread.finished.connect(self.readWorker.close)
             self.readThread.finished.connect(self.readThread.deleteLater)
             self.readWorker.signals.error.connect(self.updateStatus)
-            self.readWorker.signals.frame.connect(self.receiveFrame)
+            self.readWorker.signals.frame.connect(self.receiveRecFrame)
             self.readWorker.signals.progress.connect(self.printDiagnostics)
             # Step 6: Start the thread
             self.readThread.start()
+            
+    def startPreviewer(self) -> None:
+        '''start updating preview'''
+        if not self.prevRunning:
+            self.prevRunning = True
+            # if self.diag>1:
+            #     logging.debug(f'Starting {self.cameraName} reader')
+            
+            # https://realpython.com/python-pyqt-qthread/
+            self.prevThread = QThread()
+            # Step 3: Create a worker object
+            self.prevWorker = previewer(self.vc)         # creates a new thread to read frames to GUI      
+            # Step 4: Move worker to the thread
+            self.prevWorker.moveToThread(self.prevThread)
+            # Step 5: Connect signals and slots
+            self.prevThread.started.connect(self.prevWorker.run)  
+            self.prevWorker.signals.finished.connect(self.prevThread.quit)
+            self.prevWorker.signals.finished.connect(self.prevWorker.deleteLater)
+            self.prevThread.finished.connect(self.prevWorker.close)
+            self.prevThread.finished.connect(self.prevThread.deleteLater)
+            self.prevWorker.signals.error.connect(self.updateStatus)
+            self.prevWorker.signals.frame.connect(self.receivePrevFrame)
+            self.prevWorker.signals.progress.connect(self.printDiagnostics)
+            # Step 6: Start the thread
+            self.prevThread.start()
 
             
     @pyqtSlot(str)
@@ -353,14 +415,21 @@ class camera(QObject):
 
     @pyqtSlot(np.ndarray, bool)
     # def receiveFrame(self, frame:np.ndarray, frameNum:int, vrid:int, checkDrop:bool=True):
-    def receiveFrame(self, frame:np.ndarray, pad:bool):
+    def receiveRecFrame(self, frame:np.ndarray, pad:bool):
         '''receive a frame from the vidReader thread. pad indicates whether the frame is a filler frame'''
 
         self.lastFrame = [frame]       
         self.saveFrame(frame)        # save to file
-        self.updatePrevFrame(frame)  # update the preview window 
         if pad:
             self.framesDropped+=1
+            
+    @pyqtSlot(np.ndarray, bool)
+    # def receiveFrame(self, frame:np.ndarray, frameNum:int, vrid:int, checkDrop:bool=True):
+    def receivePrevFrame(self, frame:np.ndarray, pad:bool):
+        '''receive a frame from the vidReader thread. pad indicates whether the frame is a filler frame'''
+
+        self.lastFrame = [frame]       
+        self.updatePrevFrame(frame)  # update the preview window 
 
     #---------------------------------
     
@@ -369,6 +438,11 @@ class camera(QObject):
         if not self.recording and not self.previewing and self.readerRunning:
             logging.info(f'{self.cameraName} reader stopped')
             self.readerRunning = False
+            
+    def stopPreviewer(self) -> None:
+        if not self.recording and not self.previewing and self.prevRunning:
+            logging.info(f'{self.cameraName} previewer stopped')
+            self.prevRunning = False
            
     
     #---------------------------------
@@ -378,18 +452,13 @@ class camera(QObject):
         # update the preview
         if not self.previewing:
             return
-            
-        # downsample preview frames
-        if self.framesSincePrev==self.critFramesToPrev:
-            if type(frame)==np.ndarray:
-                self.framesSincePrev=1
-                # convert frame to pixmap in separate thread and update window when done
-                self.updatePrevWindow(frame)
-            else:
-                self.updateStatus(f'Frame is empty', True)
+        
+        if type(frame)==np.ndarray:
+            self.framesSincePrev=1
+            # convert frame to pixmap in separate thread and update window when done
+            self.updatePrevWindow(frame)
         else:
-            self.framesSincePrev+=1
-            return
+            self.updateStatus(f'Frame is empty', True) 
 
         
     def updatePrevWindow(self, frame:np.ndarray) -> None:
@@ -409,7 +478,7 @@ class camera(QObject):
             return
      
         try:
-            self.frames.put([frame, 0])  # add the frame to the queue that videoWriter is watching
+            self.frames.put([frame, self.timeRec])  # add the frame to the queue that videoWriter is watching
         except:
             # stop recording if we can't write
             self.updateStatus(f'Error writing to video', True)
@@ -470,11 +539,12 @@ class camera(QObject):
         else:
             s = 'Recorded '
             log = True
+        saveFreq = int(round(self.fps/self.recFPS))
         s+= f'{self.vFilename} {self.timeRec:2.2f} s, '
         if self.writing and not self.recording:
-            s+= f'{self.fleft}/{self.totalFrames} frames left'
+            s+= f'{int(np.floor(self.fleft/saveFreq))}/{int(np.floor(self.totalFrames/saveFreq))} frames left'
         else:
-            s+= f'{self.framesDropped}/{self.totalFrames} frames dropped'
+            s+= f'{int(np.floor(self.framesDropped/saveFreq))}/{int(np.floor(self.totalFrames/saveFreq))} frames dropped'
         self.updateStatus(s, log)
         
     @pyqtSlot(int)

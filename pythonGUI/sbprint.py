@@ -175,6 +175,7 @@ class waitForStart(QRunnable):
         self.keys = keys
         self.runFlag1 = runFlag1
         self.channelsTriggered = channelsTriggered
+        self.cf = 2**(self.runFlag1-1) + 2**(self.channelsTriggered[0]) # the critical flag at which flow starts
         self.signals = waitSignals()
         self.spindleKilled = False
         self.spindleFound = False
@@ -188,9 +189,8 @@ class waitForStart(QRunnable):
             sbFlag = self.keys.getSBFlag()
             running = self.keys.runningSBP
             self.keys.unlock()
-            cf = 2**(self.runFlag1-1) + 2**(self.channelsTriggered[0]) # the critical flag at which flow starts
-            self.updateStatus(f'Waiting to start file, Shopbot output flag = {sbFlag}, start at {cf}', False)
-            if sbFlag==cf or not running:
+            self.updateStatus(f'Waiting to start file, Shopbot output flag = {sbFlag}, start at {self.cf}', False)
+            if sbFlag==self.cf or not running:
                 self.signals.finished.emit()
                 return
             else:
@@ -209,6 +209,7 @@ class waitForStart(QRunnable):
             self.spindleFound = True
             time.sleep(self.dt/1000/2)
             self.killSpindle()
+            
         return True
        
     @pyqtSlot()
@@ -237,6 +238,7 @@ class printLoopSignals(QObject):
     aborted = pyqtSignal()    # print was aborted from sbp app
     estimate = pyqtSignal(float,float,float)   # new estimated position
     target = pyqtSignal(float,float,float)      # send current target to GUI
+    targetLine = pyqtSignal(int)   # send current target line to GUI
     
     
 class printLoop(QObject):
@@ -255,6 +257,7 @@ class printLoop(QObject):
         self.modes = []
         self.pSettings = pSettings
         self.tableDone = False
+        self.runSimple = False
         self.printStarted = False
         self.waitingForLastRead = False
         self.lastRead = 0 # last line read 
@@ -311,7 +314,6 @@ class printLoop(QObject):
                     cw.signals.snap.connect(camBox.cameraPic)   # connect signal to snap function
 
         self.pointWatch.findFirstPoint()
-
     
       
     #----------------------------------------
@@ -341,105 +343,14 @@ class printLoop(QObject):
             raise ValueError('Input to SBPtimings must be an SBP file')
         sbpfile = sbpfile
         csvfile = sbpfile.replace('.sbp', '.csv')
-        if not os.path.exists(csvfile):
+        if not os.path.exists(csvfile) or os.path.getmtime(csvfile)<os.path.getmtime(sbpfile):
+            # if there is no csv file or the sbp file was edited since the csv file was created, create a csv
             sp = SBPPoints(sbpfile)
             sp.export()
             sp = pd.read_csv(csvfile, index_col=0)
         else:
             sp = pd.read_csv(csvfile, index_col=0)
         self.pointWatch = pointWatch(sp)
-
-    def updateSpeeds(self, targetPoint:pd.Series):
-        '''update flow speeds'''
-        for flag0, cw in self.channelWatches.items():
-            if targetPoint[f'p{flag0}_before']<0 and targetPoint[f'p{flag0}_after']>0:
-                # change speed
-                cw.updateSpeed(float(targetPoint[f'p{flag0}_after']))
-           
-    @pyqtSlot()
-    def readPoint(self) -> None:
-        '''read the next point from the points list'''
-        self.lastTime = self.pointTime    # store the time when we got the last point
-        self.pointTime = datetime.datetime.now()
-        self.changePoint = self.readLoc
-        self.timeTaken = False
-        self.hitRead = False
-        self.pointsi+=1
-        self.printi+=1
-        if self.pointsi>=0 and self.pointsi<len(self.points):
-            targetPoint = self.points.iloc[self.pointsi] 
-            if pd.isna(targetPoint['speed']):
-                # this is just a speed step. adjust speeds and go to the next point
-                self.updateSpeeds(targetPoint)
-                if self.diag>1:
-                    print('Update speed')
-                self.readPoint()
-                return
-                
-            # define last and next points
-            if self.pointsi>0:
-                self.lastPoint = self.targetPoint
-            self.targetPoint = targetPoint 
-            self.speed = float(self.targetPoint['speed'])
-            self.speed0 = self.speed
-            self.signals.target.emit(*toXYZ(self.targetPoint))          # update gui
-            self.targetVec = ppVec(self.lastPoint, self.targetPoint)
-            if len(self.points)>self.pointsi+1:
-                self.nextPoint = self.points.iloc[self.pointsi+1]
-                self.nextVec = ppVec(self.targetPoint, self.nextPoint)
-            self.defineStates()
-        else:
-            self.tableDone = True
-        if self.diag>1:  
-            diagStr = self.diagPosRow({}, newPoint=True)
-        if  (self.diag>1 and (self.printi>50)):
-            print(self.headStr)
-            self.printi = 0
-
-        
-            
-    def defineStates(self) -> None:
-        ''''determine the state of the print, i.e. what we should watch for'''
-        for flag0, cw in self.channelWatches.items():
-            # for each channel, determine when to change state
-            cw.defineState(self.targetPoint, self.nextPoint, self.lastPoint)
-
-    @pyqtSlot()
-    def run(self):
-        while True:  
-            # check for stop hit
-            self.keys.lock()
-            abort = self.keys.checkStop()
-            self.keys.unlock()
-            if abort:
-                # stop hit on shopbot
-                self.close()
-                self.signals.aborted.emit()
-                return
-            
-            killed = self.stopHitPoint()
-            if killed:
-                # if self.pointsi==len(self.points)-1:
-                if self.targetPoint['z']>0:
-                    # final withdrawal
-                    time.sleep(1) # wait 1 second before stopping videos
-                    self.close()
-                    self.signals.finished.emit()
-                else:
-                    # stop hit on shopbot
-                    self.close()
-                    self.signals.aborted.emit()
-                return
-            
-            # evaluate status
-            done = self.evalState()
-            if done:
-                time.sleep(1) # wait 1 second before stopping videos
-                self.close()
-                self.signals.finished.emit()
-                return
-            
-            time.sleep(self.dt/1000)
 
     #-------------------------------------
     
@@ -570,7 +481,15 @@ class printLoop(QObject):
             self.readPoint()
             
         return self.printWatch.tableDone
+
     
+    def evalStateSimple(self) -> bool:
+        '''determine what to do about the channels for short moves'''
+        self.updateState()
+        for flag0, cw in self.channelWatches.items():
+            cw.assessPositionSimple(self.flag)
+        return not flagOn(self.flag, self.sbRunFlag1 -1)
+
     #----------------------------
     
     @pyqtSlot()

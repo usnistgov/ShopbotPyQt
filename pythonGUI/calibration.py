@@ -285,6 +285,12 @@ class pCalibrationTab(QWidget):
     def successLayout(self) -> None:
         '''Create the layout'''
 
+        
+        self.folderRow = fileSetOpenRow(width=700, title='Set pressure calibration folder',
+                                   initFolder=self.flowRateFolder, 
+                                   tooltip='Open flow rate folder',
+                                  setFunc = self.setflowRateFolder,
+                                  openFunc = self.openflowRateFolder)
         self.status = createStatus(700) 
         topRow = QHBoxLayout()
         leftcol = QVBoxLayout()
@@ -324,10 +330,20 @@ class pCalibrationTab(QWidget):
                 , func=self.copyPressure)
         
         topRow = fHBoxLayout(leftcol, self.plot.layout)
-        self.setLayout(fVBoxLayout(self.status, topRow, self.grid))
+        self.setLayout(fVBoxLayout(self.status, self.folderRow, topRow, self.grid))
         
         
     #-------------------------------------
+    
+    def setflowRateFolder(self) -> None:
+        '''set the folder to save all the files we generate from the whole gui'''
+        self.flowRateFolder = setFolder(self.flowRateFolder)        
+        self.updateStatus('Changed flow rate folder to %s' % self.flowRateFolder, True)
+        self.folderRow.updateText(self.flowRateFolder)
+            
+    def openflowRateFolder(self) -> None:
+        '''Open the save folder in windows explorer'''
+        openFolder(self.flowRateFolder)
 
     
     def initTable(self, size:int=50) -> None:
@@ -364,7 +380,7 @@ class pCalibrationTab(QWidget):
     
     def pressure(self) -> int:
         try:
-            p = int(self.pressureLabel.text())
+            p = float(self.pressureLabel.text())
         except:
             logging.warning('Error reading pressure')
             p = 0
@@ -406,6 +422,7 @@ class pCalibrationTab(QWidget):
         self.updateGrid()
         self.grid.updateUnits(self.units)
         self.plot.updateUnits(self.units)
+
         
     #--------------------------
     
@@ -626,7 +643,7 @@ class pCalibrationTab(QWidget):
                     pass
                 elif row[0]=='':
                     pass
-                elif len(row)>3:
+                elif len(row)>3 and len(row[-1])>0:
                     # we're in the table
                     try:
                         f = float(row[0])
@@ -843,6 +860,7 @@ class pCalibration(QDialog):
         self.units = units
         for i,tab in self.calibWidgets.items():
             tab.updateUnits(units)
+
         
         
         

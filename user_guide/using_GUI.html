@@ -1,0 +1,284 @@
+<html>
+<head>
+  <link rel="stylesheet" href="user_guide.css">
+</head>
+<body>
+
+<iframe src="header.html" class="headerframe"></iframe>    
+    
+    <h1>Using the GUI</h1>
+    
+    <h2>Menu</h2>
+    <details>
+      <summary>
+          <span class="icon">▼</span><span class="open_text">Open</span><span class="close_text">Close</span>
+      </summary>
+       
+               <img src="img/updated_software_header.png"  class="graphic" alt="header menu of the GUI. Menu buttons are Log, speed calibration tool, and settings">
+         
+            <ul>
+                <li>The "log" button opens a separate window holding a log of all of the status updates in all of the windows.</li>
+                <li>The "speed calibration tool" button opens a separate window holding the flow rate calibration tool.</li>
+                <li>The "convert" button opens a separate window that converts gcode files into sbp files.</li>
+                <li>The "settings" <img src="../pythonGUI/icons/settings.png" class="icon2"> button opens a separate window that holds settings for all of the modules</li>
+            </ul>
+          
+    </details>
+
+    
+    <h2>Settings</h2>
+    <details>
+      <summary>
+          <span class="icon">▼</span><span class="open_text">Open</span><span class="close_text">Close</span>
+      </summary>
+    
+            <img src="img/software_settings_load.png" class="graphic" alt="The load/save tab of the settings module. There are 2 buttons and a checkbox that pertain to loading and saving settings configurations.">
+        
+            <p>All of the settings can be collectively saved to a .yml file via "Save settings to file." A previously saved settings file can be loaded via "Load settings from file". The checkbox "Save settings for next session" automatically saves all settings to configs/config.yml when the GUI is closed. configs/config.yml is automatically loaded on startup of the GUI.</p>
+        
+    </details>
+    
+    
+    
+     <h2>Export</h2>
+    <details>
+      <summary>
+          <span class="icon">▼</span><span class="open_text">Open</span><span class="close_text">Close</span>
+      </summary>
+        <img src="img/software_export.png" class="graphic">
+        <p>The export settings module sets where files will be saved, what they will be named, and which files to save.</p>
+        <ul>
+            <li>Use the "Load" <img src="../pythonGUI/icons/open.png" class="icon2"> button to select the folder where files will be exported.</li>
+            <li>The folder status bar shows what folder files will be exported into</li>
+            <li>The "Link" <img src="../pythonGUI/icons/link.png" class="icon2">  button opens the folder in Windows Explorer</li>
+            <li>The value in the "Sample name" field is added to all exported files. Depending on the values in the Settings <img src="../pythonGUI/icons/settings.png" class="icon2"> window, the "Sample name" is also the name of the subfolder into which all files are exported.</li>
+            <li>The camera buttons <img src="../pythonGUI/icons/nosave.png" class="icon2">  can be toggled to automatically save or not save videos of the entire print when a file is sent to the Shopbot. The "Basler camera" is the high-resolution camera. The "Nozzle camera" is a webcam pointed at the nozzle. "Webcam 2" is pointed at the entire Shopbot.</li>
+        </ul>
+        
+        <img src="img/software_settings_export.png" class="graphic" alt="The export tab of the settings window. There are various checkboxes and fields to determine how to name files.">
+        
+        <p>The settings box contains many options for how to name folders. A folder is automatically created for each sample. A subfolder can be automatically created for each shopbot print file.</p>
+        
+        <ul>
+            <li>To create a subfolder for each sample, select "Create folders"</li>
+            <li>To include the sample name in the file name, select "Include sample: In file name"</li>
+            <li>To include the sample name in the new folder, select "Include sample: In folder name"</li>
+            <li>To make the folder name "[Sample]_[Date]", select "Include date: In sample folder name"</li>
+            <li>To create an extra date subfolder inside of the sample folder, such that the folder will be "[Sample]/[Date]", select "Include date: As sample folder name".</li>
+            <li>To only put the sample name in the folder and have no separate folder for each date, such that the folder will be "[Sample]", select "Include date: in no folder name".</li>
+            <li>To include the time in the file name, select, "Include time: in file name"</li>
+            <li>To include the shopbot .sbp file name in the sample folder name, such that the folder name will be "[Sample]_[Date]_[ShopbotFile]", select "Include SB file name: In sample folder name".</li>
+            <li>To include the shopbot .sbp file name in the sample subfolder name, such that the folder name will be "[Sample]_[Date]/[ShopbotFile]", select "Include SB file name: As sample subfolder name".</li>
+            <li>To leave the shopbot .sbp file name out of the folder names, select "Include SB file name: In no folder name"</li>
+            <li>To include the shopbot .sbp file name in the file names, (e.g. a video file will be labeled by what shopbot file was being printed), select "Include SB file name: in file name"</li>
+            <li>To change how the date is formatted in file names and folder names, change the "Date format" box. Use the <a href="https://www.geeksforgeeks.org/python-strftime-function/">Python strftime format.</a></li>
+            <li>To change how the time is formatted in file names and folder names, change the "Time format" box. It is recommended that the time format include the date, since the date will not otherwise be added to file names. Use the <a href="https://www.geeksforgeeks.org/python-strftime-function/">Python strftime format.</a></li>
+            <li>Duplicate suffix is the format to use if there is already an file with the name that you are requesting, and the program needs to add a suffix to the filename to avoid overwriting the existing file. {0:0=3d} adds a 3 digit counter to the end, e.g. 012</li>
+            <li>Separator is the character to place in between parts of the file name. E.g. "_" might produce a file called "[Shopbot file name]_[device]_[date].[extension]", and "-" would produce a file called "[Shopbot file name]-[device]-[date].[extension]". </li>
+            <li>A sample file name is provided at the bottom of the page and should automatically update.</li>
+        </ul>   
+        
+    </details>
+    
+  
+    
+     
+    <h2>Shopbot</h2>
+    <details>
+      <summary>
+          <span class="icon">▼</span><span class="open_text">Open</span><span class="close_text">Close</span>
+      </summary>
+    <img src="img/software_shopbot.png" class="diagram" alt="The Shopbot control module. On the left is a Play button, Load button, and Remove file button. On the right is a status bar a list of files. On bottom is a box for the Pressure during printing.">
+    <p>The Shopbot module uses a file queue. The current file is marked with a "Play" <img src="../pythonGUI/icons/play.png" class="icon2"> icon. The "Play" <img src="../pythonGUI/icons/play.png" class="icon2"> button sends the current file to the SB3 Shopbot program, which runs the file. Once the file is done, the current file proceeds to the next file. You can use the settings <img src="../pythonGUI/icons/settings.png" class="icon2">  menu to determine whether to autoplay the next file or wait for the user to press play again.<p>
+        <ul>
+            <li>To add files to the end of the queue, click the "load" <img src="../pythonGUI/icons/open.png" class="icon2"> button. You can load multiple files at once. To load the same file multiple times, you must use the "load" button multiple times.</li>
+            <li>To remove files, click once on each file, then click the "remove" <img src="../pythonGUI/icons/delete.png" class="icon2"> button.</li>
+            <li>To clear the entire queue, click the "remove all" <img src="../pythonGUI/icons/deleteAll.png" class="icon2"> button.</li>
+            <li>To re-order the files, click and drag.</li>
+            <li>To select a file as the current file to send to the Shopbot, double click on the file.</li>
+            <li>To add a breakpoint when autoplay will pause, click the "breakpoint" <img src="../pythonGUI/icons/breakpoint.png" class="icon2"> button.</li>
+            <li>To set the pressure that the pressure controller goes to during printing, use the "pressure during print" box. This can be filled in using the "Use this pressure" button in the speed calibration tool or filled in manually.</li>
+        </ul>
+        
+        <img src="img/software_settings_shopbot.png" class="graphicwide" alt="The Shopbot tab of the settings window. There are options for autoplaying files and setting the Shopbot file source folder.">
+        
+        <p>In the settings menu, the user can make many decisions.<p>
+        
+        <ul>
+            <li> The "Log" option determines how often to write messages to the console.</li>
+            <ul>
+                <li>"None": No messages will be sent during printing.</li>
+                <li>"Just critical": Only major changes in state will be printed to the console during printing.</li>
+                <li>"All changes": All changes in target point or pressure will be printed to console during printing.</li>
+                <li>"All time steps": Every time the GUI checks the state, it will print a message to the console.</li>
+            </ul>
+            <li> ".SBP file folder" is the folder that opens when the user clicks the "load" button on the main GUI window. You can change this folder using the "load" button <img src="../pythonGUI/icons/open.png" class="icon2"> in settings. You can open this folder in Windows explorer using the "link" button <img src="../pythonGUI/icons/link.png" class="icon2">.</li> 
+            <li> File queue: Check "show full path in file queue" to show the full path of every file in the file queue. Otherwise, it will only show the file base name.</li>
+            <li> Saving time series: the user can decide what information to include in the "time" table that is exported during each print. </li>
+            <ul>
+                <li> "Save x,y,z" will save the positions displayed by Sb3.exe, estimated by this GUI, and the target point maintained by this GUI.</li>
+                <li> "Save output flag" will save the status of all of the output flags on Sb3.exe to the table.</li>
+                <li> "Save data frequency" is how often to write points to the table during a print, in milliseconds.</li>
+                <li> "Save metadata and time series for prints without pressure" saves the metadata file and the time file even when the print never turns the Fluigent on and off. This can be useful for saving space when running prints that are purely for taking images.</li>
+            </ul>
+            <li> When the print is done:</li>
+            <ul>
+                <li> "Automatically start the next file" means that the next file in the queue will run without the user pressing play, unless the next file is a breakpoint.</li>
+                <li> "Wait for the user to press play" means that the user needs to press the play button for every file.</li>
+            </ul>
+            <li> Pressure strategy</li>
+            <ul>
+                <li> "Track points, flow speeds, and flags" means that the GUI will step through the points in the .sbp file while Sb3.exe is stepping through the points and try to correct for timing errors that occur in Sb3.exe. If your file has many small moves, this mode might be buggy.</li>
+                <li> "Only track flags" means that the GUI will only change pressures and take images based on the status of the output flags. In this mode, you cannot change the ink flow speed, and you may experience mistimed changes in pressure.</li>
+            </ul>
+            <li>"Burst pressure scaling": When the pressure is first turned on, it will go to the run pressure listed in the main GUI, multiplied by this scaling factor. Set to 1 if you don't want to go to a burst pressure. If you want to burst to a higher pressure at first, set this value greater than 1.</li>
+            <li>"Burst pressure length": After going to the burst pressure, the GUI will linearly drop the pressure down to the run pressure over this distance, based on the GUI's estimated of position. The minimum length that will make a difference is the resolution of the Shopbot display, which is on the order of 0.1 mm. If you set this to zero, you will go to the burst pressure and then immediately drop down in the next time step.</li>
+            <li>"Crit time on": The GUI will turn the extrusion pressure on this amount of time before the estimated point reaches the target point. This can be useful if there is a transient between turning on pressure and start of flow.</li>
+            <li>"Crit time off": The GUI will turn the extrusion pressure off this amount of time before the estimated point reaches the target point. This can be useful if there is a transient between turning pressure off and stop of flow.</li>
+            <li>"Zero distance": If a point is within this distance of the target point, the GUI considers it to be at the target point.</li>
+            <li>"Check flag frequency": How often the GUI will check the state of the Shopbot, in milliseconds.</li>
+            <li>"Run flag": Which flag indicates to the GUI that we are running a file. Turn the flag on before starting any moves in your .sbp file.</li>
+        </ul>
+        
+        <img src="img/software_flags.png" class="graphicwide" alt="The flag section of the GUI main window, inside of the file box.">
+        
+        <p> The flag section of the file box in the main window shows the status of the Shopbot. </p>
+        <ul>
+            <li>The first column is the x,y,z position displayed in Sb3.exe. This position does not necessarily reflect the actual position of the Shopbot. This position is only updated during prints.</li>
+            <li>The second column is the x,y,z position estimated by this GUI. This position is only updated during prints.</li>
+            <li>The third column is the x,y,z position that this GUI thinks is the next point the Shopbot is going to. This position is only updated during prints.</li>
+            <li>The flags are the devices that the 12 output flags of the Shopbot are assigned to. You can change these assignments in the settings menu. These flags will light up during prints.</li>
+        </ul>
+
+        
+    </details>
+    
+      <h2>Metadata</h2>
+    <details>
+      <summary>
+          <span class="icon">▼</span><span class="open_text">Open</span><span class="close_text">Close</span>
+      </summary>
+    
+            <img src="img/software_settings_metadata.png" class="graphic" alt="The metadata tab of the settings module. The tab consists of a table with the headers property, value, and units, and some values filled in.">
+        
+            <p>The metadata tab holds a table of values that will be included in the metadata table that is exported with prints. The columns should follow the format property, value, and units. Do not touch row 1, the headers. This table could be used to save any information that you want to be included in metadata about prints.</p>
+        
+    </details>
+    
+        <h2>Fluigent</h2>
+    <details>
+      <summary>
+          <span class="icon">▼</span><span class="open_text">Open</span><span class="close_text">Close</span>
+      </summary>
+        
+        <img src="img/software_fluigent.png" class="graphicwide"  alt="Fluigent pressure controller module. For each pressure channel, the top section has buttons and fields to request specific pressures, indefinitely or for a finite time. The bottom section has a graph of pressure over time.">
+        
+        <ul>
+            <li>To turn on the pressure for a certain channel on the Fluigent pressure controller, fill the "Set Pressure" box and either press [Enter] or click the top "Go" button, next to "indefinitely".</li>
+            <li>To turn on the pressure for a certain channel on the Fluigent, fill the "Set Pressure" box, fill the "fixed time" box, and click the bottom "Go" button, next to "for fixed time".</li>
+            <li>The bottom graph shows the recent pressure graph.</li>
+        </ul>
+        
+        <img src="img/software_settings_fluigent.png" class="graphicwide" alt="The fluigent tab of the settings window. It contains options for how to show the pressure versus time plot.">
+        <p>The settings box contains options for plotting and saving Fluigent data</p>
+        
+        <ul>
+            <li>"Save pressure graph": Check this if you want to include pressure readings in the time table exported during prints.</li>
+            <li>"Pressure units": The units in which the pressures will be displayed, saved, and inputted. mbar or kPa are recommended.</li>
+            <li>"Time between readings": The frequency at which the software reads the pressure and updates the display.</li>
+            <li>"Plot time range": The length of time since the present displayed on the plot.</li>
+            <li>"Plot pressure range": The maximum pressure shown on the plot.</li>
+            <li>"Channel color": Set the color for this channel displayed in the GUI.</li>
+            <li>"Flag": Set the flag that this channel corresponds to. Use this flag number in .sbp files.</li>
+        </ul>
+        
+    </details>
+   
+    
+    <h2>Cameras</h2>
+    <details>
+      <summary>
+          <span class="icon">▼</span><span class="open_text">Open</span><span class="close_text">Close</span>
+      </summary>
+        <img src="img/software_camera.png" class="graphic" alt="Basler camera module with three buttons: start preview, start recording, and snapshot.">
+        <p>Each camera has its own module. The Basler camera is the high-resolution camera, and the nozzle camera and webcam 2 are webcams. </p>
+            
+        <ul>
+               <li>To start the live camera preview, click the "start preview" <img src="../pythonGUI/icons/closedeye.png" class="icon2"> button.</li>
+            <li>To stop the live camera preview, click the "stop preview" <img src="../pythonGUI/icons/eye.svg" class="blackIcon">button.
+            <li>To start recording, click the "start recording" <img src="../pythonGUI/icons/Record.png" class="icon2"> button. The status bar will show how long the video has been recording, and how many frames have been lost during recording. Lost frames are filled in with duplicates from the last recorded frame, so videos should be as long as the recording time.</li>
+            <li>To stop recording and save, click the "stop recording" <img src="../pythonGUI/icons/recordstop.png" class="icon2"> button. The status bar will show how many frames have been written to file.</li>
+            <li>To take a single still, click the "snapshot" <img src="../pythonGUI/icons/camera.png" class="icon2"> button.</li>
+        </ul>
+        
+        <img src="img/software_settings_basler.png" class="graphicwide" alt="The Basler camera tab of the settings window. Each camera has its own tab. There are options for how many messages to log, what flag this device is assigned to, frame rate, preview rate, and exposure.">
+        
+        <p>Each camera has its own tab on the settings module.</p>
+        
+        <ul>
+            <li> "Type" is the name of the camera. This is assigned in the config.yml file. </li>
+            <li> "Log": how often to log messages. To log a status update for each frame, change the "log" setting to "All frames". To only log important status updates, select "Just critical". To keep all messages out of the log window, select "None".</li>
+            <li> "SB output flag": The flag that this device is assigned to. To take pictures during a print, turn this flag on and off. This is only allowed if there are no pressure changes during the print.</li>
+            <li> "Frame rate": Frame rate, in frames per second, at which to read frames. To maximize the frame rate, set the frame rate to a low value (e.g. 1), set the exposure through the "Exposure" field, type [Enter] or click "Save", then click "Auto" next to the Frame rate field. To manually set the frame rate, complete the Frame rate field and type [Enter] or click "Save". If the frame rate is too fast for the exposure time, the program will throw an error.</li>
+            <li> "Preview frame rate": How often to send frames to the GUI display. While the recording frame rate will always be at "frame rate", this value for the preview window can be lower than the "frame rate". Setting a lower value here might result in lag in the preview.</li>
+            <li>"Exposure": how long, in milliseconds, the camera is exposed to light during a image collection. Auto exposure is not yet implemented.</li>
+        </ul>
+        
+    </details>
+    
+    
+
+    
+    
+    <h2>Conversion Tool</h2>
+    <details>
+      <summary>
+          <span class="icon">▼</span><span class="open_text">Open</span><span class="close_text">Close</span>
+      </summary>
+    
+        <img src="img/conversion_sample.png" class='graphicwide'  alt="File conversion window. The window has fields for loading and saving files, as well as adding to queue.">
+        
+        <p>The conversion window can currently take in both STL and GCODE files to be converted into an SBP file. However, if an STL file is inserted, the GUI will only open the Cura slicer. You must first create the GCODE file, save it, and then choose the file within the GUI.</p>
+        <li>"G-Code file": To add a file to convert, click the "Load File" button <img src="../pythonGUI/icons/open.png" class="icon2">. The file name will then be displayed. Click the "link" button <img src="../pythonGUI/icons/link.png" class="icon2"> to open that file's folder in Windows explorer.</li>
+        <li>"SBP name": This will default to the original file name, with an .sbp extension. You can change this value if you wish to use a different file name. The extension will still be .sbp whether or not you put it in this field.</li>
+        <li>"SBP folder": To save the SBP file to the same location as the original file, select 'Same folder as G-Code file'. Otherwise, select "Different folder". This will enable a "load" button <img src="../pythonGUI/icons/open.png" class="icon2"> that will let you change the target folder, and a "link" button <img src="../pythonGUI/icons/link.png" class="icon2"> that will open the target folder in Windows Explorer.</li>
+        <li>"Queue": Check this to add the SBP file to the Shopbot queue when the tool is done converting the .gcode file to .sbp</li>
+        <li>"Close": Check this to close this popup window when done converting the .gcode file to .sbp.</li>
+        <li>"Flow channel": Which channel to turn on during printing, when the .gcode file includes extrusion commands.</li>
+        <li>"Convert G-Code to SBP": Conver the file to .sbp, save it, add to queue if requested, and close this window if requested.</li>
+        <li>If you exit out of the window accidentally, the window keeps all previous settings. This includes when there is a successful conversion.</li>
+    </details>
+    
+    
+    <h2>Speed calibration tool</h2>
+    <details>
+      <summary>
+          <span class="icon">▼</span><span class="open_text">Open</span><span class="close_text">Close</span>
+      </summary>
+        <img src="img/software_pressure_calibration.png" class="diagram" alt="Pressure calibration software window. The window has fields for sample info and intended speeds. At the bottom is a grid of collected values. At the right is a plot of the collected values and a best fit curve.">
+        <img src="img/software_fluigent.png" class="graphic" alt="Fluigent pressure controller module. The top section has buttons and fields to request specific pressures, indefinitely or for a finite time. The bottom section has a graph of pressure over time.">
+        
+        <p>Each time a new ink is loaded onto the printer, the pressure should be calibrated. Pressures can vary based on ink rheology, length of tubing, and pinch points in the tubing. For each pressure channel you are going to use during a session, the calibration process is as follows:</p>
+        
+        <ol>
+            <li> Set the file folder to save the pressure calibration table to using the "load" button <img src="../pythonGUI/icons/open.png" class="icon2">. You can open this folder in Windows explorer using the "link" button <img src="../pythonGUI/icons/link.png" class="icon2">.</li> 
+            <li>Load ink of known density onto printer. Start flow until the tubing is completely full, and ink is exiting the nozzle.</li>
+            <li>If you have previously saved the density for this fluid, select the sample from the "Load density" menu. If you type the beginning of the sample name into the "Sample" field, it will narrow the "Load density" list down to samples that start with that value. Selecting an ink loads the Sample name and Density.</li>
+            <li>If you have not previously loaded the density for this fluid, fill in the "Sample" and "Density" fields. Clicking "Save" will store this new density in the density.yml file in the configs folder, so it will be available the next time you load the sample.</li>
+            <li>Fill in the nozzle inner diameter.</li>
+            <li>Fill in the target flow speed</li>
+            <li>Mass the container. Fill in "init wt" in row 1. Place container under nozzle.</li>
+            <li>In the Fluigent module, put a pressure, e.g. 100, into the "Set pressure" box. Put a time, e.g. 15, into the "fixed time" box. Press "Go", next to the fixed time box. This will turn on the pressure to, e.g. 100 mBar for 15 seconds, then turn it off. It will automatically put the values for pressure and time into the top available row in the calibration table.</li>
+            <li>Mass the container. Fill in "final wt" in row 1. This will automatically fill in the "speed" value for row 1 and plot it on the graph.</li>
+            <li>Repeat previous 3 steps at varying pressures, filling in rows 2 and beyond until the calibration curve no longer shifts with additional points.</li>
+            <li>When you are done with calibration, click "Use this pressure". This will take the "Pressure" value for the given target speed and fill the pressure into the "Shopbot" module, so Channel 1 will turn to that pressure during printing. You can also fill this value in manually in the "Shopbot" module. If you put changes in ink speed into your .sbp file (see <a href="writing_SBP.html">Writing SBP files</a>), the GUI will read the change out of the file, update the target speed box, and update the run pressure box accordingly.</li>
+            <li>Click "Save" to save the entire calibration table and metadata to the export folder. </li>
+        </ol>
+
+    </details>
+    
+    
+<iframe src="footer.html" class="footerframe"></iframe>   
+    
+</body>
+</html>

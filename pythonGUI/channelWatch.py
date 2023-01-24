@@ -312,7 +312,6 @@ class channelWatch(QObject):
                 self.getSadd('OFF ', {'Flag off':True}, diagStr)
                 self.turnOff()
                 self.changedBy = 'flag'
-            
         
     def assessPosition(self, sbFlag:int, diagStr:str) -> None:
         '''check the state and do actions if relevant
@@ -347,7 +346,7 @@ class channelWatch(QObject):
         elif self.state==5:
             # turn off at end
             return self.assessTurnOff(flagOn0, diagStr)
-                
+ 
     
     def assessPositionSimple(self, sbFlag:int) -> None:
         '''only react to flags'''
@@ -362,6 +361,23 @@ class channelWatch(QObject):
         else:
             if self.on:
                 self.turnOff()
+
+    
+    def assessPositionSimple(self, sbFlag:int) -> None:
+        flagOn0 = flagOn(sbFlag, self.flag0)
+        
+        if flagOn0 is True:
+            if self.on is True:
+                return
+            else:
+                self.turnOn()
+                return
+        else:
+            if self.on is True:
+                self.turnOff()
+                return
+            else:
+                return
 
 
     @pyqtSlot() 

@@ -16,4 +16,4 @@ import layout
         
 '''Run the program'''
 if __name__ == "__main__":
-    layout.MainProgram(meta=False, sb=False, flu=False, cam=True, test=True, file=True)
+    layout.MainProgram(meta=False, sb=False, flu=False, cam=True, test=True, file=True, calib=False, convert=False)

@@ -1,6 +1,36 @@
+body{
+    max-width:1000px;
+    margin: 0 auto;
+    margin-top: 30px;
+    padding:0;
+    line-height:1.3;
+}
+
+.headerframe{
+    position:relative; 
+    border:0; 
+    height: 300px;
+    width:100%;
+}
+
+.header,.footer{
+    background-color:#e8e8e8;
+    padding: 10px;
+    border-radius:20px;
+}
+
+.footerframe{
+    position:relative; 
+    border:0; 
+    height:200px; 
+    width:100%;
+}
+
 details {
-  user-select: none;
-    margin-left:20px
+    margin-left:20px;
+    border: 1px solid #aaa;
+    border-radius: 4px;
+    padding: .5em .5em .5em;
 }
 
 details[close]>summary span.icon {
@@ -34,8 +64,11 @@ details[open]>summary span.close_text {
 }
 
 summary {
-  display: flex;
-  cursor: pointer;
+    display: flex;
+    font-weight: bold;
+    margin: -.5em -.5em 0;
+    padding: .5em;
+    cursor: pointer;
 }
 
 summary::-webkit-details-marker {
@@ -47,13 +80,18 @@ summary::-webkit-details-marker {
     max-width:100%;
 }
 
+.graphicwide {
+    max-width:100%;
+}
+
 .diagram{
     width:800px;
     max-width:100%;
 }
 
 .tabstep{
-    width:300px
+    min-width:300px;
+    max-width:500px;
 }
 
 .tg  {
@@ -107,4 +145,46 @@ summary::-webkit-details-marker {
 .blackIcon{
     width:20px;
     filter: invert(100%) sepia(0%) saturate(0%) hue-rotate(182deg) brightness(107%) contrast(105%);
+}
+
+
+pre span {
+    display: block;
+    line-height: 1.5rem;
+    counter-increment: line;
+}
+
+.headlink{
+    background-color: #b6d7f2;
+    color: #080d1c;
+    border-radius: 3px; 
+    padding: 5px;
+    text-decoration:none;
+    min-width:100px;
+}
+
+.headlink:hover{
+    background-color: #decc7c;
+}
+
+pre.code {
+  counter-reset: line;
+}
+
+code {
+  counter-increment: line;
+    font-size:14;
+    line-height:1.4;
+
+}
+
+code::before {
+  content: counter(line);
+  display: inline-block;
+  width: 1.5em; /* Fixed width */
+  border-right: 1px solid #ddd;
+  padding: 0 .5em;
+  margin-right: .5em;
+  color: #888;
+  -webkit-user-select: none;
 }

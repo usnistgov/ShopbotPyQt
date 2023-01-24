@@ -123,7 +123,7 @@ class fluChannel(QObject):
     @pyqtSlot(float)
     def goToRunPressure(self, scale:float) -> None:
         '''set the pressure for this channel to the pressure in the constBox'''
-        runPressure = int(self.constBox.text())
+        runPressure = float(self.constBox.text())
         self.goToPressure(runPressure*scale, False)
 #         print(f'go to {runPressure*scale}')
     
@@ -152,10 +152,19 @@ class fluChannel(QObject):
             self.fluBox.updateStatus(f'Setting channel {self.chanNum0} to 0 {self.units}', True)
         setPressure(self.chanNum0, 0, self.units)
         
+    def updatePrintStatus(self, status:str) -> None:
+        '''store the status'''
+        self.printStatus = status
+        
+    def getPrintStatus(self) -> None:
+        '''get the status and clear it'''
+        status = self.printStatus
+        self.printStatus = ''
+        return status
         
     def writeToTable(self, writer) -> None:
         '''write metatable values to a csv writer object'''
-        press = int(self.constBox.text())
+        press = self.constBox.text()
         writer.writerow([f'ink_pressure_channel_{self.chanNum0}',self.units, press])
         writer.writerow([f'flag1_channel_{self.chanNum0}','', self.flag1])
         
@@ -333,10 +342,12 @@ class fluSettingsBox(QWidget):
     def __init__(self, fluBox:connectBox):
         '''parent is the connectBox that this settings dialog belongs to.'''
         
-        super().__init__(fluBox)  
+        super().__init__(fluBox) 
+
         self.fluBox = fluBox
         
         layout = QVBoxLayout()
+    
         
         self.savePressureCheck = fCheckBox(layout, title='Save pressure graph during print'
                                            , checked=fluBox.savePressure
@@ -505,8 +516,7 @@ class fluSettingsBox(QWidget):
             self.fluBox.pchannels[chanNum0].flag1 = newflag1
             self.fluBox.sbWin.flagBox.labelFlags()
             self.fluBox.updateStatus(f'Changing flag of channel {chanNum0} to {newflag1}', True)
-            
-        
+
         
 #--------------------------------------
 
@@ -662,15 +672,7 @@ class fluBox(connectBox):
         '''get a layout with the fluigent buttons'''
         return self.buttRow('fluButts')
         
-    def saveConfig(self, cfg1):
-        '''save the current settings to a config Box object'''
-        cfg1.fluigent.dt = self.dt 
-        cfg1.fluigent.trange = self.trange
-        cfg1.fluigent.pmax = self.pmax 
-        cfg1.savePressure = self.savePressure
-        for pchannel in self.pchannels:
-            cfg1 = pchannel.saveConfig(cfg1)
-        return cfg1
+
         
     #-----------------------------------------
     
@@ -734,15 +736,17 @@ class fluBox(connectBox):
             out = [j[-1] for j in self.fluPlot.pw.pressures]  # most recent pressure
         else:
             out = []
-        return out
+        out2 = [channel.getPrintStatus() for channel in self.pchannels]
+        return out+out2
     
     def timeHeader(self) -> List:
         '''get a list of header values for the time table'''
         if self.savePressure and self.connected:
-            out = [f'Channel_{i}_pressure(mbar)' for i in range(self.numChans)]
+            out = [f'Channel_{i}_pressure({self.units})' for i in range(self.numChans)]
         else:
             out = []
-        return out
+        out2 = [f'Channel_{i}_status' for i in range(self.numChans)]
+        return out+out2
     
     
     def writeToTable(self, writer) -> None:

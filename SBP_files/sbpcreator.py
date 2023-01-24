@@ -88,8 +88,8 @@ class sbpCreator:
     def printVolume(self):
         print('{:0.3f}'.format(self.volume/1000), 'mL,', int(np.floor(self.time/60)), 'min', int(self.time%60), 's')
         
-    def prime(self, channel:int=0):
-        self.turnOn(cfg.shopbot.flag1-1)
+    def prime(self, channel:int=0, runFlag1:Union[int, str]=cfg.shopbot.flag1):
+        self.turnOn(runFlag1)
         self.turnOn(channel)
         self.turnOff(channel)
      
@@ -342,19 +342,44 @@ class sbpCreator:
         self.file+=s
         return s
     
+    def convertFlag(self, flag0:int) -> str:
+        if type(flag0) is int:
+            f = flag0+1
+        else:
+            if flag0[-1]=='1':
+                # this flag is actually 1 indexed
+                f = flag0
+            else:
+                # assume the flag is 0 indexed
+                print('flag not found: ', flag0)
+                flag0 = self.floatSC(flag0)+1
+        return f
+    
     def turnOn(self, flag0:int) -> str:
         '''Turn on an output flag. Input is 0-indexed, but SBP is 1-indexed.'''
-        s = f'SO, {flag0+1}, 1\n'
+        f = self.convertFlag(flag0)
+        s = f'SO, {f}, 1\n'
         self.file+=s
         self.pOn = True
         return s
     
     def turnOff(self, flag0:int) -> str:
         '''Turn off an output flag. Input is 0-indexed, but SBP is 1-indexed.'''
-        s = f'SO, {flag0+1}, 0\n'
+        f = self.convertFlag(flag0)
+        s = f'SO, {f}, 0\n'
         self.file+=s
         self.pOn = False
         return s
+    
+    def snap(self, zeroJog:bool=False, wait1:Union[float,str]=0.5, wait2:Union[float,str]=0.5, camFlag:int=2):
+        '''go to the point and snap a picture'''
+        if zeroJog:
+            self.m3(self.cp[0], self.cp[1], self.cp[2]) # add a zero move to fix timing issue
+        self.snapPoints.append(self.cp)
+        self.pause(wait1)
+        self.turnOn(camFlag)
+        self.pause(wait2)
+        self.turnOff(camFlag)   
     
     #------------
     
@@ -517,7 +542,8 @@ class sbpCreator:
         
     def setUnits(self, **kwargs):
         '''Set the units to mm'''
-        self.file+='VD , , 1\nVU, 157.480315, 157.480315, -157.480315\n'
+        self.file+='VD , , 1\nVU, 157.480315, 157.480315, -157.480315\n'  # set mm, negative z is up
+        self.file+='SA\n'  # set absolute
     
     
 ############---------------------------------
@@ -889,6 +915,140 @@ class verts(sbpCreator):
             
         return self.file
     
+class disturb(sbpCreator):
+    '''write a line, observe it, disturb it, observe it. 
+    writeDir is the direction to write in, writeLength of length of written line and disturbed line
+    shiftDir is the direction to displace the observed point towards, and shiftLength is the distance the observed point is displaced from the written line
+    distDir is the direction to displace the disturbed line, and distLength is the distance the disturbed line is displaced from the written line
+    initPt is the first point in the written line
+    shiftFrac is the weighting between the beginning and end of the line when finding the observation point. higher to weight the initial point more
+    writeExtend>0 to keep moving after flow stops
+    wait1 is the time between reaching the observation point and turning on the camera flag
+    wait2 is the time between turning on the camera flag and turning off the camera flag
+    wait3 is the time between turning off the camera flag and turning it on again
+    '''
+    
+    def __init__(self, flowFlag:int=0, camFlag:int=2
+                 , writeDir:str='+y', writeLength:Union[str,float]=10
+                 , shiftDir:str='+z', shiftLength:Union[str,float]=5
+                 , distDir:str='+z', distLength:Union[str,float]=1
+                 , initPt:list=[0,0,0]
+                 , shiftFrac:float=0.5
+                 , writeExtend:float=0
+                 , wait1:Union[str, float]=0.5, wait2:Union[str, float]=0.5, wait3:Union[str, float]=3
+                 , **kwargs):
+        super(disturb, self).__init__(**kwargs)
+        self.flowFlag = flowFlag
+        self.camFlag = camFlag
+        self.writeDir = writeDir
+        self.writeLength = writeLength
+        self.shiftDir = shiftDir
+        self.shiftLength = shiftLength
+        self.distLength = distLength
+        self.distDir = distDir
+        self.initPt = initPt
+        self.shiftFrac = shiftFrac
+        self.writeExtend = writeExtend
+        self.wait1 = wait1
+        self.wait2 = wait2
+        self.wait3 = wait3
+        self.getPoints()
+    
+    def getPoints(self):
+        
+        '''determine the beginning and end of the write, observe, and disturb lines'''
+        self.pts = {}
+        for s in ['w0', 'wf', 'wf2', 'o', 'd0', 'df', 'df2']:
+            self.pts[s] = self.initPt.copy()
+        
+        # calculate write positions
+        self.windex = {'x':0, 'y':1, 'z':2}[self.writeDir[-1]]
+        if self.writeDir[0]=='-':
+            self.writeLength = t(-1, self.writeLength)
+            self.writeExtend = t(-1, self.writeExtend)
+        x0 = self.initPt[self.windex]
+        xf = p(x0, self.writeLength)   
+        for s in ['wf', 'df']:
+            # set value of final written and disturbed points
+            self.pts[s][self.windex] = xf
+        
+        self.pts['o'][self.windex] = f'{self.shiftFrac}*({x0})+{1-self.shiftFrac}*({xf})'  # put observe point in middle of line
+        
+        
+        self.pts['wf2'] = self.pts['wf'].copy()
+        for ss in ['wf2', 'df']:
+            if not self.writeExtend==0:
+                self.pts[ss][self.windex] = p(self.pts[ss][self.windex], self.writeExtend) 
+        
+        # calculate observe positions
+        self.oindex = {'x':0, 'y':1, 'z':2}[self.shiftDir[-1]]
+        if self.shiftDir[0]=='-':
+            self.shiftLength = t(-1, self.shiftLength)
+        self.pts['o'][self.oindex] = p(self.initPt[self.oindex], self.shiftLength)   # shift observe point over
+        
+        # calculate disturb positions
+        self.dindex = {'x':0, 'y':1, 'z':2}[self.distDir[-1]]
+        if self.distDir[0]=='-':
+            self.distLength = t(-1, self.distLength)
+        for s in ['d0', 'df']:
+            self.pts[s][self.dindex] = p(self.initPt[self.dindex], self.distLength)   # shift disturb point over
+            
+        # for i,val in self.pts.items():
+        #     print(i, [self.floatSC(j) for j in val])
+            
+    def writeLine(self):
+        '''write the initial line'''
+        # write line
+        if self.writeDir=='+z':
+            # vertical line. come in from the top
+            self.mz(self.pts['wf2'][2])  
+            self.m2(self.pts['w0'][0], self.pts['w0'][1])
+        self.j3(*self.pts['w0'])  # move to the initial point
+        self.turnOn(self.flowFlag)  # turn on flow
+        self.m3(*self.pts['wf'])  # go to final written point
+        self.turnOff(self.flowFlag) # turn off flow
+        if not self.writeExtend==0:
+            self.m3(*self.pts['wf2'])
+            
+    def observe(self):
+        '''go to the observation position'''
+        # observe line
+        ofunc = 'm'+self.shiftDir[-1]
+        getattr(self, ofunc)(self.pts['o'][self.oindex])  # move just in the observation direction
+        self.m3(*self.pts['o']) # then to the observation point
+        self.snap(zeroJog=False, wait1=self.wait1, wait2=self.wait2, camFlag=self.camFlag)  # take picture
+        self.pause(self.wait3)             # wait
+        self.snap(zeroJog=False, wait1=self.wait1, wait2=self.wait2, camFlag=self.camFlag)  # take another picture
+        
+    def disturbLine(self):
+        '''disturb the line'''
+
+        if self.writeDir=='+z':
+            # vertical line. come in from the top
+            self.mz(self.pts['df'][2])  
+            self.m2(self.pts['df'][0], self.pts['df'][1])
+        else:
+            dfunc = 'm'+self.writeDir[-1]
+            getattr(self, dfunc)(self.pts['d0'][self.windex])  # move just in the writing direction
+            if not self.shiftDir==self.distDir:
+                dfunc = 'm'+self.distDir[-1]
+                getattr(self, dfunc)(self.pts['d0'][self.dindex])  # move just in the writing direction
+        self.m3(*self.pts['d0'])
+        self.m3(*self.pts['df'])
+                 
+    def sbp(self):
+        if self.created:
+            return self.file
+        
+        self.created=True
+        self.writeLine()
+        self.observe()
+        self.disturbLine()
+        self.observe()  
+        return self.file
+         
+            
+    
     
 class pics(sbpCreator):
     '''Take pictures'''
@@ -898,17 +1058,7 @@ class pics(sbpCreator):
         super(pics, self).__init__(**kwargs)
         self.flag0 = flag0   # 0-indexed
         self.wait = wait
-        
-    def snap(self, zeroJog:bool=True):
-        '''go to the point and snap a picture'''
-        if zeroJog:
-            self.m3(self.cp[0], self.cp[1], self.cp[2]) # add a zero move to fix timing issue
-        self.snapPoints.append(self.cp)
-        self.pause('&wait1')
-        self.turnOn(self.flag0)
-        self.pause('&wait2')
-        self.turnOff(self.flag0)       
-    
+ 
     def sbp(self):
         return self.file
         
