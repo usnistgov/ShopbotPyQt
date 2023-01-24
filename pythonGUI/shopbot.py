@@ -76,12 +76,12 @@ class sbSettingsBox(QWidget):
                                       func=self.updateSaveFlag)
         
         form1 = QFormLayout()
-        self.saveFreq = fLineEdit(form1, title=f'Save data frequency (ms)', 
+        self.saveFreq = fLineUnits(form1, title=f'Save data frequency', 
                                   text=str(cfg.shopbot.saveDt), 
                                   tooltip='During prints, save data every _ ms',
                                   validator=objValidator2,
                                    width=w,
-                                 func = self.updateSaveFreq)
+                                 func = self.updateSaveFreq, units=['ms'], uinit='ms')
         layout.addLayout(form1)
         self.savePicMetaData = fCheckBox(layout, title='Save metadata and time series for prints without pressure', 
                                       checked=cfg.shopbot.savePicMetadata, 
@@ -105,33 +105,45 @@ class sbSettingsBox(QWidget):
                                     tooltip='When you first turn on pressure, turn it to this value times the target value before you turn it down to the target value',
                                    func=self.updateBurstScale,
                                    width=w)
-        self.burstLength = fLineEdit(fileForm, title='Burst pressure length (mm)',
-                                    text=str(cfg.shopbot.burstLength), 
-                                    tooltip='After you turn on the pressure, decrease to the target pressure over this amount of distance in mm',
+        self.burstLength = fLineUnits(fileForm, title='Burst pressure decay length',
+                                    text=str(cfg.shopbot.burstLength.value), 
+                                    tooltip='After you turn on the pressure, decrease to the target pressure over this distance in mm or time in seconds',
                                    func=self.updateBurstLength,
-                                   width=w)
-        self.critTimeOn = fLineEdit(fileForm, title='Crit time on (s)',
-                                    text=str(cfg.shopbot.critTimeOn), 
-                                    tooltip='Turn on the pressure this amount of time before the flag is turned on',
+                                   width=w, units=['mm', 's'], uinit=cfg.shopbot.burstLength.units)
+        self.critTimeOn = fLineUnits(fileForm, title='Crit length on',
+                                    text=str(cfg.shopbot.critTimeOn.value), 
+                                    tooltip='Turn on the pressure this amount of time in s or length in mm before the flag is turned on',
                                    func=self.updateCritTimeOn,
-                                   width=w)
-        self.critTimeOff = fLineEdit(fileForm, title='Crit time off (s)', 
-                                     text=str(cfg.shopbot.critTimeOff), 
-                                     tooltip='Turn off the pressure this amount of time before the flag is turned off',
+                                   width=w, units=['mm', 's'], uinit=cfg.shopbot.critTimeOn.units)
+        self.critTimeOff = fLineUnits(fileForm, title='Crit time off (s)', 
+                                     text=str(cfg.shopbot.critTimeOff.value), 
+                                     tooltip='Turn off the pressure this amount of time in s or length in mm before the flag is turned off',
                                     func=self.updateCritTimeOff,
-                                   width=w)
-        self.zeroDist = fLineEdit(fileForm, title=f'Zero distance ({self.sbBox.units})', 
+                                   width=w, units=['mm', 's'], uinit=cfg.shopbot.critTimeOff.units)
+        self.zeroDist = fLineUnits(fileForm, title=f'Zero distance', 
                                   text=str(cfg.shopbot.zeroDist), 
                                   tooltip='If we are within this distance from a point, we are considered to be at the point. \
                                   In other words, margin of error or tolerance on distance measurements.',
                                  func = self.updateZeroDist,
-                                   width=w)
+                                   width=w, units=[self.sbBox.units], uinit=self.sbBox.units)
         
-        self.checkFreq = fLineEdit(fileForm, title=f'Check flag frequency (ms)', 
-                                  text=str(cfg.shopbot.dt), 
+        self.checkFreq = fLineUnits(fileForm, title=f'Check flag frequency', 
+                                  text=str(cfg.shopbot.dt.value), 
                                   tooltip='Check the status of the shopbot every _ ms',
                                   validator=objValidator2,
+<<<<<<< Updated upstream
                                    width=w)
+=======
+                                   width=w, units=[cfg.shopbot.dt.units], uinit=cfg.shopbot.dt.units)
+        self.runSimple = fRadioGroup(layout, 'Pressure strategy', 
+                                          {0:'Track points, flow speeds, and flags', 
+                                           1:'Only track flags'
+                                          2:'Track points, but let arduino override critTimeOn and critTimeOff'}, 
+                                          {0:0, 1:1, 2:2},
+                                         self.sbBox.runSimple, col=True, headerRow=True,
+                                          func=self.changeRunSimple)
+        
+>>>>>>> Stashed changes
         objValidator3 = QIntValidator(cfg.shopbot.flag1min,cfg.shopbot.flag1max)
         self.flag1Edit = fLineEdit(fileForm, title=f'Run flag ({cfg.shopbot.flag1min}-{cfg.shopbot.flag1max})',
                               text =str(cfg.shopbot.flag1),
@@ -145,14 +157,14 @@ class sbSettingsBox(QWidget):
         
     def loadConfig(self, cfg1) -> None:
         '''load values from a config file'''
-        self.critTimeOn.setText(str(cfg1.shopbot.critTimeOn))
-        self.critTimeOff.setText(str(cfg1.shopbot.critTimeOff))
-        self.zeroDist.setText(str(cfg1.shopbot.zeroDist))
-        self.checkFreq.setText(str(cfg1.shopbot.dt))
+        for s in ['burstScale', 'burstLength', 'critTimeOn', 'critTimeOff', 'zeroDist']:
+            getattr(self, s).loadConfig(cfg1.shopbot[s])
+        self.checkFreq.loadConfig(cfg1.shopbot.dt)
+        self.saveFreq.loadConfig(cfg1.shopbot.saveDt)
+
         
     def saveConfig(self, cfg1):
-        '''save values to the config file'''
-        cfg1.shopbot.dt = self.getDt()
+        '''save values to the config file. all of these values should have already been saved in the main shopbot window'''
         return cfg1
     
     def changeDiag(self, diagbutton):
@@ -161,7 +173,7 @@ class sbSettingsBox(QWidget):
         logging.info(f'Changed logging mode on shopbot.')
         
     def getDt(self) -> float:
-        dt = float(self.checkFreq.text())
+        dt = float(self.checkFreq.value()['value'])
         if dt<=0:
             dt = 100
             logging.error('Bad value in shopbot check flag frequency')
@@ -180,6 +192,26 @@ class sbSettingsBox(QWidget):
             self.sbBox.autoPlay = False
             self.sbBox.updateStatus('Turned off autoplay', True)
             
+<<<<<<< Updated upstream
+=======
+    def changeRunSimple(self) -> None:
+        '''Change points tracking strategy'''
+        val = self.runSimple.value()
+        self.sbBox.runSimple = val
+        if val==0:
+            self.sbBox.updateStatus('Only tracking flags', True)
+            self.critTimeOn.enable()
+            self.critTimeOff.enable()
+        elif val==1:
+            self.sbBox.updateStatus('Tracking points and flags', True)
+            self.critTimeOn.enable()
+            self.critTimeOff.enable()
+        elif val==2:
+            self.sbBox.updateStatus('Tracking points and flags, no crit times', True)
+            self.critTimeOn.disable()
+            self.critTimeOff.disable()
+            
+>>>>>>> Stashed changes
     def updateSavePos(self) -> None:
         '''update whether to save position in table'''
         if self.savePosCheck.isChecked():
@@ -203,12 +235,12 @@ class sbSettingsBox(QWidget):
             
     def updateSaveFreq(self) -> float:
         '''update how often to save data during prints'''
-        dt = float(self.saveFreq.text())
+        dt = float(self.saveFreq.value()['value'])
         if dt<=0:
             dt = 100
             logging.error('Bad value in shopbot check flag frequency')
-            if cfg.shopbot.dt>0:
-                self.saveFreq.setText(str(cfg.shopbot.saveDt))
+            if cfg.shopbot.saveDt.value>0:
+                self.saveFreq.setText(str(cfg.shopbot.saveDt.value))
             else:
                 self.saveFreq.setText(str(dt))
         self.sbBox.saveFreq = dt
@@ -227,21 +259,24 @@ class sbSettingsBox(QWidget):
             self.sbBox.updateStatus(f'Updated shopbot flag to {self.sbBox.runFlag1}.', True)
             self.sbBox.runFlag1=newflag1
             self.sbBox.sbWin.flagBox.labelFlags()
+            
+    def updateUnitsValues(self, var:str) -> None:
+        d = getattr(self, var).value()
+        d['value'] = float(d['value'])
+        setattr(self.sbBox, var, d)
+        self.sbBox.updateStatus(f'Updated {var} to {d['value']} {d['units']}', True)
         
     def updateCritTimeOn(self) -> None:
         '''update sbBox crit time on'''
-        self.sbBox.critTimeOn=float(self.critTimeOn.text())
-        self.sbBox.updateStatus(f'Updated critTimeOn to {self.sbBox.critTimeOn}', True)
+        self.updateUnitsValues('critTimeOn')
         
     def updateCritTimeOff(self) -> None:
         '''update sbBox crit time on'''
-        self.sbBox.critTimeOff=float(self.critTimeOff.text())
-        self.sbBox.updateStatus(f'Updated critTimeOff to {self.sbBox.critTimeOff}', True)
+        self.updateUnitsValues('critTimeOff')
         
     def updateZeroDist(self) -> None:
         '''update sbBox crit zero dist'''
-        self.sbBox.zeroDist=float(self.zeroDist.text())
-        self.sbBox.updateStatus(f'Updated zero distance to {self.sbBox.zeroDist}', True)
+        self.updateUnitsValues('zeroDist')
         
     def updateBurstScale(self) -> None:
         '''update the burst pressure scaling'''
@@ -250,8 +285,7 @@ class sbSettingsBox(QWidget):
         
     def updateBurstLength(self) -> None:
         '''update the burst pressure length'''
-        self.sbBox.burstLength = float(self.burstLength.text())
-        self.sbBox.updateStatus(f'Updated burst length to {self.sbBox.burstLength}', True)
+        self.updateUnitsValues('burstLength')
 
     def setSBPFolder(self) -> None:
         '''set the folder to save all the files we generate from the whole gui'''
@@ -369,12 +403,12 @@ class sbBox(connectBox):
         cfg1.shopbot.includePositionInTable = self.savePos
         cfg1.shopbot.includeFlagInTable = self.saveFlag
         cfg1.shopbot.savePicMetadata = self.savePicMetadata
-        cfg1.shopbot.critTimeOn = self.critTimeOn
-        cfg1.shopbot.critTimeOff = self.critTimeOff
+        for s in ['critTimeOn', 'critTimeOff', 'burstLength']:
+            for s2 in ['value', 'units']:
+                cfg1.shopbot[s][s2] = getattr(self, s)[s2]
         cfg1.shopbot.zeroDist = self.zeroDist
         cfg1.shopbot.dt = self.checkFreq
         cfg1.shopbot.burstScale = self.burstScale
-        cfg1.shopbot.burstLength = self.burstLength
         cfg1.shopbot.diag = self.diag
         if hasattr(self, 'settingsBox'):
             cfg1 = self.settingsBox.saveConfig(cfg1)
@@ -391,12 +425,13 @@ class sbBox(connectBox):
         self.savePos = cfg1.shopbot.includePositionInTable
         self.saveFlag = cfg1.shopbot.includeFlagInTable
         self.savePicMetadata = cfg1.shopbot.savePicMetadata
-        self.critTimeOn=cfg1.shopbot.critTimeOn
-        self.critTimeOff=cfg1.shopbot.critTimeOff
+        for s in ['critTimeOn', 'critTimeOff', 'burstLength']:
+            setattr(self, s, {})
+            for s2 in ['value', 'units']:
+                 getattr(self, s)[s2] = cfg1.shopbot[s][s2]
         self.zeroDist=cfg1.shopbot.zeroDist
         self.checkFreq=cfg1.shopbot.dt
         self.burstScale = cfg1.shopbot.burstScale
-        self.burstLength = cfg1.shopbot.burstLength
         self.saveFreq = cfg1.shopbot.saveDt
         self.diag = cfg1.shopbot.diag
         
@@ -468,19 +503,15 @@ class sbBox(connectBox):
         for row in t1:
             writer.writerow(row)
         writer.writerow(['run_flag1', '', self.runFlag1])
-        writer.writerow(['critTimeOn', '', self.critTimeOn])
-        writer.writerow(['critTimeOff', '', self.critTimeOff])
-        writer.writerow(['zeroDist', '', self.zeroDist])
-        writer.writerow(['checkFreq', '', self.checkFreq])
+        writer.writerow(['critTimeOn', self.critTimeOn.units, self.critTimeOn.value])
+        writer.writerow(['critTimeOff', self.critTimeOff.units, self.critTimeOff.value])
+        writer.writerow(['zeroDist', self.units, self.zeroDist])
+        writer.writerow(['checkFreq', 'ms', self.checkFreq])
         writer.writerow(['burstScale', '', self.burstScale])
-        writer.writerow(['burstLength', '', self.burstLength])
+        writer.writerow(['burstLength', self.burstLength.units, self.burstLength.value])
 
     def testTime(self) -> None:
         '''create metadata file'''
-        # if hasattr(self.sbWin, 'fluBox'):
-        #     logging.info('Testing time series save')
-        #     self.sbWin.fluBox.startRecording()
-        #     QTimer.singleShot(2000, self.sbWin.fluBox.stopRecording)
         self.sbWin.initSaveTable()
         QTimer.singleShot(2000, self.sbWin.stopSaveTable())
         
@@ -716,13 +747,7 @@ class sbBox(connectBox):
             self.sbWin.camBoxes.stopRecording()    # turn off cameras
             
         self.sbWin.writeSaveTable()     # save the pressure and xyz readings    
-            
-        if hasattr(self, 'timer'):
-            try:
-                self.timer.stop()
-            except Exception as e:
-                print(f'Error deleting shopbot timer: {e}')
-                pass
+
                 
     def readyState(self):
         '''return to the ready state'''
@@ -767,6 +792,4 @@ class sbBox(connectBox):
     def close(self):
         '''this gets triggered when the whole window is closed'''
         self.stopPrintThread()
-        if hasattr(self, 'timer'):
-            self.timer.stop()
-            logging.info('Shopbot timer stopped')
+

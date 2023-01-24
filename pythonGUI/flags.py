@@ -301,7 +301,7 @@ class SBKeys(QMutex):
         return int(status)
     
     
-    def waitForSBReady(self) -> None:
+    def SBisReady(self) -> None:
         '''wait for the shopbot to be ready before starting the file'''
         self.ready=False
         status = self.sbStatus()

@@ -244,6 +244,8 @@ class fLineEdit(QLineEdit):
         fAdopt(self, text=text, **kwargs)
         if hasattr(form, 'addRow'):
             form.addRow(title, self)
+        elif hasattr(form, 'addWidget'):
+            form.addWidget(self)
 
             
 class fLineCommand(QLineEdit):
@@ -254,6 +256,49 @@ class fLineCommand(QLineEdit):
         if 'func' in kwargs:
             self.returnPressed.connect(kwargs['func'])
         fAdopt(self, text=text, **kwargs)
+        
+class fLineUnits(QHBoxLayout):
+    '''this is a line edit with radio buttons for units'''
+    
+    def __init__(self, form:QFormLayout, title:str='', text:str='', units:list=['mm', 's'], uinit:str='mm', **kwargs):
+        super(fLineUnits, self).__init__()
+        self.edit = fLineEdit(self, title=title, text=text, **kwargs)
+        if not len(units)>0:
+            raise ValueError('Need list of units')
+        self.units = fRadioGroup(self, '', dict([[i, u] for i,u in enumerate(units)]), dict([[i, i] for i,u in enumerate(units)]), uinit, col=False, headerRow=False)
+        if 'func' in kwargs:
+            self.units.clicked.connect(kwargs['func'])
+        if hasattr(form, 'addRow'):
+            form.addRow(title, self)
+            
+    def value(self) -> dict:
+        d = {}
+        d['value'] = self.edit.text()
+        d['units'] = self.units.value()
+        
+    def setText(self, v) -> None:
+        self.edit.setText(str(v))
+        
+    def setUnits(self, v) -> None:
+        self.units.setValue(v)
+        
+    def loadConfig(self, b) -> None:
+        '''load value and units from the config file'''
+        if not 'value' in b or not 'units' in b:
+            raise ValueError(f'Need value and units in config file for {b}')
+        self.setText(b['value'])
+        self.setUnits(b['units'])
+        
+    def disable(self):
+        '''gray out the values'''
+        self.edit.setEnabled(False)
+        self.units.disable()
+        
+    def enable(self):
+        '''gray out the values'''
+        self.edit.setEnabled(True)
+        self.units.enable()
+
         
 #----
         
@@ -332,7 +377,19 @@ class fRadioGroup:
                 b.setChecked(True)
             else:
                 b.setChecked(False)
-        
+                
+    def setValue(self, value) -> None:
+        for bid, val in self.valueDict.items():
+            if val==value:
+                self.setChecked(bid)
+                
+    def disable(self) -> None:
+        for i,b in self.buttons:
+            b.setEnabled(False)
+            
+    def enable(self) -> None:
+        for i,b in self.buttons:
+            b.setEnabled(True)
 #----
         
 class fToolBar(QToolBar):

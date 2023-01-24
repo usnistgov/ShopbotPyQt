@@ -94,19 +94,30 @@ meta:
 savePressure: true
 shopbot:
   autoplay: false
-  burstLength: 0.01
+  burstLength: 
+      value: 0
+      units: mm
   burstScale: 1.0
-  critTimeOff: -0.2
-  critTimeOn: 0.2
+  critTimeOff: 
+      value: 0
+      units: s
+  critTimeOn: 
+      value: 0
+      units: s
   currentFile: No file selected
   diag: 2
-  dt: 10.0
+  dt: 
+      value: 10.0
+      units: 'ms'
   flag1: 12
   flag1max: 12
   flag1min: 1
   includeFlagInTable: true
   includePositionInTable: true
-  saveDt: 25
+  runSimple: 0
+  saveDt: 
+      value: 25
+      units: 'ms'
   savePicMetadata: true
   sbpFiles: 
   - No file selected
