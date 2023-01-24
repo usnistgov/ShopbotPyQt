@@ -131,9 +131,6 @@ class sbSettingsBox(QWidget):
                                   text=str(cfg.shopbot.dt.value), 
                                   tooltip='Check the status of the shopbot every _ ms',
                                   validator=objValidator2,
-<<<<<<< Updated upstream
-                                   width=w)
-=======
                                    width=w, units=[cfg.shopbot.dt.units], uinit=cfg.shopbot.dt.units)
         self.runSimple = fRadioGroup(layout, 'Pressure strategy', 
                                           {0:'Track points, flow speeds, and flags', 
@@ -142,8 +139,7 @@ class sbSettingsBox(QWidget):
                                           {0:0, 1:1, 2:2},
                                          self.sbBox.runSimple, col=True, headerRow=True,
                                           func=self.changeRunSimple)
-        
->>>>>>> Stashed changes
+    
         objValidator3 = QIntValidator(cfg.shopbot.flag1min,cfg.shopbot.flag1max)
         self.flag1Edit = fLineEdit(fileForm, title=f'Run flag ({cfg.shopbot.flag1min}-{cfg.shopbot.flag1max})',
                               text =str(cfg.shopbot.flag1),
@@ -192,8 +188,6 @@ class sbSettingsBox(QWidget):
             self.sbBox.autoPlay = False
             self.sbBox.updateStatus('Turned off autoplay', True)
             
-<<<<<<< Updated upstream
-=======
     def changeRunSimple(self) -> None:
         '''Change points tracking strategy'''
         val = self.runSimple.value()
@@ -211,7 +205,6 @@ class sbSettingsBox(QWidget):
             self.critTimeOn.disable()
             self.critTimeOff.disable()
             
->>>>>>> Stashed changes
     def updateSavePos(self) -> None:
         '''update whether to save position in table'''
         if self.savePosCheck.isChecked():

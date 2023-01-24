@@ -166,22 +166,6 @@ class waitForReady(QRunnable):
         
 #-----------------------------------------------
 
-# def checkStopHit(self) -> None:
-#         '''this checks for a window that indicates that the stop has been hit, either on the SB3 software, or through an emergency stop. this function tells sb3 to quit printing and tells sbgui to kill this print '''
-#         hwndMain = win32gui.FindWindow(None, 'PAUSED in Movement or File Action')
-#         if hwndMain>0:
-            
-#         return
-    
-# def killStopHit(self) -> None:
-#     '''kill the stop hit window'''
-#     # trigger the end of print
-#     hwndChild = win32gui.GetWindow(hwndMain, win32con.GW_CHILD)
-#     win32gui.SetForegroundWindow(hwndChild)
-#     win32api.PostMessage( hwndChild, win32con.WM_KEYDOWN, 0x51, 0)
-    
-
-
 class waitForStart(QRunnable):
     '''waiting for the printer to start printing'''
     
@@ -272,16 +256,9 @@ class printLoop(QObject):
         self.pSettings = pSettings
         self.tableDone = False
         self.printStarted = False
-<<<<<<< Updated upstream
-        self.hitRead = False
-        self.targetPoint = {}
-        self.nextPoint = {}
-        self.zeroDist = pSettings['zeroDist']
-=======
         self.waitingForLastRead = False
         self.lastRead = 0 # last line read 
         self.runSimple = pSettings['runSimple']
->>>>>>> Stashed changes
         self.timeTaken = False
         self.readKeys()   # intialize flag, loc
         self.sbWin = sbWin
@@ -332,24 +309,9 @@ class printLoop(QObject):
                     camBox.tempCheck()    # set the record checkbox to checked
                     cw.signals.finished.connect(camBox.resetCheck)  # reset the checkbox when done
                     cw.signals.snap.connect(camBox.cameraPic)   # connect signal to snap function
-       
-<<<<<<< Updated upstream
-        self.pointTime = datetime.datetime.now()
-        self.changePoint = self.readLoc
-        if len(self.points)>1:  
-            on = False
-            # find first flag change
-            while not on and not self.tableDone:
-                self.readPoint()
-                for flag0 in self.channelWatches:
-                    if self.targetPoint[f'p{flag0}_after']==1:
-                        on = True
-        else:
-            self.readPoint()
-=======
+
         self.pointWatch.findFirstPoint()
->>>>>>> Stashed changes
-            
+
     
       
     #----------------------------------------
@@ -371,11 +333,7 @@ class printLoop(QObject):
         win32gui.SetForegroundWindow(hwndChild)                       # bring the stop hit window to the front
         win32api.PostMessage( hwndChild, win32con.WM_KEYDOWN, win32con.VK_SPACE, 0) # close the stop hit window
         time.sleep(self.dt/1000/2)
-<<<<<<< Updated upstream
-        # stopHit = False
-        # while not stopHit:
-        #     stopHit = self.checkStopHit()
-    
+
         
     def readCSV(self, sbpfile:str):
         '''get list of points from the sbp file'''
@@ -389,17 +347,8 @@ class printLoop(QObject):
             sp = pd.read_csv(csvfile, index_col=0)
         else:
             sp = pd.read_csv(csvfile, index_col=0)
-        self.points = sp
-        self.pointsi = -1
-        self.printi = -1
-        self.zmax = self.points[self.points.z<=0].z.max() + 2
-        self.fillTable()    # fill empty entries with current position
-=======
         self.pointWatch = pointWatch(sp)
->>>>>>> Stashed changes
 
-
-<<<<<<< Updated upstream
     def updateSpeeds(self, targetPoint:pd.Series):
         '''update flow speeds'''
         for flag0, cw in self.channelWatches.items():
@@ -491,10 +440,7 @@ class printLoop(QObject):
                 return
             
             time.sleep(self.dt/1000)
-=======
 
->>>>>>> Stashed changes
-    
     #-------------------------------------
     
     def readKeys(self) -> None:
@@ -504,10 +450,7 @@ class printLoop(QObject):
         self.sbFlag = self.keys.getSBFlag()   # gets flag and sends signal back to GUI from keys
         self.pointWatch.updateReadLoc(self.keys.getLoc())       # gets SB3 location and sends signal back to GUI from keys
         self.runningSBP = self.keys.runningSBP   # checks if the stop button has been hit
-<<<<<<< Updated upstream
-=======
         self.pointWatch.updateLastRead(self.keys.getLastRead())  # get the last line read into the shopbot. this is ahead of the line it is running
->>>>>>> Stashed changes
         newDiag = self.keys.diag                # logging mode           
         self.keys.unlock()
         
@@ -521,32 +464,10 @@ class printLoop(QObject):
     def updateState(self) -> None:
         '''get values from the keys'''
         self.readKeys()
-<<<<<<< Updated upstream
-        
-    @pyqtSlot()
-    def estimateLoc(self) -> None:
-        '''estimate the current location based on time since hitting last point and translation speed'''
-        
-        if not self.timeTaken:
-            self.estLoc = self.readLoc
-        else:
-            dnow = datetime.datetime.now()
-            dt = (dnow - self.pointTime).total_seconds()   # time since we hit the last point
-            if not ('speed' in self.targetPoint and 'x' in self.lastPoint) or self.speed==0:
-                self.estLoc = self.readLoc
-            else:
-                pt = toXYZ(self.lastPoint, listOut=True)
-                vec = self.targetVec
-                distTraveled = self.speed*dt # distance traveled since we hit the last point
-                self.estLoc = [pt[i]+distTraveled*vec[i] for i in range(3)]  # estimated position
-        self.signals.estimate.emit(self.estLoc[0], self.estLoc[1], self.estLoc[2])
-        
-        
-=======
         self.signals.estimate.emit(*self.pointWatch.d.estimate)  # update the estimate in the display
         # don't need to update the read point in display because flags.py already did it
 
->>>>>>> Stashed changes
+
     def stopHitPoint(self) -> bool:
         '''check if the stop was hit via the read point'''        
         if not self.runningSBP:
@@ -564,15 +485,9 @@ class printLoop(QObject):
     def defineHeader(self):
         '''define the diagnostics print header'''
         headStr = '\t'
-<<<<<<< Updated upstream
-        for flag0 in self.channelWatches:
-            headStr = headStr + f'flag0:on mode\tstate|\t'
-        headStr = headStr + f'xd\tyd\tzd|\txe\tye\tze|\txt\tyt\tzt|\tflag\tspeed\tstart\tend\ttrd\tlrd\ttld\tted\tled'
-=======
         for flag0,cw in self.channelWatches.items():
             headStr = headStr + cw.diagHeader()
         headStr = headStr + self.pointWatch.diagHeader()
->>>>>>> Stashed changes
         self.headStr = headStr
         if self.diag>1:
             print(self.headStr)
@@ -583,94 +498,15 @@ class printLoop(QObject):
         if self.diag>1:
             diagStr = '\t'
             for flag0, cw in self.channelWatches.items():
-<<<<<<< Updated upstream
-                flagOn0 = flagOn(self.flag, flag0)
-                diagStr = diagStr + f'{flag0}:{flagOn0}\t{cw.mode}\t{cw.state}|'
-            if newPoint:
-                diagStr = diagStr + f'p{self.pointsi}'
-                diagStr = diagStr + f'\t \t \t \t \t \t '
-                flag, speed, timeTaken, stopHit = ' ', ' ', ' ', ' '
-                trd, lrd, tld, ted, led = ' ', ' ', ' ', ' ', ' '
-            else:
-                x,y,z = toXYZ(self.readLoc)
-                xe,ye,ze = toXYZ(self.estLoc)
-                diagStr = diagStr + f'\t{x:2.2f}\t{y:2.2f}\t{z:2.2f}|'
-                diagStr = diagStr + f'\t{xe:2.2f}\t{ye:2.2f}\t{ze:2.2f}|'
-                flag = self.flag
-                speed = self.speed
-                timeTaken = self.timeTaken
-                stopHit = self.hitRead
-                trd = d['trd']
-                lrd = d['lrd']
-                tld = d['tld']
-                ted = d['ted']
-                led = d['led']
-            xt,yt,zt = toXYZ(self.targetPoint)
-            
-            diagStr = diagStr + f'\t{xt:2.2f}\t{yt:2.2f}\t{zt:2.2f}|'
-            diagStr = diagStr + f'\t{flag}'
-            if newPoint:
-                diagStr = diagStr + '\t \t \t \t \t \t \t \t '
-            else:
-                diagStr = diagStr + f'\t{speed:2.2f}\t{timeTaken}\t{stopHit}'
-                diagStr = diagStr + f'\t{trd:2.2f}\t{lrd:2.2f}\t{tld:2.2f}\t{ted:2.2f}\t{led:2.2f}'
-=======
                 diagStr = diagStr + cw.diagPosRow(self.sbFlag)
             diagStr + self.pointWatch.diagPosRow(flag, newPoint)
->>>>>>> Stashed changes
         else:
             diagStr = ''
         if self.diag>2:
             print(diagStr)
             self.printi+=1
         return diagStr
-<<<<<<< Updated upstream
     
-    
-    def evalAngle(self, d:dict) -> Tuple[bool, float]:
-        '''evaluate whether the angle of travel agrees with the intended angle of travel'''
-        if self.timeTaken and not 2 in self.modes:
-            # determine if we've changed direction. don't do this for camera runs or if we haven't started moving yet
-            readStepDist = ppDist(self.oldReadLoc, self.readLoc)   # distance traveled between this step and last step
-            if readStepDist>self.zeroDist and self.timeTaken:
-                vec = ppVec(self.oldReadLoc, self.readLoc)       # direction traveled during this step
-                angle = np.arccos(np.dot(vec, self.targetVec))   # angle between traveled vec and target vec
-                nextAngle = np.arccos(np.dot(vec, self.nextVec)) # angle between vec and next vec
-            else:
-                angle = 0
-        else:
-            angle = 0
-
-        if angle>np.pi/4 and self.hitRead:
-            # we've changed directions and already hit the read point
-            return True, angle
-        else:
-            # we've changed directions to the new direction
-            return (angle>np.pi/4 and angle<np.pi*3/4 and nextAngle<np.pi/16), angle
-    
-    def checkHitRead(self, d:dict):
-        '''check if the read point has hit the target point'''
-        if not self.hitRead:
-            if d['trd']<self.zeroDist or d['lrd']+d['trd'] > d['tld']+self.zeroDist:
-                self.hitRead = True    # indicate we've hit the read point and are ready to move on
-                
-    def checkTimeTaken(self, d:dict):
-        '''check if the time has started to write estimate points'''
-        if not self.timeTaken and d['lrd']>self.zeroDist:
-            # reset the time when the stage actually starts moving
-            self.pointTime = datetime.datetime.now()
-            self.timeTaken = True
-            
-    def checkEstimate(self, d:dict, diagStr:str) -> str:
-        '''check if the estimate position is at the right speed'''
-        if d['led']>d['lrd'] and self.speed>0.8*self.speed0:
-            # estimate has gone past read point: slow down estimate
-            self.speed = 0.95*self.speed  
-            if self.diag>2:
-                diagStr = diagStr + f' Reduce speed to {self.speed:2.2f}'
-        return diagStr
-=======
-
     #---------------------------------
     # each new point
 
@@ -710,54 +546,12 @@ class printLoop(QObject):
             
     #---------------------------------
     # each new time step
->>>>>>> Stashed changes
 
     def evalState(self) -> bool:
         '''determine what to do about the channels'''
         # get keys and position, new estimate position
         if not self.printStarted:
             # once we go below z=0, we've started printing
-<<<<<<< Updated upstream
-            if self.readLoc[2]<self.zmax:
-                self.printStarted = True
-        
-        self.updateState()
-        if self.flag==0:
-            # print finished, end loop
-            return True
-        d = self.getDistances()                  # get distances between points
-        self.checkHitRead(d)                     # check if the read point has hit the target
-        self.checkTimeTaken(d)                   # check if we've started the line
-        diagStr = self.diagPosRow(d)             # get diagnostic row
-        diagStr = self.checkEstimate(d,diagStr)  # check estimate
-        
-        readyForNextPoint = {}
-        ready = False
-        force, angle = self.evalAngle(d)
-        if force:
-            ready = True
-            for flag0 in self.channelWatches:
-                readyForNextPoint[flag0] = False
-        else:
-            # still going in the same direction
-            for flag0, cw in self.channelWatches.items():
-                # determine if each channel has reached the action
-                readyForNextPoint[flag0] = cw.assessPosition(d, self.flag, diagStr)
-                if readyForNextPoint[flag0]:
-                    ready = True
-                
-        if ready:
-            # if only some of the channels have moved on, force the action for the rest of them
-            for flag0, r0 in readyForNextPoint.items():
-                if not r0:
-                    self.channelWatches[flag0].forceAction(diagStr, angle)
-            # move onto the next point
-            self.readPoint()
-            if self.tableDone:
-                return True
-            
-        return False
-=======
             if self.pointWatch.printStarted():
                 self.printStarted = True
 
@@ -776,8 +570,6 @@ class printLoop(QObject):
             self.readPoint()
             
         return self.printWatch.tableDone
->>>>>>> Stashed changes
-
     
     #----------------------------
     

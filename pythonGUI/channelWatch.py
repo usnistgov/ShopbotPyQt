@@ -54,11 +54,8 @@ class channelWatch(QObject):
         self.flag0 = flag0
         self.mode = 1
         self.diag = diag
-<<<<<<< Updated upstream
-=======
         self.turningDown = False
         self.resetPointVars()
->>>>>>> Stashed changes
         # store burstScale, burstLength, zero, critTimeOn, critTimeOff
         for s,val in pSettings.items():
             setattr(self, s, val)
@@ -135,9 +132,6 @@ class channelWatch(QObject):
     @pyqtSlot(float) 
     def updateSpeed(self, speed:float) -> None:
         '''send new extrusion speed to fluigent'''
-<<<<<<< Updated upstream
-        self.signals.updateSpeed.emit(speed)
-=======
         t = self.pointWatch.d.target
         if t[self.beforeCol()]<0 and t[self.afterCol()]>0:
             # negative value in before flag indicates that this is a special row
@@ -176,7 +170,6 @@ class channelWatch(QObject):
     def defineStateFluigentTurnOn(self) -> None:
         '''define the state where the flag is turning on at this step'''
         sn = self.stateChange('next')
->>>>>>> Stashed changes
         
         if sn['before']==1 and sn['after']==0 and self.pw.d.zeroMove('next'):
             # turn on, then immediately turn off. don't actually extrude pressure
@@ -242,64 +235,10 @@ class channelWatch(QObject):
             self.defineStateCamera()
         elif self.mode==1:
             # fluigent
-<<<<<<< Updated upstream
-            if before==0 and after==1:
-                if nbefore==1 and nafter==0 and targetPoint['x']==nextPoint['x'] and targetPoint['y']==nextPoint['y'] and targetPoint['z']==nextPoint['z']:
-                    # turn on, then turn off
-                    self.state = 0
-                else:
-                    # turn on within crit distance of point
-                    self.state=1
-                    self.critDistance = max(self.zeroDist, abs(self.critTimeOn)*targetPoint['speed'])
-                    tld = ppDist(lastPoint, targetPoint)  # distance between last point and target point
-                    if tld<abs(self.critDistance)*2:
-                        self.critDistance = self.zeroDist
-            elif before==1 and after==0:
-                # turn off after crit distance of point
-                if lbefore==0 and lafter==1 and targetPoint['x']==lastPoint['x'] and targetPoint['y']==lastPoint['y'] and targetPoint['z']==lastPoint['z']:
-                    self.state = 0
-                else:
-                    self.state = 5
-
-                    if self.critTimeOff<0:
-                        # turn off before crit distance of point
-                        self.critDistance = -max(self.zeroDist, -self.critTimeOff*targetPoint['speed'])
-                    else:
-                        # turn off after crit distance of point
-                        if 'speed' in nextPoint:
-                            speed = nextPoint['speed']
-                        else:
-                            speed = targetPoint['speed']
-                        self.critDistance = max(self.zeroDist, self.critTimeOff*speed)
-
-                    # zero out crit distance for short moves
-                    tld = ppDist(lastPoint, targetPoint)  # distance between last point and target point
-                    if tld<abs(self.critDistance):
-                        self.critDistance = self.zeroDist
-            else:
-                # do nothing at point
-                self.state = 0
-
-    @pyqtSlot(str, float, float)          
-    def forceAction(self, diagStr:str, angle:float) -> None:
-        '''force the current action'''
-        sadd = ''
-        if self.state==4 or self.state==1:
-            self.turnOn()
-            sadd = sadd + 'ON'
-        elif self.state==5:
-            self.turnOff() 
-            sadd = sadd + 'OFF'
-        else:
-            sadd = sadd + 'NONE'
-        sadd = sadd + f' Force action: {angle:1.2f}'
-        self.signals.printStatus.emit(sadd)
-        diagStr = diagStr+' '+sadd
-        if self.diag>=2:
-            print(diagStr)
-=======
             self.defineStateFluigent()
->>>>>>> Stashed changes
+        else:
+            # do nothing at point
+            self.state = 0
         
     @pyqtSlot(str, str)
     def emitStatus(self, diagStr:str, sadd:str) -> None:
@@ -363,18 +302,6 @@ class channelWatch(QObject):
                 self.turnOn()
                 self.changedBy = 'flag'
         else:
-<<<<<<< Updated upstream
-            # turn off after end of line
-            atTarget = d['led']>d['tld']+self.critDistance
-            radTarget = self.hitRead
-            outsidePath = ((d['lrd']+d['trd'] > d['tld']+self.zeroDist) and d['trd']>self.critDistance and d['lrd']>self.zeroDist)
-            if (atTarget and radTarget) or outsidePath:
-                self.getSadd('OFF', {'est at target and hit read':(atTarget and radTarget), 'read outside path and read past crit':outsidePath}, diagStr)
-                self.turnOff() 
-                return True
-            else:
-                return False
-=======
             if self.on or self.changedBy=='point':
                 # if the point turned on pressure early, and the flag is now on, tell pointWatch accurate timing 
                 self.pw.flagReset(self.flag0, False) 
@@ -386,15 +313,9 @@ class channelWatch(QObject):
                 self.turnOff()
                 self.changedBy = 'flag'
             
->>>>>>> Stashed changes
         
     def assessPosition(self, sbFlag:int, diagStr:str) -> None:
         '''check the state and do actions if relevant
-        trd distance from target to read point
-        lrd distance from last to read point
-        tld distance from last to target point
-        ted distance from target to estimated point
-        led distance from last to estimated point
         sbFlag full flag value
         possible states are 0,1,4,5'''
         if self.runSimple==1:
@@ -402,13 +323,9 @@ class channelWatch(QObject):
             return
         
         flagOn0 = flagOn(sbFlag, self.flag0)
-<<<<<<< Updated upstream
-=======
-            
         if self.trustFlag:
             self.assessTrusted(flagOn0)
->>>>>>> Stashed changes
-        
+
         # turn down from burst
         if self.turningDown:
             # bring down pressure from burst pressure
@@ -431,10 +348,6 @@ class channelWatch(QObject):
             # turn off at end
             return self.assessTurnOff(flagOn0, diagStr)
                 
-<<<<<<< Updated upstream
-        return readyForNextPoint
-=======
-        return
     
     def assessPositionSimple(self, sbFlag:int) -> None:
         '''only react to flags'''
@@ -449,7 +362,6 @@ class channelWatch(QObject):
         else:
             if self.on:
                 self.turnOff()
->>>>>>> Stashed changes
 
 
     @pyqtSlot() 

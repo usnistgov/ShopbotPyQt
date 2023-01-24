@@ -554,15 +554,10 @@ class fluBox(connectBox):
                 setattr(self, s, cfg1.fluigent[s])
             else:
                 setattr(self, s, {'dt':100, 'trange':60, 'pmax':7000, 'savePressure':True, 'units':'mbar'}[s])
-#         self.dt = cfg1.fluigent.dt
-#         self.trange = cfg1.fluigent.trange
-#         self.pmax = cfg1.fluigent.pmax
-#         self.savePressure = cfg1.fluigent.savePressure
         for channel in self.pchannels:
             channel.loadConfig(cfg1)
         self.pcolors = self.cfgColors()  # preset channel colors
         self.colors = self.pcolors
-#         self.units = cfg1.fluigent.units
         
 
     def cfgColors(self) -> List[str]:

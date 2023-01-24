@@ -333,6 +333,7 @@ class pointWatch(QObject):
         else:
             self.onoffCount[s][flag0] = 0
         i = df.iloc[self.onoffCount[s][flag0]].name  # get the index of the point we just hit
+        logging.info(f'Arduino timing override: {on}')
         self.pointsi = i
         self.readPoint()        # go to the next point
         self.resetPointTime()   # mark the start of the movement as now
