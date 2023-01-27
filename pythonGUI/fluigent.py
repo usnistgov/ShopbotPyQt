@@ -375,9 +375,9 @@ class fluSettingsBox(QWidget):
                                    , tooltip='Time in s to display in plot'
                                    , func=self.updateTrange, width=editw
                                   , validator=objValidator)
-        self.pmaxBox = fLineEdit(form, title=f'Plot pressure range ({self.fluBox.units})'
+        self.pmaxBox = fLineEdit(form, title=f'Plot pressure range'
                                  , text=str(fluBox.pmax)
-                                 , tooltip=f'Max pressure in {self.fluBox.units} to display in plot'
+                                 , tooltip=f'Max pressure in chosen units to display in plot'
                                  , func=self.updatePmax, width=editw
                                 , validator=objValidator)
 
@@ -457,6 +457,7 @@ class fluSettingsBox(QWidget):
         '''store the new units'''
         self.fluBox.setUnits(self.unitsGroup.value())
         self.pmaxBox.setText(str(self.fluBox.pmax))
+        
         
     def resetUnits(self) -> None:
         '''go back to the old units'''
@@ -736,8 +737,8 @@ class fluBox(connectBox):
             out = [j[-1] for j in self.fluPlot.pw.pressures]  # most recent pressure
         else:
             out = []
-        out2 = [channel.getPrintStatus() for channel in self.pchannels]
-        return out+out2
+        # out2 = [channel.getPrintStatus() for channel in self.pchannels]
+        return out
     
     def timeHeader(self) -> List:
         '''get a list of header values for the time table'''
@@ -745,8 +746,8 @@ class fluBox(connectBox):
             out = [f'Channel_{i}_pressure({self.units})' for i in range(self.numChans)]
         else:
             out = []
-        out2 = [f'Channel_{i}_status' for i in range(self.numChans)]
-        return out+out2
+        # out2 = [f'Channel_{i}_status' for i in range(self.numChans)]
+        return out
     
     
     def writeToTable(self, writer) -> None:

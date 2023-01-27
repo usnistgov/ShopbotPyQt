@@ -58,7 +58,7 @@ files:
 fluigent:
   channel0:
     calibration:
-      flowRateFolder: C:/myfolder/flow rates
+      flowRateFolder: C://
       initDensity: 1
       initDiam: 0.603
       initSpeed: 40.0
@@ -66,7 +66,7 @@ fluigent:
     flag1: 1
   channel1:
     calibration:
-      flowRateFolder: C:/myfolder/flow rates
+      flowRateFolder: C://
       initDensity: 1
       initDiam: 0.603
       initSpeed: 5.0
@@ -137,8 +137,8 @@ shopbot:
   savePicMetadata: true
   sbpFiles: 
   - No file selected
-  sbpFolder: C:\myfolder\GitHub\ShopbotPyQt\SBP_files
+  sbpFolder: C://
   showFolder: false
   units: mm
   zeroDist: 0.1
-testFolder: C:\myfolder\GitHub\ShopbotPyQt\pythonGUI\testResults
+testFolder: C://

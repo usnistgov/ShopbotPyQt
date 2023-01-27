@@ -269,14 +269,14 @@ class SBKeys(QMutex):
     def initializeArduino(self) -> None:
         '''connect to the arduino'''
         self.pins = {}
-        logging.info('Connecting to Arduino')
+        print('Connecting to Arduino')
         try:
             self.board = Arduino(cfg.arduino.port)
             it = util.Iterator(self.board)
             it.start()
         except:
-            logging.info('Failed to connect to Arduino')
-        logging.info('Connected to Arduino')
+            print('Failed to connect to Arduino')
+            return
         
         # get the pin-flag correspondences from the config file
         for f in [5,6,7,8]:
@@ -287,6 +287,8 @@ class SBKeys(QMutex):
             
     def readArduino(self, sbFlag:int) -> int:
         '''read the flags from the arduino and update the sbFlag'''
+        if not hasattr(self, 'board'):
+            return
         for f1,p in self.pins.items():
             status = self.board.digital[p].read()   # read the pin, returns a bool
             on = flagOn(sbFlag, f1-1)

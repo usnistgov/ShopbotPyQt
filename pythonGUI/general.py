@@ -272,6 +272,12 @@ class fLineEdit(QLineEdit):
             form.addRow(title, self)
         elif hasattr(form, 'addWidget'):
             form.addWidget(self)
+            
+    def disable(self):
+        self.setEnabled(False)
+        
+    def enable(self):
+        self.setEnabled(True)
 
             
 class fLineCommand(QLineEdit):
@@ -291,9 +297,10 @@ class fLineUnits(QHBoxLayout):
         self.edit = fLineEdit(self, title=title, text=text, **kwargs)
         if not len(units)>0:
             raise ValueError('Need list of units')
-        self.units = fRadioGroup(self, '', dict([[i, u] for i,u in enumerate(units)]), dict([[i, i] for i,u in enumerate(units)]), uinit, col=False, headerRow=False)
+        d = dict([[i, u] for i,u in enumerate(units)])
+        self.units = fRadioGroup(self, '', d, d, uinit, col=False, headerRow=False)
         if 'func' in kwargs:
-            self.units.clicked.connect(kwargs['func'])
+            self.units.buttonGroup.buttonClicked.connect(kwargs['func'])
         if hasattr(form, 'addRow'):
             form.addRow(title, self)
             
@@ -301,6 +308,7 @@ class fLineUnits(QHBoxLayout):
         d = {}
         d['value'] = self.edit.text()
         d['units'] = self.units.value()
+        return d
         
     def setText(self, v) -> None:
         self.edit.setText(str(v))
@@ -410,11 +418,11 @@ class fRadioGroup:
                 self.setChecked(bid)
                 
     def disable(self) -> None:
-        for i,b in self.buttons:
+        for i,b in self.buttons.items():
             b.setEnabled(False)
             
     def enable(self) -> None:
-        for i,b in self.buttons:
+        for i,b in self.buttons.items():
             b.setEnabled(True)
 #----
         

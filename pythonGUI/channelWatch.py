@@ -48,20 +48,25 @@ class channelWatchSignals(QObject):
 class channelWatch(QObject):
     '''holds functions for turning on and off pressure'''
     
-    def __init__(self, flag0:int, pSettings:dict, diag:int, pw:pointWatch, pins:dict, runSimple:int):
+    def __init__(self, flag0:int, pSettings:dict, diagStr, pw, pins:dict, runSimple:int):
         super().__init__()
         self.on = False
         self.flag0 = flag0
         self.mode = 1
-        self.diag = diag
+        self.state = 0
+        self.diagStr = diagStr
         self.turningDown = False
         self.resetPointVars()
         # store burstScale, burstLength, zero, critTimeOn, critTimeOff
         for s,val in pSettings.items():
             setattr(self, s, val)
+        if self.runSimple==1:
+            self.burstScale = 1  # do not burst if only tracking flags
         self.signals = channelWatchSignals()
         self.pw = pw     # now we can access the distances
         self.runSimple = runSimple
+        self.determineTrust(pins)
+        self.defineBurst()
         
     def resetPointVars(self):
         '''reset the variables that must reset with each new point'''
@@ -69,20 +74,56 @@ class channelWatch(QObject):
         self.started = False # indicates we are in the early turnon at the beginning of the line
         self.changedBy = None # indicates whether the status was changed by the point or by the flag
         
-    def determineTrust(self) -> None:
+    def determineTrust(self, pins:dict) -> None:
         '''determine if this flag is hooked up to the arduino. if it is, we can trust its timing. if not, the flag is coming from sb3.exe and might be lying'''
         self.trustFlag = False
-        for flag1, pin in pins:
+        for flag1, pin in pins.items():
             if flag1==self.flag0+1:
                 self.trustFlag = True
                 
         
     def diagHeader(self) -> str:
-        return '\t'.join(['flag0:on mode', 'state|'])
+        self.diagStr.addHeader('\t'.join([f'{self.flag0}:on dev act']))
     
-    def diagPosRow(self, flag:int) -> str:
-        flagOn0 = flagOn(self.flag, flag0)
-        return '\t'.join([f'{flag0}:{flagOn0}', f'{cw.mode}', f'{cw.state}|'])
+    def diagPosRow(self, sbflag:int) -> str:
+        flagOn0 = flagOn(sbflag, self.flag0)
+        s = f'{self.flag0}'
+        if flagOn0:
+            s = s + ':ON '
+        else:
+            s = s + ':OFF'
+        s = s + ' '
+        if self.mode==1:
+            s = s + 'flu'
+        elif self.mode==2:
+            s = s + 'cam'
+        else:
+            s = s + 'non'
+        s = s + ' '
+        if self.state==0:
+            s = s + 'non'
+        elif self.state==1:
+            s = s + 'on '
+        elif self.state==4:
+            s = s + 'sna'
+        elif self.state==5:
+            s = s + 'off'
+        self.diagStr.addRow(s)
+        
+            
+    @pyqtSlot(str, str)
+    def emitStatus(self, sadd:str) -> None:
+        '''print the status and emit it to the channel'''
+        self.signals.printStatus.emit(sadd)
+        self.diagStr.addStatus(sadd)
+            
+    def getSadd(self, change:str, d:dict) -> None:
+        '''get a status string based on a dictionary of bools. change is a string to put at the front'''
+        s = f'{self.flag0}: {change}'
+        for key,val in d.items():
+            if val:
+                s = s + ' ' + key
+        self.emitStatus(s)
     
     #---------------------------------------
     # actions
@@ -102,22 +143,25 @@ class channelWatch(QObject):
     @pyqtSlot(float) 
     def turnDown(self) -> None:
         '''turn the pressure down, given a distance from the last point'''
+        if self.burstScale==1:
+            self.turningDown = False
+            return
         led = self.pw.d.led
         if self.mode==1 and self.on:
-            if led>self.bl:
+            if led>self.bl or self.bl==0:
                 scale = 1
                 self.turningDown = False   # stop turning down, met burst length
             else:
                 scale = 1 + (self.burstScale-1)*(1-led/self.bl)
             self.signals.goToPressure.emit(scale)
-            self.signals.printStatus.emit('turning down')
+            self.diagStr.addStatus('Turning down')
      
     @pyqtSlot() 
     def turnOff(self) -> None:
         '''turn the pressure off'''
+        self.on = False
         if self.mode == 1:
             self.signals.zeroChannel.emit(False)
-            self.on=False
             self.turningDown = False
             
     #------------------------------------
@@ -132,7 +176,7 @@ class channelWatch(QObject):
     @pyqtSlot(float) 
     def updateSpeed(self, speed:float) -> None:
         '''send new extrusion speed to fluigent'''
-        t = self.pointWatch.d.target
+        t = self.pw.d.target
         if t[self.beforeCol()]<0 and t[self.afterCol()]>0:
             # negative value in before flag indicates that this is a special row
             speed = float(t[self.afterCol()])
@@ -192,6 +236,7 @@ class channelWatch(QObject):
     def defineStateFluigentTurnOff(self) -> None:
         '''define the state where the flag is turning off at this step'''
         # turn off after crit distance of point
+        ln = self.stateChange('last')
         if ln['before']==1 and ln['after']==0 and self.pw.d.zeroMove('next'):
             # in this and last step, we turn on, then immediately turn off. don't actually extrude pressure
             self.state = 0
@@ -239,81 +284,128 @@ class channelWatch(QObject):
         else:
             # do nothing at point
             self.state = 0
-        
-    @pyqtSlot(str, str)
-    def emitStatus(self, diagStr:str, sadd:str) -> None:
-        '''print the status and emit it to the channel'''
-        self.signals.printStatus.emit(sadd)
-        if self.diag>=2:   
-            print(f'{diagStr} {sadd}')
             
-    def getSadd(self, change:str, d:dict, diagStr:str) -> None:
-        '''get a status string based on a dictionary of bools. change is a string to put at the front'''
-        s = change
-        for key,val in d.items():
-            if val:
-                s = s + ' ' + key
-        self.emitStatus(diagStr, s)
+    #----------------------
 
-        
-    def assessSnap(self, flagOn0:bool, diagStr:str) -> None:
+    def assessSnap(self, flagOn0:bool) -> None:
         '''snap camera at the point. we already did the trustworthy flag check'''
         if flagOn0 and not self.on:
             if self.pw.estAtTarget() and self.pw.readAtTarget():
-                self.getSadd('SNAP', {'Read and est at target':True}, diagStr)
+                self.getSadd('SNAP', {'Read and est at target':True})
                 self.turnOn()
                 self.changedBy = 'point'
         
-    def assessTurnOn(self, flagOn0:bool, diagStr:str) -> bool:
+    def assessTurnOn(self, flagOn0:bool) -> bool:
         '''turn on fluigent at the point. '''
         # allow point timings to turn pressure on        
-        zeroMove = self.cw.zeroMove()
-        withinCrit = self.cw.estWithinCrit(self.critDistance)
+        zeroMove = self.pw.zeroMove()
+        withinCrit = self.pw.estWithinCrit(self.critDistance)
         if zeroMove or withinCrit:
-            self.getSadd('ON', {'Est at crit':withinCrit, 'Zero move':zeroMove}, diagStr)
+            self.getSadd('ON', {'Est at crit':withinCrit, 'Zero move':zeroMove})
             self.turnOn()
             self.changedBy = 'point'
-            if withinCrit and not self.cw.estAtTarget():
+            if withinCrit and not self.pw.estAtTarget():
                 self.started = True
 
         
-    def assessTurnOff(self, flagOn0:bool, d:dict, diagStr:str) -> bool:
+    def assessTurnOff(self, flagOn0:bool) -> bool:
         '''turn off fluigent at point'''
-        zeroMove = self.cw.zeroMove()
-        withinCrit = self.cw.estWithinCrit(self.critDistance)
+        zeroMove = self.pw.zeroMove()
+        withinCrit = self.pw.estWithinCrit(self.critDistance)
         if zeroMove or withinCrit:
-            self.getSadd('ON', {'Est at crit':withinCrit, 'Zero move':zeroMove}, diagStr)
+            self.getSadd('OFF', {'Est at crit':withinCrit, 'Zero move':zeroMove})
             self.turnOff()
             self.changedBy = 'point'
-            self.ende = True
+            self.ended = True
 
+    def flagOnSadd(self) -> None:
+        '''send out a message that the flag has turned on pressure or initiated the snap'''
+        if self.mode==1:
+            # fluigent
+            self.getSadd('ON ', {'Flag on':True})
+        else:
+            self.getSadd('SNAP ', {'Flag on':True})
             
-    def assessTrusted(self, flagOn0:bool) -> None:
-        # reset the point timing based on the flag
+    def flagOffSadd(self) -> None:
+        '''send out a message that the flag has turned off pressure or stopped the snap'''
+        if self.mode==1:
+            # fluigent
+            self.getSadd('OFF ', {'Flag off':True})
+        else:
+            self.getSadd('SNOFF ', {'Flag off':True})
+            
+    def assessTrusted(self, flagOn0:bool) -> bool:
+        ''' reset the point timing based on the flag. return true if the arduino changed the value '''
         if flagOn0:
             if not self.on or self.changedBy=='point':
-                # if the point turned on pressure early, and the flag is now on, tell pointWatch accurate timing 
+                # if the point turned on pressure early, and the flag is now on, tell pw accurate timing 
                 self.pw.flagReset(self.flag0, True) 
                 self.changedBy = 'flag'
+                if self.changedBy=='point':
+                    self.getSadd('RESET ', {'Flag on':True})
             if not self.on and not self.ended:
                 # flag is on, but pressure is not on 
                 # and isn't at the end of the line
-                self.getSadd('ON ', {'Flag on':True}, diagStr)
+                self.flagOnSadd()
                 self.turnOn()
                 self.changedBy = 'flag'
+                return True
         else:
             if self.on or self.changedBy=='point':
-                # if the point turned on pressure early, and the flag is now on, tell pointWatch accurate timing 
+                # if the point turned off pressure early, and the flag is now off, tell pw accurate timing 
                 self.pw.flagReset(self.flag0, False) 
                 self.changedBy = 'flag'
+                if self.changedBy=='point':
+                    self.getSadd('RESET', {'Flag off':True})
             if self.on and not self.started:
                 # flag is on, but pressure is not on 
                 # and isn't at the end of the line
-                self.getSadd('OFF ', {'Flag off':True}, diagStr)
+                self.flagOffSadd()
                 self.turnOff()
                 self.changedBy = 'flag'
+                return True
+        return False
+    
         
-    def assessPosition(self, sbFlag:int, diagStr:str) -> None:
+    def forceAction(self) -> bool:
+        '''force the action if there is no trustworthy flag to force it'''
+        if self.runSimple==1 or (self.runSimple==2 and self.trustFlag):
+            # don't let points boss us around, wait for flags
+            return
+        
+        if self.state==4:
+            # snap camera at point
+            if not self.on:
+                self.getSadd('SNAP', {'Forced':True})
+                self.turnOn()
+        elif self.state==1:
+            # turn on within crit distance of point or if we've started on the next line
+            if not self.on:
+                self.getSadd('ON', {'Forced':True})
+                self.turnOn()
+        elif self.state==5:
+            # turn off at end
+            if self.on:
+                self.getSadd('OFF', {'Forced':True})
+                self.turnOff()
+                
+    def assessPositionSimple(self, sbFlag:int) -> None:
+        '''only react to flags'''
+        flagOn0 = flagOn(sbFlag, self.flag0)
+        if flagOn0:
+            if not self.on:
+                # flag is on, but pressure is not on
+                self.flagOnSadd()
+                self.turnOn()
+            elif self.turningDown:
+                # flag is on, and pressure is on, and we're still in the burst zone
+                self.turnDown() 
+        else:
+            if self.on:
+                self.flagOffSadd()
+                self.turnOff()
+        
+    def assessPosition(self, sbFlag:int) -> bool:
         '''check the state and do actions if relevant
         sbFlag full flag value
         possible states are 0,1,4,5'''
@@ -323,7 +415,10 @@ class channelWatch(QObject):
         
         flagOn0 = flagOn(sbFlag, self.flag0)
         if self.trustFlag:
-            self.assessTrusted(flagOn0)
+            changed = self.assessTrusted(flagOn0)
+            if changed:
+                # don't change it again
+                return True
 
         # turn down from burst
         if self.turningDown:
@@ -332,52 +427,18 @@ class channelWatch(QObject):
 
         if self.runSimple==1 or (self.runSimple==2 and self.trustFlag):
             # trust the flag, ignore points
-            return
+            return False
             
-        if self.state==0:
-            # no change
-            return
-        elif self.state==4:
+        if self.state==4:
             # snap camera at point
-            return self.assessSnap(flagOn0, diagStr)
+            self.assessSnap(flagOn0)
         elif self.state==1:
             # turn on within crit distance of point or if we've started on the next line
-            return self.assessTurnOn(flagOn0, diagStr)
+            self.assessTurnOn(flagOn0)
         elif self.state==5:
             # turn off at end
-            return self.assessTurnOff(flagOn0, diagStr)
- 
-    
-    def assessPositionSimple(self, sbFlag:int) -> None:
-        '''only react to flags'''
-        flagOn0 = flagOn(sbFlag, self.flag0)
-        if flagOn0:
-            if not self.on:
-                # flag is on, but pressure is not on
-                self.turnOn()
-            elif self.turningDown:
-                # flag is on, and pressure is on, and we're still in the burst zone
-                self.turnDown() 
-        else:
-            if self.on:
-                self.turnOff()
-
-    
-    def assessPositionSimple(self, sbFlag:int) -> None:
-        flagOn0 = flagOn(sbFlag, self.flag0)
-        
-        if flagOn0 is True:
-            if self.on is True:
-                return
-            else:
-                self.turnOn()
-                return
-        else:
-            if self.on is True:
-                self.turnOff()
-                return
-            else:
-                return
+            self.assessTurnOff(flagOn0)
+        return False
 
 
     @pyqtSlot() 

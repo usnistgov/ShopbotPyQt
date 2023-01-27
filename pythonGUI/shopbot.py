@@ -77,11 +77,11 @@ class sbSettingsBox(QWidget):
         
         form1 = QFormLayout()
         self.saveFreq = fLineUnits(form1, title=f'Save data frequency', 
-                                  text=str(cfg.shopbot.saveDt), 
+                                  text=str(cfg.shopbot.saveDt.value), 
                                   tooltip='During prints, save data every _ ms',
                                   validator=objValidator2,
                                    width=w,
-                                 func = self.updateSaveFreq, units=['ms'], uinit='ms')
+                                 func = self.updateSaveFreq, units=[cfg.shopbot.saveDt.units], uinit=cfg.shopbot.saveDt.units)
         layout.addLayout(form1)
         self.savePicMetaData = fCheckBox(layout, title='Save metadata and time series for prints without pressure', 
                                       checked=cfg.shopbot.savePicMetadata, 
@@ -134,8 +134,8 @@ class sbSettingsBox(QWidget):
                                    width=w, units=[cfg.shopbot.dt.units], uinit=cfg.shopbot.dt.units)
         self.runSimple = fRadioGroup(layout, 'Pressure strategy', 
                                           {0:'Track points, flow speeds, and flags', 
-                                           1:'Only track flags'
-                                          2:'Track points, but let arduino override critTimeOn and critTimeOff'}, 
+                                           1:'Only track flags',
+                                          2:'Track points for bad flags and arduino for good flags'}, 
                                           {0:0, 1:1, 2:2},
                                          self.sbBox.runSimple, col=True, headerRow=True,
                                           func=self.changeRunSimple)
@@ -149,6 +149,7 @@ class sbSettingsBox(QWidget):
         layout.addLayout(fileForm)
         layout.addStretch()
         self.setLayout(layout)
+        self.changeRunSimple() # run this to disable critTimeOn and critTimeOff if needed
         
     def loadConfig(self, cfg1) -> None:
         '''load values from a config file'''
@@ -188,21 +189,27 @@ class sbSettingsBox(QWidget):
             self.sbBox.updateStatus('Turned off autoplay', True)
             
     def changeRunSimple(self) -> None:
-        '''Change points tracking strategy''
+        '''Change points tracking strategy'''
         val = self.runSimple.value()
         self.sbBox.runSimple = val
-        if val==0:
+        if val==1:
             self.sbBox.updateStatus('Only tracking flags', True)
-            self.critTimeOn.enable()
-            self.critTimeOff.enable()
-        elif val==1:
-            self.sbBox.updateStatus('Tracking points and flags', True)
-            self.critTimeOn.enable()
-            self.critTimeOff.enable()
-        elif val==2:
-            self.sbBox.updateStatus('Tracking points and flags, no crit times', True)
             self.critTimeOn.disable()
             self.critTimeOff.disable()
+            self.zeroDist.disable()
+            self.burstLength.disable()
+            self.burstScale.disable()
+        elif val==0 or val==2:
+            if val==0:
+                self.sbBox.updateStatus('Tracking points and flags', True)
+            elif val==2:
+                self.sbBox.updateStatus('Tracking points for bad flags and arduino for good flags', True)
+            self.critTimeOn.enable()
+            self.critTimeOff.enable()
+            self.zeroDist.enable()
+            self.burstLength.enable()
+            self.burstScale.enable()
+
             
     def updateSavePos(self) -> None:
         '''update whether to save position in table'''
@@ -255,8 +262,10 @@ class sbSettingsBox(QWidget):
     def updateUnitsValues(self, var:str) -> None:
         d = getattr(self, var).value()
         d['value'] = float(d['value'])
+        v = d['value']
+        u = d['units']
         setattr(self.sbBox, var, d)
-        self.sbBox.updateStatus(f'Updated {var} to {d['value']} {d['units']}', True)
+        self.sbBox.updateStatus(f'Updated {var} to {v} {u}', True)
         
     def updateCritTimeOn(self) -> None:
         '''update sbBox crit time on'''
@@ -282,8 +291,8 @@ class sbSettingsBox(QWidget):
     def setSBPFolder(self) -> None:
         '''set the folder to save all the files we generate from the whole gui'''
         self.sbBox.sbpFolder = setFolder(self.sbBox.sbpFolder)        
-        self.sbBox.updateStatus('Changed shopbot file folder to %s' % self.sbBox.sbpFolder, True)
-        self.fsor.updateText(self.sbBox.sbpFolder)
+        self.sbBox.updateStatus(f'Changed shopbot file folder to {self.sbBox.sbpFolder}', True)
+        self.folderRow.updateText(self.sbBox.sbpFolder)
             
     def openSBPFolder(self) -> None:
         '''Open the save folder in windows explorer'''
@@ -308,6 +317,7 @@ class sbBox(connectBox):
         self.bTitle = 'Shopbot'
         self.sbWin = sbWin
         self.runningSBP = False
+        self.printStatus = ''
         self.setTitle('Shopbot')
         self.loadConfigMain(cfg)
         
@@ -357,6 +367,7 @@ class sbBox(connectBox):
                     self.keys.unlock()
             else:
                 out = out + ['']
+        out.append(self.printStatus)
         return out
     
     def timeHeader(self) -> List:
@@ -366,7 +377,7 @@ class sbBox(connectBox):
         else:
             out = []
         if self.saveFlag:
-            out = out + ['flag', 'lastRead', 'targetLine']
+            out = out + ['flag', 'lastRead', 'targetLine', 'status']
         return out
  
     #-------------
@@ -427,7 +438,7 @@ class sbBox(connectBox):
         self.zeroDist=cfg1.shopbot.zeroDist
         self.checkFreq=cfg1.shopbot.dt
         self.burstScale = cfg1.shopbot.burstScale
-        self.saveFreq = cfg1.shopbot.saveDt
+        self.saveFreq = cfg1.shopbot.saveDt.value
         self.diag = cfg1.shopbot.diag
         self.runSimple = cfg1.shopbot.runSimple
         
@@ -504,12 +515,12 @@ class sbBox(connectBox):
         for row in t1:
             writer.writerow(row)
         writer.writerow(['run_flag1', '', self.runFlag1])
-        writer.writerow(['critTimeOn', self.critTimeOn.units, self.critTimeOn.value])
-        writer.writerow(['critTimeOff', self.critTimeOff.units, self.critTimeOff.value])
+        writer.writerow(['critTimeOn', self.critTimeOn['units'], self.critTimeOn['value']])
+        writer.writerow(['critTimeOff', self.critTimeOff['units'], self.critTimeOff['value']])
         writer.writerow(['zeroDist', self.units, self.zeroDist])
         writer.writerow(['checkFreq', 'ms', self.checkFreq])
         writer.writerow(['burstScale', '', self.burstScale])
-        writer.writerow(['burstLength', self.burstLength.units, self.burstLength.value])
+        writer.writerow(['burstLength', self.burstLength['units'], self.burstLength['value']])
 
     def testTime(self) -> None:
         '''create metadata file'''
@@ -622,10 +633,10 @@ class sbBox(connectBox):
         if self.runFlag1-1 in self.channelsTriggered:
             self.channelsTriggered.remove(self.runFlag1-1)
             
-        # remove flags that aren't attached to anything
-        for c in self.channelsTriggered:
-            if self.sbWin.flagBox.flagLabels0[c]=='':
-                self.channelsTriggered.remove(c)
+        # # remove flags that aren't attached to anything
+        # for c in self.channelsTriggered:
+        #     if self.sbWin.flagBox.flagLabels0[c]=='':
+        #         self.channelsTriggered.remove(c)
         
         return 0
     
@@ -645,6 +656,7 @@ class sbBox(connectBox):
     def runFile(self) -> None:
         '''runFile sends a file to the shopbot and tells the GUI to wait for next steps. first, check if the shopbot is ready'''
         self.runningSBP = True
+        self.printStatus = ''
         self.keys.lock()
         self.keys.runningSBP = True
         self.keys.unlock()
@@ -656,7 +668,9 @@ class sbBox(connectBox):
             
     #---------------------------------------------------------
     
-
+    @pyqtSlot(str)
+    def updatePrintStatus(self, s:str) -> None:
+        self.printStatus = s
 
     @pyqtSlot()
     def runFileContinue(self) -> None:
@@ -690,6 +704,7 @@ class sbBox(connectBox):
             self.allowEnd = False
             
         self.updateStatus(f'Running SBP file {self.sbpName()}, critFlag = {self.critFlag}', True)
+        
 
             
         self.stopPrintThread()  # stop any existing threads
@@ -700,9 +715,11 @@ class sbBox(connectBox):
         self.printWorker.signals.estimate.connect(self.updateXYZest)
         self.printWorker.signals.target.connect(self.updateXYZt)
         self.printWorker.signals.targetLine.connect(self.updateXYZtline)
+        self.printWorker.signals.status.connect(self.updatePrintStatus)
 
         # send the file to the shopbot via command line
         self.sendFileToShopbot(self.sbpName())
+        
         
         # create a thread that waits for the start of flow
         waitRunnable = waitForStart(self.settingsBox.getDt(), self.keys, self.runFlag1, self.channelsTriggered)
@@ -712,6 +729,7 @@ class sbBox(connectBox):
         
     def sendFileToShopbot(self, name:str):
         '''send the sbp file to the shopbot'''
+        self.printStatus = 'Sending file'
         self.keys.lock()
         appl = self.keys.sb3File
         self.keys.unlock()
@@ -736,7 +754,7 @@ class sbBox(connectBox):
             # only save speeds and pressures if there is extrusion or if the checkbox is marked
             self.sbWin.saveMetaData()    # save metadata
             self.sbWin.initSaveTable()   # save table of pressures
-            
+        self.printStatus = 'Start recordings'   
             
         self.printThread = QThread()
         self.printWorker.moveToThread(self.printThread)
@@ -787,6 +805,7 @@ class sbBox(connectBox):
     def triggerEndOfPrint(self) -> None:
         '''we finished the file, so stop and move onto the next one'''
         logging.info('File completed')
+        self.printStatus = 'File completed'
         self.stopRunning()
         self.sbList.activateNext() # activate the next sbp file in the list
         if self.autoPlay and self.sbList.sbpNumber()>0: # if we're in autoplay and we're not at the beginning of the list, play the next file

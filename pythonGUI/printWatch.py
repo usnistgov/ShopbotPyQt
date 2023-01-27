@@ -86,7 +86,7 @@ def ppVec(p1:pd.Series, p2:pd.Series) -> Tuple[float]:
     else:
         return [dx/dist, dy/dist, dz/dist]
     
-def calcAngle(self, vec1, vec2):
+def calcAngle(vec1, vec2):
     '''calculate the angle between two vectors'''
     dot = np.dot(vec1, vec2)
     if dot<=0:
@@ -100,23 +100,34 @@ def naPoint(row:pd.Series) -> bool:
     '''determine if the point is not filled'''
     return pd.isna(row['x']) or pd.isna(row['y']) or pd.isna(row['z'])
     
+def dummyPoint() -> dict:
+    '''a point that we certainly won't be near'''
+    return {'x':-1000, 'y':-1000, 'z':-1000}
 
-class pointWatchSignals(QObject):
-    estimate = pyqtSignal(float,float,float)   # new estimated position
-    target = pyqtSignal(float,float,float)      # send current target to GUI
-    targetLine = pyqtSignal(int)   # send current target line to GUI
+def emptyPoint() -> dict:
+    '''display nothing'''
+    return {'x':'', 'y':'', 'z':''}
+
     
 class distances:
     '''holds point locations and distances, vectors, and angles'''
     
-    def __init__(self):
-        self.target = {'x':0, 'y':0, 'z':0}   # point we're trying to hit
-        self.last = {'x':0, 'y':0, 'z':0}     # point we're coming from
-        self.next = {'x':0, 'y':0, 'z':0}     # the next point we will try to hit
+    def __init__(self, trackPoints:bool):
+
         
-        self.estimate = [0,0,0] # where we think we are
-        self.read = [0,0,0]     # where the shopbot software thinks we are
-        self.lastread = [0,0,0] # the last point where the shopbot software thought we were
+        if trackPoints:
+            self.estimate = toXYZ(dummyPoint()) # where we think we are
+            self.target = dummyPoint()   # point we're trying to hit
+            self.last = dummyPoint()     # point we're coming from
+            self.next = dummyPoint()     # the next point we will try to hit
+        else:
+            self.estimate = ['','','']
+            self.target = emptyPoint()   # point we're trying to hit
+            self.last = emptyPoint()     # point we're coming from
+            self.next = emptyPoint()     # the next point we will try to hit
+            
+        self.read = toXYZ(dummyPoint())     # where the shopbot software thinks we are
+        self.lastread = toXYZ(dummyPoint()) # the last point where the shopbot software thought we were
         
         self.vec = [0,0,0]
         self.targetVec = [0,0,0]
@@ -128,11 +139,16 @@ class distances:
         self.ted = 0  # distance between the estimated loc and the target point
         self.led = 0  # distance between estimated loc and last point
         self.angle = 0 # angle between read movement and target direction
+        
+        print(trackPoints)
+        self.trackPoints = trackPoints
 
        
-    def updateTarget(self, newPoint:dict, nextPoint:dict) -> None:
+    def updateTarget(self, prevPoint:dict, newPoint:dict, nextPoint:dict) -> None:
         '''update the target point'''
-        self.last = self.target
+        if not self.trackPoints:
+            return
+        self.last = prevPoint
         self.target = newPoint
         self.next = nextPoint
         self.targetVec = ppVec(self.last, self.target)
@@ -146,15 +162,17 @@ class distances:
         '''update the current positions'''
         self.lastread = self.read
         self.read = read
-        self.trd = ppDist(self.read, self.target)   
-        if 'x' in self.last:
-            self.lrd = ppDist(self.read, self.last)   
-        else:
-            self.lrd = 0
+        if self.trackPoints:
+            self.trd = ppDist(self.read, self.target)   
+            if 'x' in self.last:
+                self.lrd = ppDist(self.read, self.last)   
+            else:
+                self.lrd = 0
             
     def calcEst(self, timeTaken:bool, pointTime, speed:float) -> None:
         '''estimate the current location based on time since hitting last point and translation speed'''
-        
+        if not self.trackPoints:
+            return
         if not timeTaken or not ('speed' in self.target and 'x' in self.last) or speed==0:
             self.estimate = self.last
         else:
@@ -171,11 +189,14 @@ class distances:
     def calcAngle(self):
         '''get angle between direction of movement and intended direction. run each time step'''
         self.vec = ppVec(self.lastread, self.read)  # vector from lastread to current read
-        self.angle = calcAngle(self.vec, self.targetVec)
+        if self.trackPoints:
+            self.angle = calcAngle(self.vec, self.targetVec)
         return
     
     def zeroMove(self, s:str) -> bool:
         '''determine if the point coordinates do not change between the two points. if s is last, compare last to target. if s is next, compare next to target'''
+        if not self.trackPoints:
+            return False
         if not hasattr(self, s):
             raise ValueError('Unexpected value passed to zeroMove. should be next or last')
         for c in ['x', 'y', 'z']:
@@ -184,54 +205,80 @@ class distances:
         return True
         
         
-        
+class pointWatchSignals(QObject):
+    estimate = pyqtSignal(float,float,float)   # new estimated position
+    target = pyqtSignal(float,float,float)      # send current target to GUI
+    targetLine = pyqtSignal(int)   # send current target line to GUI 
+    printStatus = pyqtSignal(str)
 
     
     
 class pointWatch(QObject):
     '''holds functions for iterating through points in an sbp file'''
     
-    def __init__(self, sbpfile:str, pSettings:dict, dt:float):
+    def __init__(self, pSettings:dict, dt:float, diagStr, parent, runSimple:int):
         super().__init__()
-        self.readCSV(sbpfile)
-        self.d = distances()
+        self.trackPoints = (not runSimple==1)
+        self.d = distances(self.trackPoints)
         self.zeroDist = pSettings['zeroDist']
+        self.dt = dt
         self.signals = pointWatchSignals()
         self.queuedLine = 0
+        self.timeTaken = False
         self.hitRead = False
-        self.dt = dt
+        self.speed = 0
+        self.tableDone = False
+        self.waitingForLastRead = False
+        self.diagStr = diagStr
+        self.resetPointTime()
         self.onoffCount = {'on':{}, 'off':{}}   # count how many times the flag has turned on and off
+        self.printLoop = parent
         
     def diagHeader(self) -> str:
         l = []
-        for s1 in ['d', 'e', 't']:
+        if not self.trackPoints:
+            llll = ['d']
+        else:
+            llll =  ['d', 'e', 't']
+        for s1 in llll:
             for s2 in ['x', 'y', 'z']:
                 l.append(f'{s2}{s1}')
-        l = l+['tline', 'qline|', 'flag']
-        l = l+['speed', 'started', 'ended']
-        l = l+['trd', 'lrd', 'tld', 'ted', 'led']
-        return '\t'.join(l)
+            l[-1] = l[-1]+'|'
+        if self.trackPoints:
+            l = l+['tline', 'qline|']
+        l = l+['flag']
+        if self.trackPoints:
+            l = l+['speed', 'start', 'ended|']
+            l = l+['trd', 'lrd', 'tld', 'ted', 'led']
+        return '\t'.join(l)+'|'
     
     
     def diagPosRow(self, flag:int, newPoint:bool) -> str:
         l = []
-        for s1 in ['d', 'e', 't']:
-            if newPoint and not s1=='t':
+        if not self.trackPoints:
+            llll = ['read']
+        else:
+            llll =  ['read', 'estimate', 'target']
+        for s1 in llll:
+            if newPoint and not s1=='target':
                 l = l + [' ', ' ', ' '] 
             else:
                 x,y,z = toXYZ(getattr(self.d, s1))
-                l = l+['2.2f'.format(i) for i in [x,y,z]]
-        
-        l = l+[str(i) for i in [self.d.target['line'], self.queuedLine, flag]]
-               
-        if newPoint:
-            l = l + [' ', ' ', ' '] 
-        else:
-            l = l+[str(i) for i in [self.speed, self.timeTaken, self.hitRead]]
-               
-        for s in ['trd', 'lrd', 'tld', 'ted', 'led']:
-            l.append('2.2f'.format(getattr(self.d, s)))
-        return '\t'.join(l)
+                l = l+[f'{i:2.2f}' for i in [x,y,z]]
+            l[-1] = l[-1]+'|'
+        if self.trackPoints:
+            l = l+[str(i) for i in [self.d.target['line'], f'{self.queuedLine}|']]
+        l = l+[str(i) for i in [flag]]
+             
+        if self.trackPoints:
+            if newPoint:
+                l = l + [' ', ' ', ' '] 
+            else:
+                l = l+[str(i) for i in [self.speed, self.timeTaken, f'{self.hitRead}|']]
+
+            for s in ['trd', 'lrd', 'tld', 'ted', 'led']:
+                l.append(f'{getattr(self.d, s):2.2f}')
+        return '\t'.join(l)+'|'
     
         
     #-------------------  
@@ -284,20 +331,21 @@ class pointWatch(QObject):
     #-------------------
     # tracking points
     
-    @pyqtSlot()
-    def readPoint(self) -> None:
+    def readPoint(self, letQueuedKill:bool=True) -> pd.Series:
         '''read the next point from the points list'''
-        if self.pointsi>0 and self.queuedLine>0 and self.points.iloc[self.pointsi]['line']>self.queuedLine:
-            # don't read the point if we're ahead of the file
-            self.waitingForLastRead = True
+        if not self.trackPoints:
             return
+        if letQueuedKill:
+            if self.pointsi>0 and self.queuedLine>0 and self.points.iloc[self.pointsi]['line']>self.queuedLine+1:
+                # don't read the point if we're ahead of the file
+                self.waitingForLastRead = True
+                return {}
         self.timeTaken = False
         self.hitRead = False
         self.waitingForLastRead = False
         self.pointsi+=1
         if self.pointsi>=0 and self.pointsi<len(self.points):
             targetPoint = self.points.iloc[self.pointsi] 
-            
             if pd.isna(targetPoint['speed']):
                 # just changing flow speed
                 return targetPoint
@@ -306,11 +354,17 @@ class pointWatch(QObject):
             if len(self.points)>self.pointsi+1:
                 nextPoint = self.points.iloc[self.pointsi+1]
             else:
-                nextPoint = {'x':0, 'y':0, 'z':0}
-            self.d.updateTarget(targetPoint, nextPoint)
+                nextPoint = dummyPoint()
+            if self.pointsi>0:
+                prevPoint = self.points.iloc[self.pointsi-1]
+            else:
+                prevPoint = dummyPoint()
+            self.d.updateTarget(prevPoint, targetPoint, nextPoint)
             self.speed = float(self.d.target['speed'])
         else:
             self.tableDone = True
+        return self.d.target
+        
             
     def flagReset(self, flag0:int, on:bool) -> None:
         '''reset the time and find the right point because the real flag turned on'''
@@ -332,25 +386,58 @@ class pointWatch(QObject):
             self.onoffCount[s][flag0]+=1
         else:
             self.onoffCount[s][flag0] = 0
-        i = df.iloc[self.onoffCount[s][flag0]].name  # get the index of the point we just hit
-        logging.info(f'Arduino timing override: {on}')
+        idx = self.onoffCount[s][flag0]
+        if idx>=len(df):
+            print(f'Too many flag resets:{flag0}:{s}, {idx}/{len(df)}')
+            print(df)
+            return
+        print(self.onoffCount)
+        i = df.iloc[idx].name  # get the index of the point we just hit
         self.pointsi = i
-        self.readPoint()        # go to the next point
+        self.printLoop.readPoint(letQueuedKill=False)        # go to the next point
         self.resetPointTime()   # mark the start of the movement as now
         
             
-    def findFirstPoint(self) -> None:
+    def findFirstPoint(self, flags:list) -> None:
         '''find the first point where pressure is on'''
+        if not self.trackPoints:
+            return
         self.resetPointTime()
         if len(self.points)>1:  
             on = False
             # find first flag change
             while not on and not self.tableDone:
                 self.readPoint()
-                for flag0 in self.channelWatches:
-                    if self.targetPoint[f'p{flag0}_after']==1:
+                for flag0 in flags:
+                    if self.d.target[f'p{flag0}_after']==1:
                         on = True
         else:
+            self.readPoint()
+        self.pointsi = self.pointsi-1
+        self.printLoop.readPoint()
+        
+        #-------------------
+    # loop actions
+    
+    def resetPointTime(self):
+        '''reset the time of the start of the last move'''
+        self.pointTime = datetime.datetime.now()-datetime.timedelta(seconds=self.dt/1000)
+        # print('new point time', self.pointTime)
+    
+    def updateReadLoc(self, readLoc:dict) -> None:
+        '''update the read point'''
+        # update read point and calculate read distances
+        self.d.updateRead(readLoc)
+        self.checkTimeTaken()   # check if we've taken the start time
+        # update estimate point and angle
+        self.d.calcEst(self.timeTaken, self.pointTime, self.speed)
+        self.checkHitRead()     # check if we've hit the read point
+        
+        
+    def updateLastRead(self, lastRead:int) -> None:
+        '''update the queued line'''
+        self.queuedLine = lastRead
+        if self.waitingForLastRead:
             self.readPoint()
 
 
@@ -362,16 +449,26 @@ class pointWatch(QObject):
         '''determine if we have entered the printing space'''
         return self.d.read[2]<self.zmax
     
-    def retracting(self, diag:bool) -> bool:
+    def retracting(self) -> bool:
         '''determine if we are retracting above the printing space'''
         ret = float(self.d.read[2])>(self.zmax)
-        if diag>1 and ret:
-            print(f'z above max, {self.d.read[2]}, {self.zmax}, {self.pointsi}, {self.starti}')
+        if self.diagStr.diag>1 and ret:
+            print(f'\tz above max, {self.d.read[2]:0.2f}, {self.zmax:0.2f}, {self.pointsi}, {self.starti}')
         return ret
+    
+    def noFlagChanges(self) -> bool:
+        # the move is exactly 0
+        for c in self.d.target.keys():
+            # iterate through columns
+            if c.startswith('p') and c.endswith('before'):
+                if self.d.target[c]!=self.d.target[c.replace('before', 'after')]:
+                    # flags are changing during these moves
+                    return False
+        return True
     
     def zeroMove(self) -> bool:
         '''this move is smaller than the resolution of our measurement'''
-        return self.d.tld<self.zeroDist    
+        return self.d.tld<self.zeroDist   
     
     def readAtTarget(self) -> bool:
         '''read point is at the target point'''
@@ -391,7 +488,7 @@ class pointWatch(QObject):
     
     def estAtTarget(self) -> bool:
         '''estimated point is at the target point'''
-        return self.d.led>=self.tld-self.zeroDist
+        return self.d.led>=self.d.tld-self.zeroDist
     
     def estWithinCrit(self, crit:float) -> bool:
         '''estimated point is within critical distance of target. crit<0 to be after end of line'''
@@ -409,47 +506,33 @@ class pointWatch(QObject):
             if not self.readAtLast():
                 # reset the time when the stage actually starts moving
                 self.resetPointTime()
-                
-                
-                
-    def readyForNextPoint(self):
-        '''check if we can go on to the next point'''
-        if self.zeroMove():
-            # this move is so small we won't be able to detect it. move on
-            return True
-        if self.estAtTarget():
-            # the estimated point has reached the target point
-            return True
-        if self.readChangedDirection():
-            # the read point has changed direction
-            return True
-        
-                
-    #-------------------
-    # loop actions
-    
-    def resetPointTime(self):
-        '''reset the time of the start of the last move'''
-        self.pointTime = datetime.datetime.now()-datetime.timedelta(seconds=self.dt/1000)
-        self.timeTaken = True
-        # print('new point time', self.pointTime)
-    
-    def updateReadLoc(self, readLoc:dict) -> None:
-        '''update the read point'''
-        
-        # update read point and calculate read distances
-        self.d.updateRead(readLoc)
-        if not self.timeTaken:
-            if not self.readAtLast():
                 self.timeTaken = True
-                self.resetPointTime()
-        # update estimate point and angle
-        self.d.calcEst(self.timeTaken, self.pointTime, self.speed)
-        self.checkHitRead()     # check if we've hit the read point
-        self.checkTimeTaken()   # check if we've taken the start time
-        
-    def updateLastRead(self, lastRead:int) -> None:
-        '''update the queued line'''
-        self.queuedLine = lastRead
+                
+                
+    def emitStatus(self, sadd:str) -> None:
+        '''print the status'''
+        self.diagStr.addStatus(sadd)
+                
+    def getSadd(self, change:str, d:dict) -> None:
+        '''get a status string based on a dictionary of bools. change is a string to put at the front'''
+        s = f'{self.flag0}: {change}'
+        for key,val in d.items():
+            if val:
+                s = s + ' ' + key
+        self.emitStatus(s)
+      
+    def readyForNextPoint(self) -> bool:
+        '''check if we can go on to the next point'''
+        if not self.trackPoints:
+            return False
         if self.waitingForLastRead:
-            self.readPoint()
+            return True
+        d = {'Est at target':self.estAtTarget(), 'Zero move':self.zeroMove(), 'change direction':self.readChangedDirection()}
+        if any(d.values()) and self.noFlagChanges():
+            sadd = self.getSadd('NEW PT', d)
+            self.signals.printStatus.emit(sadd)
+            return True
+        else:
+            return False
+        
+                
