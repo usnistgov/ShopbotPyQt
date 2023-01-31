@@ -315,7 +315,7 @@ class SBwindow(QMainWindow):
             return
         self.fileName = fullfn
     
-    def initSaveTable(self) -> None:
+    def initSaveTable(self, channelsTriggered:dict, runSimple:dict) -> None:
         '''initialize a table that saves data during a print'''
         if (hasattr(self, 'fluBox') and self.fluBox.savePressure) or (hasattr(self, 'sbBox') and self.sbBox.savePos):
             self.saveTable = []
@@ -324,6 +324,8 @@ class SBwindow(QMainWindow):
             self.getFileName() # determine the current file name
             self.tStart = datetime.datetime.now()
             self.timer = QTimer()
+            self.channelsTriggered = channelsTriggered
+            self.runSimple = runSimple
             self.timer.timeout.connect(self.readValues)
             self.timer.start(self.sbBox.saveFreq)
             
@@ -334,11 +336,11 @@ class SBwindow(QMainWindow):
             dnow = datetime.datetime.now()
             tnow = (dnow-self.tStart).total_seconds()
             if hasattr(self, 'fluBox'):
-                plist = self.fluBox.timeRow()
+                plist = self.fluBox.timeRow(self.channelsTriggered)
             else:
                 plist = []
             if hasattr(self, 'sbBox'):
-                xyzlist = self.sbBox.timeRow()
+                xyzlist = self.sbBox.timeRow(self.runSimple)
             else:
                 xyzlist = []
             self.saveTable.append([tnow]+plist+xyzlist)
@@ -360,8 +362,8 @@ class SBwindow(QMainWindow):
             self.save = False
             with open(self.fileName, mode='w', newline='', encoding='utf-8') as c:
                 writer = csv.writer(c, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                phead = self.fluBox.timeHeader()
-                xyzhead = self.sbBox.timeHeader()
+                phead = self.fluBox.timeHeader(self.channelsTriggered)
+                xyzhead = self.sbBox.timeHeader(self.runSimple)
                 writer.writerow(['time(s)']+phead+xyzhead) # header
                 for row in self.saveTable:
                     writer.writerow(row)

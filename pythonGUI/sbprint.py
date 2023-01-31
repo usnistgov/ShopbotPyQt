@@ -22,8 +22,8 @@ sys.path.append(currentdir)
 sys.path.append(parentdir)
 sys.path.append(os.path.join(parentdir, 'SBP_files'))  # add python folder
 from sbpRead import *
-from channelWatch import *
-from printWatch import *
+from sbprintChannel import *
+from sbprintWatch import *
 
 printDiag = False
 
@@ -334,7 +334,7 @@ class printLoop(QObject):
                 spl = re.split('p|_', key)
                 flag0 = int(spl[1])   # 0-indexed
                 if not flag0==self.sbRunFlag1-1:
-                    self.channelWatches[flag0] = channelWatch(flag0, self.pSettings, self.diagStr, self.pw, self.keys.pins, self.runSimple)
+                    self.channelWatches[flag0] = channelWatch(flag0, self.pSettings, self.diagStr, self.pw, self.keys.arduino.pins, self.runSimple)
                    
         self.defineHeader()
                     
@@ -556,7 +556,7 @@ class printLoop(QObject):
             
             killed = self.stopHitPoint()
             if killed:
-                if self.pw.retracting():
+                if self.pw.retracting(diag=True):
                     # final withdrawal
                     time.sleep(1) # wait 1 second before stopping videos
                     self.close()

@@ -341,44 +341,53 @@ class sbBox(connectBox):
             self.successLayout()
             self.updateLoc()
             
-    def timeRow(self) -> List:
+    def timeRow(self, runSimple:int) -> List:
         '''get a list of values to collect for the time table'''
         if self.savePos:
             if hasattr(self, 'x') and hasattr(self, 'y') and hasattr(self, 'z'):
                 out = [self.x, self.y, self.z]
             else:
                 out = ['','','']
-            if hasattr(self, 'xe') and hasattr(self, 'ye') and hasattr(self, 'ze'):
-                out = out+[self.xe, self.ye, self.ze]
-            else:
-                out = out + ['','','']
-            if hasattr(self, 'xt') and hasattr(self, 'yt') and hasattr(self, 'zt'):
-                out = out+[self.xt, self.yt, self.zt]
-            else:
-                out = out + ['','','']
+            if not runSimple==1:
+                if hasattr(self, 'xe') and hasattr(self, 'ye') and hasattr(self, 'ze'):
+                    out = out+[self.xe, self.ye, self.ze]
+                else:
+                    out = out + ['','','']
+                if hasattr(self, 'xt') and hasattr(self, 'yt') and hasattr(self, 'zt'):
+                    out = out+[self.xt, self.yt, self.zt]
+                else:
+                    out = out + ['','','']
         else:
             out = []
         if self.saveFlag:
-            if hasattr(self, 'keys'):
-                if hasattr(self, 'sbFlag') and hasattr(self, 'lastRead') and hasattr(self, 'tline'):
-                    out = out + [self.sbFlag, self.lastRead, self.tline]
-                else:
-                    self.keys.lock()
-                    out = out + [self.keys.currentFlag, self.keys.lastRead, '']
-                    self.keys.unlock()
+            if hasattr(self, 'sbFlag') and hasattr(self, 'lastRead') and hasattr(self, 'tline'):
+                out = out + [self.sbFlag, self.lastRead]
+                if not runSimple==1:
+                    out.append(self.tline)
             else:
-                out = out + ['']
+                self.keys.lock()
+                out.append(self.keys.currentFlag)
+                out.append(self.keys.lastRead)
+                if not runSimple==1:
+                    out.append('')
+                self.keys.unlock()
         out.append(self.printStatus)
+        self.printStatus = ''
         return out
     
-    def timeHeader(self) -> List:
+    def timeHeader(self, runSimple:int) -> List:
         '''get a list of header values for the time table'''
         if self.savePos:
-            out = ['x_disp(mm)', 'y_disp(mm)', 'z_disp(mm)', 'x_est(mm)', 'y_est(mm)', 'z_est(mm)', 'x_target(mm)', 'y_target(mm)', 'z_target(mm)']
+            out = ['x_disp(mm)', 'y_disp(mm)', 'z_disp(mm)']
+            if not runSimple==1:
+                out = out+ ['x_est(mm)', 'y_est(mm)', 'z_est(mm)', 'x_target(mm)', 'y_target(mm)', 'z_target(mm)']
         else:
             out = []
         if self.saveFlag:
-            out = out + ['flag', 'lastRead', 'targetLine', 'status']
+            out = out + ['flag', 'lastRead']
+            if not runSimple==1:
+                out.append('targetLine')
+            out.append('status')
         return out
  
     #-------------
@@ -624,20 +633,20 @@ class sbBox(connectBox):
 
     def getCritFlag(self) -> int:
         '''Identify which channels are triggered during the run. critFlag is a shopbot flag value that indicates that the run is done. We always set this to 0. If you want the video to shut off after the first flow is done, set this to 2^(cfg.shopbot.flag-1). We run this function at the beginning of the run to determine what flag will trigger the start of videos, etc.'''
-        self.channelsTriggered = channelsTriggered(self.sbpName())
-        if not self.runFlag1-1 in self.channelsTriggered:
+        self.channels0Triggered = channelsTriggered(self.sbpName())
+        if not self.runFlag1-1 in self.channels0Triggered:
             # abort run: no signal to run this file
             self.updateStatus(f'Missing flag in sbp file: {self.runFlag1}', True)
             raise ValueError('Missing flag in sbp file')
         
         # remove run flag
-        if self.runFlag1-1 in self.channelsTriggered:
-            self.channelsTriggered.remove(self.runFlag1-1)
+        if self.runFlag1-1 in self.channels0Triggered:
+            self.channels0Triggered.remove(self.runFlag1-1)
             
         # # remove flags that aren't attached to anything
-        # for c in self.channelsTriggered:
+        # for c in self.channels0Triggered:
         #     if self.sbWin.flagBox.flagLabels0[c]=='':
-        #         self.channelsTriggered.remove(c)
+        #         self.channels0Triggered.remove(c)
         
         return 0
     
@@ -671,7 +680,14 @@ class sbBox(connectBox):
     
     @pyqtSlot(str)
     def updatePrintStatus(self, s:str) -> None:
-        self.printStatus = s
+        if len(self.printStatus)>0:
+            # we haven't saved the previous status
+            if len(s)>0:
+                # stack statuses
+                self.printStatus = f'{self.printStatus}, {s}'
+        else:
+            # replace the status
+            self.printStatus = s
 
     @pyqtSlot()
     def runFileContinue(self) -> None:
@@ -723,7 +739,7 @@ class sbBox(connectBox):
         
         
         # create a thread that waits for the start of flow
-        waitRunnable = waitForStart(self.settingsBox.getDt(), self.keys, self.runFlag1, self.channelsTriggered)
+        waitRunnable = waitForStart(self.settingsBox.getDt(), self.keys, self.runFlag1, self.channels0Triggered)
         waitRunnable.signals.finished.connect(self.triggerWatch)
         waitRunnable.signals.status.connect(self.updateStatus)
         QThreadPool.globalInstance().start(waitRunnable) 
@@ -749,12 +765,12 @@ class sbBox(connectBox):
             return
 
         # start the cameras if any flow is triggered in the run
-        if min(self.channelsTriggered)<len(self.sbWin.fluBox.pchannels):
+        if min(self.channels0Triggered)<len(self.sbWin.fluBox.pchannels):
             self.sbWin.camBoxes.startRecording()
-        if self.savePicMetadata or (len(self.channelsTriggered)>0 and not self.channelsTriggered==[2]):
+        if self.savePicMetadata or self.sbWin.fluBox.pressureTriggered(self.channels0Triggered):
             # only save speeds and pressures if there is extrusion or if the checkbox is marked
             self.sbWin.saveMetaData()    # save metadata
-            self.sbWin.initSaveTable()   # save table of pressures
+            self.sbWin.initSaveTable(self.channels0Triggered, self.runSimple)   # save table of pressures
         self.printStatus = 'Start recordings'   
             
         self.printThread = QThread()

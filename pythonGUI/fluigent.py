@@ -217,7 +217,7 @@ class fluSettingsBox(QWidget):
             # free flag: assign
             self.fluBox.pchannels[chanNum0].flag1 = newflag1
             self.fluBox.sbWin.flagBox.labelFlags()
-            if chanNum0<self.fluBox.pChannels:
+            if chanNum0<self.fluBox.pChans:
                 s = f'channel {chanNum0}'
             else:
                 s = 'uv lamp'
@@ -451,23 +451,38 @@ class fluBox(connectBox):
 
     #----------------------------------------
     
-    def timeRow(self) -> List:
+    def pressureTriggered(self, channels0Triggered:dict) -> bool:
+        '''determine if any pressure channels are triggered during the print'''
+        for i in range(self.numChans):
+            if self.pchannels[i].flag1-1 in channels0Triggered:
+                return True
+        return False
+    
+    def timeRow(self, channels0Triggered:dict) -> List:
         '''get a list of values to collect for the time table'''
+        out = []
         if self.savePressure and self.connected:
-            out = [j[-1] for j in self.fluPlot.pw.pressures]  # most recent pressure
-        else:
-            out = []
-        # out2 = [channel.getPrintStatus() for channel in self.pchannels]
+            for i in range(self.pChans):
+                if self.pchannels[i].flag1-1 in channels0Triggered:
+                    out.append(self.fluPlot.pw.pressures[i][-1])
+            for i in range(self.uvChans):
+                if self.pchannels[i+self.pChans].flag1-1 in channels0Triggered:
+                    if self.arduino.uvOn:
+                        out.append(1)
+                    else:
+                        out.append(0)
         return out
     
-    def timeHeader(self) -> List:
+    def timeHeader(self, channels0Triggered:dict) -> List:
         '''get a list of header values for the time table'''
+        out = []
         if self.savePressure and self.connected:
-            out = [f'Channel_{i}_pressure({self.units})' for i in range(self.pChans)]
-            out = out + ['UV' for i in range(self.uvChans)]
-        else:
-            out = []
-        # out2 = [f'Channel_{i}_status' for i in range(self.numChans)]
+            for i in range(self.pChans):
+                if self.pchannels[i].flag1-1 in channels0Triggered:
+                    out.append(f'Channel_{i}_pressure({self.units})')
+            for i in range(self.uvChans):
+                if self.pchannels[i+self.pChans].flag1-1 in channels0Triggered:
+                    out.append('UV')
         return out
     
     

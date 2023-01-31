@@ -52,7 +52,7 @@ class channelWatch(QObject):
         super().__init__()
         self.on = False
         self.flag0 = flag0
-        self.mode = 1
+        self.mode = 0
         self.state = 0
         self.diagStr = diagStr
         self.turningDown = False
@@ -84,11 +84,11 @@ class channelWatch(QObject):
         
     def diagHeader(self) -> str:
         if self.mode==1 or self.mode==2:
-            self.diagStr.addHeader('\t'.join([f'{self.flag0}:on dev act']))
+            self.diagStr.addHeader('\t'.join([f'{self.flag0+1}:on dev act']))
     
     def diagPosRow(self, sbflag:int) -> str:
         flagOn0 = flagOn(sbflag, self.flag0)
-        s = f'{self.flag0}'
+        s = f'{self.flag0+1}'
         if flagOn0:
             s = s + ':ON '
         else:
@@ -121,7 +121,7 @@ class channelWatch(QObject):
             
     def getSadd(self, change:str, d:dict) -> None:
         '''get a status string based on a dictionary of bools. change is a string to put at the front'''
-        s = f'{self.flag0}: {change}'
+        s = f'{self.flag0+1}: {change}'
         for key,val in d.items():
             if val:
                 s = s + ' ' + key

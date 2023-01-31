@@ -448,10 +448,10 @@ class pointWatch(QObject):
         '''determine if we have entered the printing space'''
         return self.d.read[2]<self.zmax
     
-    def retracting(self) -> bool:
+    def retracting(self, diag:bool=False) -> bool:
         '''determine if we are retracting above the printing space'''
         ret = float(self.d.read[2])>(self.zmax)
-        if self.diagStr.diag>1 and ret:
+        if self.diagStr.diag>1 and ret and diag:
             print(f'\tz above max, {self.d.read[2]:0.2f}, {self.zmax:0.2f}, {self.pointsi}, {self.starti}')
         return ret
     
