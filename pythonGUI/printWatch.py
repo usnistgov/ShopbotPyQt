@@ -139,8 +139,7 @@ class distances:
         self.ted = 0  # distance between the estimated loc and the target point
         self.led = 0  # distance between estimated loc and last point
         self.angle = 0 # angle between read movement and target direction
-        
-        print(trackPoints)
+
         self.trackPoints = trackPoints
 
        

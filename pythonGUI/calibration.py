@@ -822,7 +822,7 @@ class pCalibration(QDialog):
         self.tabs.setTabBar(QTabBar(self))
         self.tabs.setTabPosition(QTabWidget.North)
         
-        channels = self.sbWin.fluBox.numChans
+        channels = self.sbWin.fluBox.pChans
         self.calibWidgets = dict([[i, pCalibrationTab(self.sbWin, i)] for i in range(channels)])
         for w,val in self.calibWidgets.items():
             self.tabs.addTab(val, val.bTitle)    

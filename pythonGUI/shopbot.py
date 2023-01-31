@@ -311,7 +311,7 @@ class sbBox(connectBox):
     ############## initialization functions
     
     
-    def __init__(self, sbWin:QMainWindow, connect:bool=True):
+    def __init__(self, sbWin:QMainWindow, arduino, connect:bool=True):
         '''sbWin is the parent window that all of the widgets are in'''
         super(sbBox, self).__init__()
         self.bTitle = 'Shopbot'
@@ -319,6 +319,7 @@ class sbBox(connectBox):
         self.runningSBP = False
         self.printStatus = ''
         self.setTitle('Shopbot')
+        self.arduino = arduino
         self.loadConfigMain(cfg)
         
         if connect:
@@ -326,14 +327,14 @@ class sbBox(connectBox):
    
     def connect(self):
         '''connect to the SB3 software'''
-        self.keys = SBKeys(self.diag)
+        self.keys = SBKeys(self.diag, self.arduino)
         self.keys.signals.status.connect(self.updateStatus)   # connect key status to GUI
         self.keys.signals.flag.connect(self.updateFlag)       # connect flag status to GUI
         self.keys.signals.pos.connect(self.updateXYZ)         # connect position status to GUI
         self.keys.signals.lastRead.connect(self.updateLastRead) # connect lastline read to GUI
         if hasattr(self.sbWin, 'flagBox'):
             self.flagBox = self.sbWin.flagBox    # adopt the parent's flagBox for shorter function calls
-            self.flagBox.boldFlags(self.keys.pins)
+            self.flagBox.boldFlags(self.keys.arduino.pins)
         if not self.keys.connected:
              self.failLayout()
         else:
@@ -525,7 +526,7 @@ class sbBox(connectBox):
     def testTime(self) -> None:
         '''create metadata file'''
         self.sbWin.initSaveTable()
-        QTimer.singleShot(2000, self.sbWin.stopSaveTable())
+        QTimer.singleShot(2000, self.sbWin.stopSaveTable)
         
     
     #----------------------------   

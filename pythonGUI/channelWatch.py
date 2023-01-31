@@ -83,7 +83,8 @@ class channelWatch(QObject):
                 
         
     def diagHeader(self) -> str:
-        self.diagStr.addHeader('\t'.join([f'{self.flag0}:on dev act']))
+        if self.mode==1 or self.mode==2:
+            self.diagStr.addHeader('\t'.join([f'{self.flag0}:on dev act']))
     
     def diagPosRow(self, sbflag:int) -> str:
         flagOn0 = flagOn(sbflag, self.flag0)
@@ -98,7 +99,8 @@ class channelWatch(QObject):
         elif self.mode==2:
             s = s + 'cam'
         else:
-            s = s + 'non'
+            # this is just a dummy flag, don't report values
+            return
         s = s + ' '
         if self.state==0:
             s = s + 'non'

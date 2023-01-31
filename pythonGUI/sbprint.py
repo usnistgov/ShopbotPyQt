@@ -256,7 +256,9 @@ class diagStr:
         self.row = self.row + ' | '+ s
         
     def addStatus(self, s:str) -> None:
-        self.status = f'{self.status}, {s}'
+        if len(self.status)>0:
+            self.status = self.status + ', '
+        self.status = self.status + s
         
     def printRow(self) -> None:
         if self.diag>2:

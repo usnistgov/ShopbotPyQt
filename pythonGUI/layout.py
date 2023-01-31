@@ -39,14 +39,15 @@ from sbpRead import SBPHeader
 class SBwindow(QMainWindow):
     '''The whole GUI window'''
     
-    def __init__(self, parent=None, meta:bool=True, sb:bool=True, flu:bool=True, cam:bool=True, file:bool=True, calib:bool=True, convert:bool=True, test:bool=False):
+    def __init__(self, parent=None, meta:bool=True, sb:bool=True, flu:bool=True, cam:bool=True, file:bool=True, calib:bool=True, convert:bool=True, uv:bool=True, test:bool=False):
         super(SBwindow, self).__init__(parent)
         
         # initialize all boxes to empty value so if we hit an error during setup and need to disconnect, we aren't trying to call empty variables
 
+        self.arduino = flags.arduino(connect=False)
         self.fileBox = files.fileBox(self, connect=False)
-        self.sbBox = shopbot.sbBox(self, connect=False)   
-        self.fluBox = fluigent.fluBox(self, connect=False)
+        self.sbBox = shopbot.sbBox(self, self.arduino, connect=False)   
+        self.fluBox = fluigent.fluBox(self, self.arduino, connect=False)
         self.logDialog = None
         self.camBoxes = cameras.camBoxes(self, connect=False)
         self.metaBox = sbprint.metaBox(self, connect=False) 
@@ -58,6 +59,7 @@ class SBwindow(QMainWindow):
         
         self.meta = meta
         self.sb = sb
+        self.uv = uv
         self.flu = flu
         self.cam = cam
         self.test = test
@@ -98,6 +100,11 @@ class SBwindow(QMainWindow):
             
     def connect(self) -> None:
         '''create the boxes. sbBox loads features from fluBox and camBoxes. fileBox loads features from sbBox and camBoxes. '''
+        
+        if self.uv or self.sb and hasattr(self, 'arduino'):
+            print('Connecting Arduino')
+            self.arduino.signals.status.connect(self.updateStatus)
+            self.arduino.connect()
         
         if self.flu and hasattr(self, 'fluBox'):
             print('Connecting Fluigent box')
@@ -183,6 +190,12 @@ class SBwindow(QMainWindow):
         '''Open the log window'''
         self.logDialog.show()
         self.logDialog.raise_()
+        
+    @pyqtSlot(str,bool)
+    def updateStatus(self, st:str, log:bool) -> None:
+        '''update the displayed device status'''
+        if log:
+            logging.info(st)
         
     #----------------
     # settings

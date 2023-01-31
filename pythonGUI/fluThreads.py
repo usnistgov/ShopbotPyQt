@@ -51,14 +51,17 @@ def convertPressure(val:float, oldUnits:str, newUnits:str) -> float:
 class plotWatch(QMutex):
     '''Holds the pressure/time list for all channels'''
 
-    def __init__(self, numChans:int, trange:float, dt:float, units:str):
+    def __init__(self, pChans:int, uvChans:int, trange:float, dt:float, units:str, pmax:float):
         super().__init__()
         self.stop = False          # tells us to stop reading pressures
-        self.numChans = numChans   # number of channels
+        self.pChans = pChans   # number of channels
+        self.uvChans = uvChans
+        self.numChans = pChans+uvChans
         self.trange = cfg.fluigent.trange       # time range
         self.dt = dt
         self.d0 = datetime.datetime.now()
         self.units = units
+        self.pmax = pmax
         self.initializePList()
 
         
@@ -81,7 +84,9 @@ class plotWatch(QMutex):
         convert = pressureConversion()
         factor = convert[newUnits.lower()]/convert[oldUnits.lower()]
         for i,p in enumerate(self.pressures):
-            self.pressures[i] = [x*factor for x in p]
+            if i<self.pChans:
+                self.pressures[i] = [x*factor for x in p]
+                # don't convert uv values
 
 
 class fluSignals(QObject):
@@ -101,18 +106,37 @@ def setPressure(channel:int, runPressure:float, units:str) -> None:
     p_mbar = int(convertPressure(runPressure, units, 'mbar')) # convert to mbar
     fgt.fgt_set_pressure(channel, p_mbar)
             
+        
 class plotUpdate(QObject):
     '''plotUpdate updates the list of times and pressures and allows us to read pressures continuously in a background thread.'''
     
-    def __init__(self, pw:plotWatch, connected:bool):
+    def __init__(self, pw:plotWatch, arduino, connected:bool):
         super().__init__()   
         self.pw = pw                  # plotWatch object (stores pressure list)
         self.numChans = pw.numChans   # number of channels
+        self.pChans = pw.pChans 
         self.signals = fluSignals()   # lets us send messages and data back to the GUI
         self.connected = connected  # if the fluigent is connected
         self.pw.lock()
         self.dt = self.pw.dt   # dt in milliseconds
         self.pw.unlock()
+        self.arduino = arduino
+        
+    def checkPressure(self, channel:int, units:str) -> int:
+        if not self.connected:
+            return 0
+        if channel<self.pChans:
+            # pressure channel
+            pnew_mbar = checkPressure(channel)
+            pnew = convertPressure(pnew_mbar, 'mbar', units)
+            return pnew
+        else:
+            # uv lamp
+            if self.arduino.uvOn:
+                return self.pw.pmax
+            else:
+                return 0
+            
 
     @pyqtSlot()
     def run(self) -> None:
@@ -138,11 +162,7 @@ class plotUpdate(QObject):
                 newtime.append(tnow)         # Add the current time to the list
                 for i in range(self.numChans):
                     newpressures[i] = newpressures[i][1:]
-                    if self.connected:
-                        pnew_mbar = checkPressure(i)    # read pressure in mbar
-                        pnew = convertPressure(pnew_mbar, 'mbar', units)
-                    else:
-                        pnew = 0
+                    pnew = self.checkPressure(i, units)
                     newpressures[i].append(pnew)         # Add the current pressure to the list, for each channel
             except Exception as e:
                 self.signals.error.emit(f'Error reading pressure: {e}', True)

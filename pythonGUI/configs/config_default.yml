@@ -7,6 +7,9 @@ arduino:
     f6: 6
     f7: 7
     f8: 8
+  uvpins:
+    in: 13
+    out: 12
 camera:
   cam0:
     checked: false
@@ -142,3 +145,7 @@ shopbot:
   units: mm
   zeroDist: 0.1
 testFolder: C://
+uv:
+  flag1: 7
+  color: '#4e1263'
+  
