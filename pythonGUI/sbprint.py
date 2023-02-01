@@ -239,20 +239,21 @@ class diagStr:
     '''holds a diagnostic string that describes the current time step'''
     
     def __init__(self, diag:int):
-        self.row = ''
-        self.status = ''
-        self.header = ''
+        self.header = '\t'
+        self.newRow()
         self.diag = diag
         self.printi = 0
         
     def newRow(self):
-        self.row = ''
+        self.row = '\t'
         self.status = ''
         
     def addHeader(self, s) -> None:
         self.header = self.header +' | '+ s
         
     def addRow(self, s:str) -> None:
+        if s in self.row:
+            self.printRow()
         self.row = self.row + ' | '+ s
         
     def addStatus(self, s:str) -> None:
@@ -271,6 +272,7 @@ class diagStr:
         if (self.diag>1 and (self.printi>50)):
             print(self.header)
             self.printi = 0
+        self.newRow()
             
     def printHeader(self) -> None:
         if self.diag>1:
@@ -320,7 +322,6 @@ class printLoop(QObject):
         '''set up the point watch object'''
         self.pw = pointWatch(pSettings, dt, self.diagStr, self, self.runSimple)
         self.readKeys()   # intialize flag, loc
-        
         self.pw.readCSV(sbpfile)
 
     @pyqtSlot()
@@ -335,9 +336,7 @@ class printLoop(QObject):
                 flag0 = int(spl[1])   # 0-indexed
                 if not flag0==self.sbRunFlag1-1:
                     self.channelWatches[flag0] = channelWatch(flag0, self.pSettings, self.diagStr, self.pw, self.keys.arduino.pins, self.runSimple)
-                   
-        self.defineHeader()
-                    
+   
         # assign behaviors to channels
         if hasattr(self.sbWin, 'fluBox') and hasattr(self.sbWin.fluBox, 'pchannels'):
             for channel in self.sbWin.fluBox.pchannels:
@@ -352,8 +351,9 @@ class printLoop(QObject):
                     cw.signals.printStatus.connect(channel.updatePrintStatus)
                     self.pw.signals.printStatus.connect(channel.updatePrintStatus)
                     if hasattr(self.sbWin, 'calibDialog'):
-                        calibBox = self.sbWin.calibDialog.calibWidgets[channel.chanNum0]
-                        cw.signals.updateSpeed.connect(calibBox.updateSpeedAndPressure)
+                        if channel.chanNum0<len(self.sbWin.calibDialog.calibWidgets):
+                            calibBox = self.sbWin.calibDialog.calibWidgets[channel.chanNum0]
+                            cw.signals.updateSpeed.connect(calibBox.updateSpeedAndPressure)
 
         # assign behaviors to cameras
         if hasattr(self.sbWin, 'camBoxes'):
@@ -367,6 +367,8 @@ class printLoop(QObject):
                     # camBox.tempCheck()    # set the record checkbox to checked
                     # cw.signals.finished.connect(camBox.resetCheck)  # reset the checkbox when done
                     cw.signals.snap.connect(camBox.cameraPic)   # connect signal to snap function
+                    
+        self.defineHeader()
 
         self.pw.findFirstPoint(list(self.channelWatches.keys()))
 
@@ -416,11 +418,21 @@ class printLoop(QObject):
     
     def diagPosRow(self, newPoint:bool=False) -> None:
         '''get a row of diagnostic data'''
+        if newPoint:
+            self.printRow()
         if self.diag>1:
             for flag0, cw in self.channelWatches.items():
                 cw.diagPosRow(self.sbFlag)
             self.pw.diagPosRow(self.sbFlag, newPoint)
+        if newPoint:
+            self.printRow()
         return
+    
+        
+    def printRow(self):
+        '''print the table and status if in the right mode. return status to the shopbot box'''
+        self.signals.status.emit(self.diagStr.status)
+        self.diagStr.printRow()
 
 
     #-------------------------------------
@@ -468,7 +480,6 @@ class printLoop(QObject):
             
     def readPoint(self, letQueuedKill:bool=True) -> None:
         '''read a new point'''
-        self.printi+=1
         t = self.pw.readPoint(letQueuedKill)   # get new target
         if len(t)==0:
             # print('read point rejected')
@@ -495,17 +506,10 @@ class printLoop(QObject):
     
     def flagDone(self) -> bool:
         return self.sbFlag==0
-    
-    def printRow(self):
-        '''print the table and status if in the right mode. return status to the shopbot box'''
-        self.signals.status.emit(self.diagStr.status)
-        self.diagStr.printRow()
 
     def evalState(self) -> bool:
         '''determine what to do about the channels'''
         # get keys and position, new estimate position
-        
-        self.diagStr.newRow()
         
         if not self.printStarted:
             # once we go below z=0, we've started printing
@@ -516,7 +520,7 @@ class printLoop(QObject):
         if self.runSimple==1 and self.flagDone():
             # print finished, end loop
             self.diagStr.addStatus('DONE flag off')
-            self.diagStr.printRow()
+            self.printRow()
             self.signals.status.emit(self.diagStr.status)
             return True
 
@@ -526,12 +530,12 @@ class printLoop(QObject):
             trustChanged = cw.assessPosition(self.sbFlag)
             tc = tc or trustChanged
         
-        if not trustChanged and self.pw.readyForNextPoint():
+        if not tc and self.pw.readyForNextPoint():
             # pointWatch says it's time for the next point
             for cw in self.channelWatches.values():
                 # make any channels not attached to a trustworthy flag finish this move
                 cw.forceAction()
-            self.printRow()
+            # self.printRow()
             self.readPoint()
         else:
             self.printRow()

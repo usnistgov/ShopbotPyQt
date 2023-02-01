@@ -241,15 +241,16 @@ class pointWatch(QObject):
             llll =  ['d', 'e', 't']
         for s1 in llll:
             for s2 in ['x', 'y', 'z']:
-                l.append(f'{s2}{s1}')
+                l.append("{:6s}".format(f'{s2}{s1}'))
             l[-1] = l[-1]+'|'
         if self.trackPoints:
-            l = l+['tline', 'qline|']
+            l = l+['tln', 'qln|']
         l = l+['flag']
         if self.trackPoints:
-            l = l+['speed', 'start', 'ended|']
-            l = l+['trd', 'lrd', 'tld', 'ted', 'led']
-        return '\t'.join(l)+'|'
+            l = l+['speed', 'strt', '@pt|']
+            for si in ['trd', 'lrd', 'tld', 'ted', 'led']:
+                l.append(f'{si:5s}')
+        return self.diagStr.addHeader('\t'.join(l)+'|')
     
     
     def diagPosRow(self, flag:int, newPoint:bool) -> str:
@@ -260,24 +261,24 @@ class pointWatch(QObject):
             llll =  ['read', 'estimate', 'target']
         for s1 in llll:
             if newPoint and not s1=='target':
-                l = l + [' ', ' ', ' '] 
+                l = l+[f'{i:6s}' for i in [' ', ' ', ' ']]
             else:
                 x,y,z = toXYZ(getattr(self.d, s1))
-                l = l+[f'{i:2.2f}' for i in [x,y,z]]
+                l = l+[f'{i:6.2f}' for i in [x,y,z]]
             l[-1] = l[-1]+'|'
         if self.trackPoints:
-            l = l+[str(i) for i in [self.d.target['line'], f'{self.queuedLine}|']]
+            l = l+[str(int(self.d.target['line'])), f'{self.queuedLine}|']
         l = l+[str(i) for i in [flag]]
              
         if self.trackPoints:
             if newPoint:
                 l = l + [' ', ' ', ' '] 
             else:
-                l = l+[str(i) for i in [self.speed, self.timeTaken, f'{self.hitRead}|']]
+                l = l+[f'{self.speed:4.1f}', f'{self.timeTaken:4b}',f'{self.hitRead:3b}|']
 
             for s in ['trd', 'lrd', 'tld', 'ted', 'led']:
-                l.append(f'{getattr(self.d, s):2.2f}')
-        return '\t'.join(l)+'|'
+                l.append(f'{getattr(self.d, s):5.2f}')
+        self.diagStr.addRow('\t'.join(l)+'|')
     
         
     #-------------------  
@@ -367,7 +368,6 @@ class pointWatch(QObject):
             
     def flagReset(self, flag0:int, on:bool) -> None:
         '''reset the time and find the right point because the real flag turned on'''
-        
         # find the points when the pressure turns on
         if on:
             b = 0
@@ -387,10 +387,9 @@ class pointWatch(QObject):
             self.onoffCount[s][flag0] = 0
         idx = self.onoffCount[s][flag0]
         if idx>=len(df):
-            print(f'Too many flag resets:{flag0}:{s}, {idx}/{len(df)}')
-            print(df)
+            print(f'Too many flag resets:{flag0+1}:{s}, {idx}/{len(df)}')
             return
-        print(self.onoffCount)
+        # print(self.onoffCount)
         i = df.iloc[idx].name  # get the index of the point we just hit
         self.pointsi = i
         self.printLoop.readPoint(letQueuedKill=False)        # go to the next point
@@ -456,7 +455,7 @@ class pointWatch(QObject):
         return ret
     
     def noFlagChanges(self) -> bool:
-        # the move is exactly 0
+        '''flags are not changing during this move'''
         for c in self.d.target.keys():
             # iterate through columns
             if c.startswith('p') and c.endswith('before'):
@@ -514,7 +513,7 @@ class pointWatch(QObject):
                 
     def getSadd(self, change:str, d:dict) -> None:
         '''get a status string based on a dictionary of bools. change is a string to put at the front'''
-        s = f'{self.flag0}: {change}'
+        s = f'PT: {change}'
         for key,val in d.items():
             if val:
                 s = s + ' ' + key
@@ -526,9 +525,9 @@ class pointWatch(QObject):
             return False
         if self.waitingForLastRead:
             return True
-        d = {'Est at target':self.estAtTarget(), 'Zero move':self.zeroMove(), 'change direction':self.readChangedDirection()}
-        if any(d.values()) and self.noFlagChanges():
-            sadd = self.getSadd('NEW PT', d)
+        d = {'Est at target':self.estAtTarget(), 'Zero move':(self.zeroMove() and self.noFlagChanges()), 'change direction':self.readChangedDirection()}
+        if any(d.values()):
+            sadd = self.getSadd('NEW', d)
             self.signals.printStatus.emit(sadd)
             return True
         else:

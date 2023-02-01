@@ -128,7 +128,9 @@ class camera(QObject):
         if not self.connected:
             return
         b2 = self.guiBox.bTitle.replace(' ', '_')
-        writer.writerow([f'{b2}_frame_rate','fps', self.fps])
+        writer.writerow([f'{b2}_collection_frame_rate','fps', self.fps])
+        writer.writerow([f'{b2}_rec_frame_rate','fps', self.recFPS])
+        writer.writerow([f'{b2}_prev_frame_rate','fps', self.previewFPS])
         writer.writerow([f'{b2}_exposure','ms', self.exposure])
         writer.writerow([f'{b2}_flag1','', self.flag1])
         

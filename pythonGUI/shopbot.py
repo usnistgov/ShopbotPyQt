@@ -100,6 +100,15 @@ class sbSettingsBox(QWidget):
         fileForm = QFormLayout()
         objValidator = QDoubleValidator(0, 10, 2)
         
+        self.runSimpleDict = {0:'Track points, flow speeds, and flags', 
+                                          2:'Track points, but only watch arduino for trustworthy flags (no early turn off/on)',
+                                          1:'Only track flags'}
+        self.runSimple = fRadioGroup(layout, 'Pressure strategy', 
+                                          self.runSimpleDict, 
+                                          {0:0, 1:1, 2:2},
+                                         self.sbBox.runSimple, col=True, headerRow=True,
+                                          func=self.changeRunSimple)
+        
         self.burstScale = fLineEdit(fileForm, title='Burst pressure scaling (default=1)',
                                     text=str(cfg.shopbot.burstScale), 
                                     tooltip='When you first turn on pressure, turn it to this value times the target value before you turn it down to the target value',
@@ -110,35 +119,27 @@ class sbSettingsBox(QWidget):
                                     tooltip='After you turn on the pressure, decrease to the target pressure over this distance in mm or time in seconds',
                                    func=self.updateBurstLength,
                                    width=w, units=['mm', 's'], uinit=cfg.shopbot.burstLength.units)
-        self.critTimeOn = fLineUnits(fileForm, title='Crit length on',
+        self.critTimeOn = fLineUnits(fileForm, title='Turn on early*',
                                     text=str(cfg.shopbot.critTimeOn.value), 
-                                    tooltip='Turn on the pressure this amount of time in s or length in mm before the flag is turned on',
+                                    tooltip='Turn on the pressure this amount of time in s or length in mm before the flag is turned on. ',
                                    func=self.updateCritTimeOn,
                                    width=w, units=['mm', 's'], uinit=cfg.shopbot.critTimeOn.units)
-        self.critTimeOff = fLineUnits(fileForm, title='Crit time off (s)', 
+        self.critTimeOff = fLineUnits(fileForm, title='Turn off early*', 
                                      text=str(cfg.shopbot.critTimeOff.value), 
                                      tooltip='Turn off the pressure this amount of time in s or length in mm before the flag is turned off',
                                     func=self.updateCritTimeOff,
                                    width=w, units=['mm', 's'], uinit=cfg.shopbot.critTimeOff.units)
-        self.zeroDist = fLineUnits(fileForm, title=f'Zero distance', 
+        self.zeroDist = fLineUnits(fileForm, title=f'Distance tolerance', 
                                   text=str(cfg.shopbot.zeroDist), 
-                                  tooltip='If we are within this distance from a point, we are considered to be at the point. \
-                                  In other words, margin of error or tolerance on distance measurements.',
+                                  tooltip='Margin of error or tolerance on distance measurements.',
                                  func = self.updateZeroDist,
-                                   width=w, units=[self.sbBox.units], uinit=self.sbBox.units)
-        
+                                   width=w, units=[self.sbBox.units], uinit=self.sbBox.units)       
         self.checkFreq = fLineUnits(fileForm, title=f'Check flag frequency', 
                                   text=str(cfg.shopbot.dt.value), 
                                   tooltip='Check the status of the shopbot every _ ms',
                                   validator=objValidator2,
                                    width=w, units=[cfg.shopbot.dt.units], uinit=cfg.shopbot.dt.units)
-        self.runSimple = fRadioGroup(layout, 'Pressure strategy', 
-                                          {0:'Track points, flow speeds, and flags', 
-                                           1:'Only track flags',
-                                          2:'Track points for bad flags and arduino for good flags'}, 
-                                          {0:0, 1:1, 2:2},
-                                         self.sbBox.runSimple, col=True, headerRow=True,
-                                          func=self.changeRunSimple)
+        
         objValidator3 = QIntValidator(cfg.shopbot.flag1min,cfg.shopbot.flag1max)
         self.flag1Edit = fLineEdit(fileForm, title=f'Run flag ({cfg.shopbot.flag1min}-{cfg.shopbot.flag1max})',
                               text =str(cfg.shopbot.flag1),
@@ -528,9 +529,10 @@ class sbBox(connectBox):
         writer.writerow(['critTimeOn', self.critTimeOn['units'], self.critTimeOn['value']])
         writer.writerow(['critTimeOff', self.critTimeOff['units'], self.critTimeOff['value']])
         writer.writerow(['zeroDist', self.units, self.zeroDist])
-        writer.writerow(['checkFreq', 'ms', self.checkFreq])
+        writer.writerow(['checkFreq', self.checkFreq['units'], self.checkFreq['value']])
         writer.writerow(['burstScale', '', self.burstScale])
         writer.writerow(['burstLength', self.burstLength['units'], self.burstLength['value']])
+        writer.writerow(['tracking', self.runSimple, self.settingsBox.runSimpleDict[self.runSimple]])
 
     def testTime(self) -> None:
         '''create metadata file'''
