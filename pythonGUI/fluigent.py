@@ -78,7 +78,7 @@ class fluSettingsBox(QWidget):
         grid = QGridLayout()
         
         grid.addWidget(QLabel('Color'), 2, 0)
-        grid.addWidget(QLabel('Flag (1-12)'), 4, 0)
+        grid.addWidget(QLabel(f'Flag ({cfg.shopbot.flag1min}-{cfg.shopbot.flag1max})'), 4, 0)
         padding = 20
         for r in [1,3]:
             grid.setRowMinimumHeight(r, padding)
@@ -211,7 +211,7 @@ class fluSettingsBox(QWidget):
             return
         if self.fluBox.sbWin.flagTaken(newflag1-1): # convert to 0-indexed
             # another device is already assigned to that flag. revert
-            self.sender.setText(str(oldflag1))
+            self.sender().setText(str(oldflag1))
             return
         else:
             # free flag: assign

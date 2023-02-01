@@ -243,6 +243,7 @@ class diagStr:
         self.newRow()
         self.diag = diag
         self.printi = 0
+        self.lastPrinted = ''
         
     def newRow(self):
         self.row = '\t'
@@ -262,12 +263,18 @@ class diagStr:
         self.status = self.status + s
         
     def printRow(self) -> None:
+        line = f'{self.row}| {self.status}'
+        if line==self.lastPrinted:
+            # no change, don't print
+            self.newRow()
+            return
+        self.lastPrinted = line
         if self.diag>2:
             # print every step
-            print(f'{self.row}| {self.status}')
+            print(line)
             self.printi+=1
         elif self.diag>1 and len(self.status)>0:
-            print(f'{self.row}| {self.status}')
+            print(line)
             self.printi+=1
         if (self.diag>1 and (self.printi>50)):
             print(self.header)
@@ -287,6 +294,7 @@ class printLoopSignals(QObject):
     target = pyqtSignal(float,float,float)      # send current target to GUI
     targetLine = pyqtSignal(int)   # send current target line to GUI
     status = pyqtSignal(str)
+    trusted = pyqtSignal(bool)  # whether we can trust the point
     
     
 class printLoop(QObject):
@@ -321,8 +329,20 @@ class printLoop(QObject):
     def setUpPointWatch(self, pSettings:dict, dt:float, sbpfile:str) -> None:
         '''set up the point watch object'''
         self.pw = pointWatch(pSettings, dt, self.diagStr, self, self.runSimple)
+        self.pw.signals.trusted.connect(self.updateTrusted)
+        # self.pw.signals.printStatus.connect(self.updatePrintStatus)
         self.readKeys()   # intialize flag, loc
         self.pw.readCSV(sbpfile)
+        
+    @pyqtSlot(str)
+    def updatePrintStatus(self, s:str) -> None:
+        '''send the print status back to the shopbot window'''
+        self.signals.status.emit(s)
+        
+    @pyqtSlot(bool)
+    def updateTrusted(self, t:bool) -> None:
+        '''send the print status back to the shopbot window'''
+        self.signals.trusted.emit(t)
 
     @pyqtSlot()
     def assignFlags(self) -> None:
@@ -349,7 +369,6 @@ class printLoop(QObject):
                     cw.signals.goToPressure.connect(channel.goToRunPressure)
                     cw.signals.zeroChannel.connect(channel.zeroChannel)
                     cw.signals.printStatus.connect(channel.updatePrintStatus)
-                    self.pw.signals.printStatus.connect(channel.updatePrintStatus)
                     if hasattr(self.sbWin, 'calibDialog'):
                         if channel.chanNum0<len(self.sbWin.calibDialog.calibWidgets):
                             calibBox = self.sbWin.calibDialog.calibWidgets[channel.chanNum0]
@@ -419,7 +438,8 @@ class printLoop(QObject):
     def diagPosRow(self, newPoint:bool=False) -> None:
         '''get a row of diagnostic data'''
         if newPoint:
-            self.printRow()
+            # self.printRow()
+            return
         if self.diag>1:
             for flag0, cw in self.channelWatches.items():
                 cw.diagPosRow(self.sbFlag)

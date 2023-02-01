@@ -84,7 +84,7 @@ class channelWatch(QObject):
         
     def diagHeader(self) -> str:
         if self.mode==1 or self.mode==2:
-            self.diagStr.addHeader(f'{self.flag0+1}:on  dev act on')
+            self.diagStr.addHeader(f'{self.flag0+1}:flg dev act on')
     
     def diagPosRow(self, sbflag:int) -> str:
         flagOn0 = flagOn(sbflag, self.flag0)
@@ -394,6 +394,7 @@ class channelWatch(QObject):
                 self.changedBy = 'flag'
                 self.ended = False   # now we are in the real line, not the pre-off
                 retval = True
+                resetFlag = True
             if resetFlag:
                 self.pw.flagReset(self.flag0, False) 
                 self.changedBy = 'flag'

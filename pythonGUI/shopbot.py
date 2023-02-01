@@ -140,8 +140,8 @@ class sbSettingsBox(QWidget):
                                   validator=objValidator2,
                                    width=w, units=[cfg.shopbot.dt.units], uinit=cfg.shopbot.dt.units)
         
-        objValidator3 = QIntValidator(cfg.shopbot.flag1min,cfg.shopbot.flag1max)
-        self.flag1Edit = fLineEdit(fileForm, title=f'Run flag ({cfg.shopbot.flag1min}-{cfg.shopbot.flag1max})',
+        objValidator3 = QIntValidator(cfg.shopbot.flag1min,4)
+        self.flag1Edit = fLineEdit(fileForm, title=f'Run flag ({cfg.shopbot.flag1min}-4)',
                               text =str(cfg.shopbot.flag1),
                               tooltip = 'Flag that triggers the start of print',
                               validator = objValidator3,
@@ -252,7 +252,7 @@ class sbSettingsBox(QWidget):
         if newflag1==self.sbBox.runFlag1:
             # no change in flag
             return
-        if self.sbBox.sbWin.flagTaken(newflag1-1):
+        if self.sbBox.sbWin.flagTaken(newflag1-1) and not newflag1==4:
             self.sbBox.updateStatus(f'{newflag1} is taken. Resetting shopbot flag.', True)
             self.flag1Edit.setText(str(self.sbBox.runFlag1)) # reset the flag if it's taken
         else:
@@ -318,6 +318,7 @@ class sbBox(connectBox):
         self.bTitle = 'Shopbot'
         self.sbWin = sbWin
         self.runningSBP = False
+        self.trusted = False
         self.printStatus = ''
         self.setTitle('Shopbot')
         self.arduino = arduino
@@ -372,6 +373,7 @@ class sbBox(connectBox):
                 if not runSimple==1:
                     out.append('')
                 self.keys.unlock()
+        out.append(self.trusted)
         out.append(self.printStatus)
         self.printStatus = ''
         return out
@@ -388,7 +390,8 @@ class sbBox(connectBox):
             out = out + ['flag', 'lastRead']
             if not runSimple==1:
                 out.append('targetLine')
-            out.append('status')
+        out.append('trusted')
+        out.append('status')
         return out
  
     #-------------
@@ -588,6 +591,7 @@ class sbBox(connectBox):
             return self.flagBox.flagTaken(flag0)
         else:
             return False
+        
     
     @pyqtSlot(float,float,float)   
     def updateXYZ(self, x:float, y:float, z:float) -> None:
@@ -668,6 +672,7 @@ class sbBox(connectBox):
     def runFile(self) -> None:
         '''runFile sends a file to the shopbot and tells the GUI to wait for next steps. first, check if the shopbot is ready'''
         self.runningSBP = True
+        self.trusted = False
         self.printStatus = ''
         self.keys.lock()
         self.keys.runningSBP = True
@@ -690,6 +695,10 @@ class sbBox(connectBox):
         else:
             # replace the status
             self.printStatus = s
+            
+    @pyqtSlot(bool)
+    def updateTrusted(self, t:bool) -> None:
+        self.trusted = t
 
     @pyqtSlot()
     def runFileContinue(self) -> None:
@@ -735,6 +744,7 @@ class sbBox(connectBox):
         self.printWorker.signals.target.connect(self.updateXYZt)
         self.printWorker.signals.targetLine.connect(self.updateXYZtline)
         self.printWorker.signals.status.connect(self.updatePrintStatus)
+        self.printWorker.signals.trusted.connect(self.updateTrusted)
 
         # send the file to the shopbot via command line
         self.sendFileToShopbot(self.sbpName())
@@ -812,6 +822,7 @@ class sbBox(connectBox):
         self.keys.unlock()
         self.updateRunButt()    
         self.updateStatus('Ready', False)
+        self.updateFlag(0)
         
     @pyqtSlot()
     def triggerKill(self) -> None:

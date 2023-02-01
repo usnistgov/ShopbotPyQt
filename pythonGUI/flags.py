@@ -49,6 +49,7 @@ class flagGrid(QGridLayout):
         self.flagLabels0 = dict([[flag0, ''] for flag0 in range(self.numFlags)])   
                     # dictionary that holds labels {flag:device name}
                     # 0=indexed
+        self.flagLabels0[3] = 'Reserved'
                 
     def unusedFlag0(self) -> int:
         '''find an unused flag'''
@@ -138,9 +139,9 @@ class flagGrid(QGridLayout):
  
     def flagTaken(self, flag0:int) -> bool:
         '''check the dictionary to see if the flag is taken'''
-        if flag0<self.flag1min-1 or flag0>self.flag1max-1:
-            # flag out of range
-            return False
+        if flag0<self.flag1min-1 or flag0>self.flag1max-1 or flag0==3:
+            # flag out of range, or special spindle flag
+            return True
         label = self.flagLabels0[flag0]
         if len(label)>0:
             logging.info(f'Flag taken: {flag0+1}: {label}')
@@ -200,6 +201,8 @@ class flagGrid(QGridLayout):
             if hasattr(self, labelname):
                 labelObj = getattr(self, labelname)
                 labelObj.setText('')
+                
+        self.flag3Device.setText('Reserved')
         
         # get flags from camBoxes and fluChannels and re-label
         if hasattr(self.sbWin, 'camBoxes'):

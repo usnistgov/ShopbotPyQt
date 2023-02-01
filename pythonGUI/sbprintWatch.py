@@ -208,7 +208,8 @@ class pointWatchSignals(QObject):
     estimate = pyqtSignal(float,float,float)   # new estimated position
     target = pyqtSignal(float,float,float)      # send current target to GUI
     targetLine = pyqtSignal(int)   # send current target line to GUI 
-    printStatus = pyqtSignal(str)
+    printStatus = pyqtSignal(str)  # status of the points
+    trusted = pyqtSignal(bool)     # whether we can trust the point estimate and target
 
     
     
@@ -225,6 +226,7 @@ class pointWatch(QObject):
         self.queuedLine = 0
         self.timeTaken = False
         self.hitRead = False
+        self.trusted = False
         self.speed = 0
         self.tableDone = False
         self.waitingForLastRead = False
@@ -245,9 +247,9 @@ class pointWatch(QObject):
             l[-1] = l[-1]+'|'
         if self.trackPoints:
             l = l+['tln', 'qln|']
-        l = l+['flag']
+        l.append('flag')
         if self.trackPoints:
-            l = l+['speed', 'strt', '@pt|']
+            l = l+['speed', 'strt', '@pt', 'trust|']
             for si in ['trd', 'lrd', 'tld', 'ted', 'led']:
                 l.append(f'{si:5s}')
         return self.diagStr.addHeader('\t'.join(l)+'|')
@@ -268,13 +270,14 @@ class pointWatch(QObject):
             l[-1] = l[-1]+'|'
         if self.trackPoints:
             l = l+[str(int(self.d.target['line'])), f'{self.queuedLine}|']
-        l = l+[str(i) for i in [flag]]
+        l.append(f'{flag:4.0f}')
              
         if self.trackPoints:
             if newPoint:
-                l = l + [' ', ' ', ' '] 
+                s0 = ''
+                l = l + [f'{s0:4s}', f'{s0:4s}',f'{s0:3s}', f'{s0:5s}|']
             else:
-                l = l+[f'{self.speed:4.1f}', f'{self.timeTaken:4b}',f'{self.hitRead:3b}|']
+                l = l+[f'{self.speed:4.1f}', f'{self.timeTaken:4b}',f'{self.hitRead:3b}', f'{self.trusted:5b}|']
 
             for s in ['trd', 'lrd', 'tld', 'ted', 'led']:
                 l.append(f'{getattr(self.d, s):5.2f}')
@@ -343,6 +346,7 @@ class pointWatch(QObject):
         self.timeTaken = False
         self.hitRead = False
         self.waitingForLastRead = False
+        self.trusted = False
         self.pointsi+=1
         if self.pointsi>=0 and self.pointsi<len(self.points):
             targetPoint = self.points.iloc[self.pointsi] 
@@ -394,6 +398,8 @@ class pointWatch(QObject):
         self.pointsi = i
         self.printLoop.readPoint(letQueuedKill=False)        # go to the next point
         self.resetPointTime()   # mark the start of the movement as now
+        self.timeTaken = True
+        self.trusted = True
         
             
     def findFirstPoint(self, flags:list) -> None:
@@ -429,6 +435,7 @@ class pointWatch(QObject):
         self.checkTimeTaken()   # check if we've taken the start time
         # update estimate point and angle
         self.d.calcEst(self.timeTaken, self.pointTime, self.speed)
+        self.signals.trusted.emit(self.trusted) # send the trusted status back to the printLoop
         self.checkHitRead()     # check if we've hit the read point
         
         
@@ -510,6 +517,7 @@ class pointWatch(QObject):
     def emitStatus(self, sadd:str) -> None:
         '''print the status'''
         self.diagStr.addStatus(sadd)
+        self.signals.printStatus.emit(sadd)
                 
     def getSadd(self, change:str, d:dict) -> None:
         '''get a status string based on a dictionary of bools. change is a string to put at the front'''
@@ -528,7 +536,7 @@ class pointWatch(QObject):
         d = {'Est at target':self.estAtTarget(), 'Zero move':(self.zeroMove() and self.noFlagChanges()), 'change direction':self.readChangedDirection()}
         if any(d.values()):
             sadd = self.getSadd('NEW', d)
-            self.signals.printStatus.emit(sadd)
+            
             return True
         else:
             return False

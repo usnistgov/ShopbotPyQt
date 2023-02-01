@@ -303,7 +303,10 @@ class SBwindow(QMainWindow):
         
     def flagTaken(self, flag0:int) -> bool:
         '''check if the flag is already occupied'''
-        return self.sbBox.flagTaken(flag0)   
+        if hasattr(self, 'flagBox'):
+            return self.flagBox.flagTaken(flag0)
+        else:
+            return False
     
     #----------------
     
