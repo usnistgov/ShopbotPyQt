@@ -23,7 +23,6 @@ sys.path.append(parentdir)
 sys.path.append(os.path.join(parentdir, 'SBP_files'))  # add python folder
 from sbpRead import *
 
-printDiag = False
 
 #---------------------------------------------
 
@@ -147,6 +146,8 @@ class distances:
         '''update the target point'''
         if not self.trackPoints:
             return
+        if pd.isna(prevPoint['x']):
+            print(prevPoint, newPoint, newPoint)
         self.last = prevPoint
         self.target = newPoint
         self.next = nextPoint
@@ -181,6 +182,8 @@ class distances:
             vec = self.targetVec                      # direction of travel
             distTraveled = speed*dt              # distance traveled since we hit the last point
             self.estimate = [pt[i]+distTraveled*vec[i] for i in range(3)]  # estimated position
+            # if pd.isna(self.estimate[0]):
+            #     print(self.estimate, pt, distTraveled, vec)
         self.ted = ppDist(self.estimate, self.target) 
         self.led = ppDist(self.estimate, self.last) 
         self.calcAngle()
@@ -208,7 +211,6 @@ class pointWatchSignals(QObject):
     estimate = pyqtSignal(float,float,float)   # new estimated position
     target = pyqtSignal(float,float,float)      # send current target to GUI
     targetLine = pyqtSignal(int)   # send current target line to GUI 
-    printStatus = pyqtSignal(str)  # status of the points
     trusted = pyqtSignal(bool)     # whether we can trust the point estimate and target
 
     
@@ -216,9 +218,10 @@ class pointWatchSignals(QObject):
 class pointWatch(QObject):
     '''holds functions for iterating through points in an sbp file'''
     
-    def __init__(self, pSettings:dict, dt:float, diagStr, parent, runSimple:int):
+    def __init__(self, pSettings:dict, dt:float, diagStr, parent, runSimple:int, camFlags:list):
         super().__init__()
         self.trackPoints = (not runSimple==1)
+        self.camFlags = camFlags
         self.d = distances(self.trackPoints)
         self.zeroDist = pSettings['zeroDist']
         self.dt = dt
@@ -318,6 +321,7 @@ class pointWatch(QObject):
             self.zmax = self.points.z.max()
         self.fillTable()    # fill empty entries with current position
         
+        
 
     def fillTable(self) -> None:
         '''go through the top of the table and fill empty entries with the current position'''
@@ -334,10 +338,36 @@ class pointWatch(QObject):
     #-------------------
     # tracking points
     
+    def getPrevPoint(self) -> pd.Series:
+        '''get the last point with coordinates'''
+        ii = self.pointsi-1
+        while ii>=0 and pd.isna(self.points.iloc[ii]['x']):
+            ii = ii-1
+        if ii>=0:
+            prevPoint = self.points.iloc[ii]
+        else:
+            prevPoint = dummyPoint()
+        return prevPoint
+    
+    def getNextPoint(self) -> pd.Series:
+        '''get the next point with coordinates'''
+        # new target point
+        ii = self.pointsi+1
+        while ii<len(self.points) and pd.isna(self.points.iloc[ii]['x']):
+            ii = ii+1
+        if ii<len(self.points):
+            nextPoint = self.points.iloc[ii]
+        else:
+            nextPoint = dummyPoint()
+        return nextPoint
+    
     def readPoint(self, letQueuedKill:bool=True) -> pd.Series:
         '''read the next point from the points list'''
         if not self.trackPoints:
             return
+        if self.tableDone:
+            # we've already hit the end
+            return {}
         if letQueuedKill:
             if self.pointsi>0 and self.queuedLine>0 and self.points.iloc[self.pointsi]['line']>self.queuedLine+1:
                 # don't read the point if we're ahead of the file
@@ -352,24 +382,21 @@ class pointWatch(QObject):
             targetPoint = self.points.iloc[self.pointsi] 
             if pd.isna(targetPoint['speed']):
                 # just changing flow speed
-                return targetPoint
-            
-            # new target point
-            if len(self.points)>self.pointsi+1:
-                nextPoint = self.points.iloc[self.pointsi+1]
-            else:
-                nextPoint = dummyPoint()
-            if self.pointsi>0:
-                prevPoint = self.points.iloc[self.pointsi-1]
-            else:
-                prevPoint = dummyPoint()
-            self.d.updateTarget(prevPoint, targetPoint, nextPoint)
+                return targetPoint            
+            self.d.updateTarget(self.getPrevPoint(), targetPoint, self.getNextPoint())
             self.speed = float(self.d.target['speed'])
         else:
             self.tableDone = True
         return self.d.target
+    
+    def incrementOnOff(self, flag0:int, s:str) -> None:
+        '''add to the on off count'''
+        for si in ['on', 'off']:
+            if not flag0 in self.onoffCount[si]:
+                self.onoffCount[si][flag0]=-1
+        self.onoffCount[s][flag0]+=1
         
-            
+
     def flagReset(self, flag0:int, on:bool) -> None:
         '''reset the time and find the right point because the real flag turned on'''
         # find the points when the pressure turns on
@@ -385,21 +412,36 @@ class pointWatch(QObject):
         else:
             s = 'off'
             
-        if flag0 in self.onoffCount[s]:
-            self.onoffCount[s][flag0]+=1
-        else:
-            self.onoffCount[s][flag0] = 0
+        self.incrementOnOff(flag0, s)
         idx = self.onoffCount[s][flag0]
         if idx>=len(df):
             print(f'Too many flag resets:{flag0+1}:{s}, {idx}/{len(df)}')
             return
         # print(self.onoffCount)
         i = df.iloc[idx].name  # get the index of the point we just hit
+        if idx<len(df)-1:
+            ln = df.iloc[idx+1].name
+            if 5*abs(self.pointsi-ln)<abs(self.pointsi-i) and abs(self.pointsi-i)>100:
+                # we are much closer to the next point than the previous one. we must have missed a flip.
+                self.incrementOnOff(flag0, 'off')
+                self.incrementOnOff(flag0, 'on')
+                self.getSadd('FLIP', {'Missed 2 flips'})
+                i = ln
         self.pointsi = i
         self.printLoop.readPoint(letQueuedKill=False)        # go to the next point
         self.resetPointTime()   # mark the start of the movement as now
         self.timeTaken = True
         self.trusted = True
+        if on:
+            if self.onoffCount['on'][flag0]>self.onoffCount['off'][flag0]+1:
+                # we must have missed an off
+                self.incrementOnOff(flag0, 'off')
+                self.getSadd('FLIP', {'Missed off flip'})
+        else:
+            if self.onoffCount['off'][flag0]>self.onoffCount['on'][flag0]:
+                # we must have missed an on
+                self.incrementOnOff(flag0, 'on')
+                self.getSadd('FLIP', {'Missed on flip'})
         
             
     def findFirstPoint(self, flags:list) -> None:
@@ -462,13 +504,21 @@ class pointWatch(QObject):
         return ret
     
     def noFlagChanges(self) -> bool:
-        '''flags are not changing during this move'''
-        for c in self.d.target.keys():
-            # iterate through columns
-            if c.startswith('p') and c.endswith('before'):
-                if self.d.target[c]!=self.d.target[c.replace('before', 'after')]:
-                    # flags are changing during these moves
+        '''camera flags are not changing during this move'''
+        for flag0 in self.camFlags:
+            b = f'p{flag0}_before'
+            a = f'p{flag0}_after'
+            if a in self.d.target and b in self.d.target:
+                if self.d.target[a]!=self.d.target[b]:
                     return False
+        
+        
+#         for c in self.d.target.keys():
+#             # iterate through columns
+#             if c.startswith('p') and c.endswith('before'):
+#                 if self.d.target[c]!=self.d.target[c.replace('before', 'after')]:
+#                     # flags are changing during these moves
+#                     return False
         return True
     
     def zeroMove(self) -> bool:
@@ -492,8 +542,8 @@ class pointWatch(QObject):
         return self.d.angle>=np.pi/4
     
     def estAtTarget(self) -> bool:
-        '''estimated point is at the target point'''
-        return self.d.led>=self.d.tld-self.zeroDist
+        '''estimated point is at the target point, and this is not a zero move'''
+        return (self.d.led>=self.d.tld-self.zeroDist)
     
     def estWithinCrit(self, crit:float) -> bool:
         '''estimated point is within critical distance of target. crit<0 to be after end of line'''
@@ -517,7 +567,6 @@ class pointWatch(QObject):
     def emitStatus(self, sadd:str) -> None:
         '''print the status'''
         self.diagStr.addStatus(sadd)
-        self.signals.printStatus.emit(sadd)
                 
     def getSadd(self, change:str, d:dict) -> None:
         '''get a status string based on a dictionary of bools. change is a string to put at the front'''
@@ -529,11 +578,15 @@ class pointWatch(QObject):
       
     def readyForNextPoint(self) -> bool:
         '''check if we can go on to the next point'''
+        if self.tableDone:
+            return False
         if not self.trackPoints:
             return False
         if self.waitingForLastRead:
             return True
-        d = {'Est at target':self.estAtTarget(), 'Zero move':(self.zeroMove() and self.noFlagChanges()), 'change direction':self.readChangedDirection()}
+        d = {'Est at target':(self.estAtTarget() and not self.zeroMove()), 
+             'Zero move':(self.zeroMove() and self.noFlagChanges()), 
+             'change direction':(self.readChangedDirection() and not self.trusted)}
         if any(d.values()):
             sadd = self.getSadd('NEW', d)
             

@@ -12,6 +12,7 @@ import re
 import win32gui, win32api, win32con
 import time
 import datetime
+import traceback
 
 # local packages
 from config import cfg
@@ -24,8 +25,7 @@ sys.path.append(os.path.join(parentdir, 'SBP_files'))  # add python folder
 from sbpRead import *
 from sbprintChannel import *
 from sbprintWatch import *
-
-printDiag = False
+from sbprintDiag import *
 
 
 ##################################################  
@@ -235,55 +235,6 @@ class waitForStart(QRunnable):
                 
 #----------------------------
 
-class diagStr:
-    '''holds a diagnostic string that describes the current time step'''
-    
-    def __init__(self, diag:int):
-        self.header = '\t'
-        self.newRow()
-        self.diag = diag
-        self.printi = 0
-        self.lastPrinted = ''
-        
-    def newRow(self):
-        self.row = '\t'
-        self.status = ''
-        
-    def addHeader(self, s) -> None:
-        self.header = self.header +' | '+ s
-        
-    def addRow(self, s:str) -> None:
-        if s in self.row:
-            self.printRow()
-        self.row = self.row + ' | '+ s
-        
-    def addStatus(self, s:str) -> None:
-        if len(self.status)>0:
-            self.status = self.status + ', '
-        self.status = self.status + s
-        
-    def printRow(self) -> None:
-        line = f'{self.row}| {self.status}'
-        if line==self.lastPrinted:
-            # no change, don't print
-            self.newRow()
-            return
-        self.lastPrinted = line
-        if self.diag>2:
-            # print every step
-            print(line)
-            self.printi+=1
-        elif self.diag>1 and len(self.status)>0:
-            print(line)
-            self.printi+=1
-        if (self.diag>1 and (self.printi>50)):
-            print(self.header)
-            self.printi = 0
-        self.newRow()
-            
-    def printHeader(self) -> None:
-        if self.diag>1:
-            print(self.header)
 
 
     
@@ -328,16 +279,16 @@ class printLoop(QObject):
         
     def setUpPointWatch(self, pSettings:dict, dt:float, sbpfile:str) -> None:
         '''set up the point watch object'''
-        self.pw = pointWatch(pSettings, dt, self.diagStr, self, self.runSimple)
+        camFlags = self.sbWin.camBoxes.listFlags0()
+        self.pw = pointWatch(pSettings, dt, self.diagStr, self, self.runSimple, list(camFlags.keys()))
         self.pw.signals.trusted.connect(self.updateTrusted)
-        # self.pw.signals.printStatus.connect(self.updatePrintStatus)
         self.readKeys()   # intialize flag, loc
         self.pw.readCSV(sbpfile)
         
-    @pyqtSlot(str)
-    def updatePrintStatus(self, s:str) -> None:
-        '''send the print status back to the shopbot window'''
-        self.signals.status.emit(s)
+    # @pyqtSlot(str)
+    # def updatePrintStatus(self, s:str) -> None:
+    #     '''send the print status back to the shopbot window'''
+    #     self.signals.status.emit(s)
         
     @pyqtSlot(bool)
     def updateTrusted(self, t:bool) -> None:
@@ -438,14 +389,11 @@ class printLoop(QObject):
     def diagPosRow(self, newPoint:bool=False) -> None:
         '''get a row of diagnostic data'''
         if newPoint:
-            # self.printRow()
             return
         if self.diag>1:
             for flag0, cw in self.channelWatches.items():
                 cw.diagPosRow(self.sbFlag)
             self.pw.diagPosRow(self.sbFlag, newPoint)
-        if newPoint:
-            self.printRow()
         return
     
         
@@ -487,10 +435,10 @@ class printLoop(QObject):
     #---------------------------------
     # each new point
 
-    def updateSpeeds(self, targetPoint:pd.Series):
+    def updateSpeeds(self, t):
         '''update flow speeds'''
         for flag0, cw in self.channelWatches.items():
-            cw.updateSpeed()
+            cw.updateSpeed(t)
 
     def defineStates(self) -> None:
         ''''determine the state of the print, i.e. what we should watch for'''
@@ -506,10 +454,10 @@ class printLoop(QObject):
             # read point was rejected
             return
         if pd.isna(t['speed']):
-            # this is just a speed step. adjust speeds and go to the next point
+            # this is just a flow speed step. adjust speeds and go to the next point
             self.updateSpeeds(t)
             if self.diag>1:
-                print('Update speed')
+                self.diagStr.addStatus(f'Update flow speed')
             self.readPoint()
             return
         else:
@@ -517,8 +465,8 @@ class printLoop(QObject):
             self.signals.target.emit(*toXYZ(t))          # update gui
             self.signals.targetLine.emit(int(t['line']))
             self.defineStates()
-            if self.diag>1:  
-                self.diagPosRow(newPoint=True)
+            # if self.diag>1:  
+            #     self.diagPosRow(newPoint=True)
                 
             
     #---------------------------------
@@ -530,6 +478,7 @@ class printLoop(QObject):
     def evalState(self) -> bool:
         '''determine what to do about the channels'''
         # get keys and position, new estimate position
+    
         
         if not self.printStarted:
             # once we go below z=0, we've started printing
@@ -541,7 +490,6 @@ class printLoop(QObject):
             # print finished, end loop
             self.diagStr.addStatus('DONE flag off')
             self.printRow()
-            self.signals.status.emit(self.diagStr.status)
             return True
 
         tc = False
@@ -550,18 +498,19 @@ class printLoop(QObject):
             trustChanged = cw.assessPosition(self.sbFlag)
             tc = tc or trustChanged
         
-        if not tc and self.pw.readyForNextPoint():
-            # pointWatch says it's time for the next point
-            for cw in self.channelWatches.values():
-                # make any channels not attached to a trustworthy flag finish this move
-                cw.forceAction()
-            # self.printRow()
-            self.readPoint()
-        else:
-            self.printRow()
-          
-        
-        return self.pw.tableDone
+        if not self.pw.tableDone:
+            if not tc and self.pw.readyForNextPoint():
+                # pointWatch says it's time for the next point
+                for cw in self.channelWatches.values():
+                    # make any channels not attached to a trustworthy flag finish this move
+                    cw.forceAction()
+                self.readPoint()
+
+            if self.pw.tableDone:
+                self.diagStr.addStatus('last pt hit')
+            
+        self.printRow()
+        return self.pw.tableDone and self.flagDone()
 
     #----------------------------
     
@@ -577,7 +526,7 @@ class printLoop(QObject):
                 self.close()
                 self.signals.aborted.emit()
                 return
-            
+
             killed = self.stopHitPoint()
             if killed:
                 if self.pw.retracting(diag=True):
@@ -590,7 +539,7 @@ class printLoop(QObject):
                     self.close()
                     self.signals.aborted.emit()
                 return
-            
+
             # evaluate status
             done = self.evalState()
             if done:
@@ -598,7 +547,7 @@ class printLoop(QObject):
                 self.close()
                 self.signals.finished.emit()
                 return
-            
+
             time.sleep(self.dt/1000)
     
     def close(self):

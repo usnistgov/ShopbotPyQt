@@ -9,8 +9,9 @@
 &waitDSnap = 0.250
 &waitDO = 3.000
 &runFlag1 = 4.000
-&basFlag1 = 12.000
-&flowFlag1 = 11.000
+&basFlag1 = 8.000
+&flowFlag1 = 5.000
+&dummyFlag1 = 1.000
 VD , , 1
 VU, 157.480315, 157.480315, -157.480315
 SA
@@ -19,6 +20,8 @@ JS, 20, 20
 VR,10.06, 10.06, , , 10.06, 10.06, , , 5.08, 5.08, 100, 3.81, 65, , , 5.08
 J2, &margin + &slideW/2, &margin + 49.0*&nid + 3
 SO, &runFlag1, 1
+SO, &dummyFlag1, 1
+SO, &dummyFlag1, 0
 JZ, -0.9*&slideW
 J3, 1.5*&margin + &slideW/2, 57.999999999999998*&nid + 3, -0.9*&slideW
 SO, &flowFlag1, 1

@@ -295,6 +295,7 @@ class SBPPoints:
     def addPoint(self, command:str) -> None:
         '''add the current point to the list'''
         p1 = {'line':self.line, 'x':self.cp[0], 'y':self.cp[1], 'z':self.cp[2]}
+        # print(self.pressures)
         for c in self.channels:
             for s in ['before', 'after']:
                 p1[f'p{c}_{s}'] = self.pressures[c]
@@ -325,46 +326,62 @@ class SBPPoints:
         spl = re.split('=', command)
         channel = spl[0][-1]
         val = float(spl[1])
-        self.points.append({'line':self.line, f'p{channel}_before':-1000, f'p{channel}_after':val})  # -1000 is code for "change speed"        
+        self.points.append({'line':self.line, f'p{channel}_before':-1000, f'p{channel}_after':val})  # -1000 is code for "change speed"    
+        
+    def readLineSO(self, spl:list) -> None:
+        '''read an SO line'''
+        if hasattr(self, 'lastLine'):
+            if self.lastLine.startswith('SO'):
+                # turned off/on
+                self.addPoint('')
+                
+        # get the flag
+        li = spl[1]
+        if type(li) is str:
+            if li[1:] in self.header.vardefs:
+                channel = self.header.vardefs[li[1:]]-1
+            else:
+                print(self.header.vardefs)
+                raise ValueError(f'Missing pressure channel in header: {li}')
+        else:
+            channel = int(spl[1])-1 # shopbot flags are 1-indexed, but we store 0-indexed
+            
+        # get the value we're setting the flag to
+        self.pressures[channel] = spl[2]
+
+        # note that the previous point ends in a flag change
+        i = -1
+        plast = self.points[i]
+        while (not f'p{int(channel)}_after' in plast or plast[f'p{int(channel)}_before']<0) and i>-len(self.points):
+            i = i-1
+            plast = self.points[i]
+        if f'p{int(channel)}_after' in plast and plast[f'p{int(channel)}_after'] in [0,1]:
+            self.points[i][f'p{int(channel)}_after'] = self.pressures[channel]   # 0-indexed
+            
+    def readLineMove(self, spl:list) -> None:
+        '''read a move'''
+        if spl[0][1] in ['X', 'Y', 'Z']:
+            # MX, MY, MZ, JX, JY, JZ
+            self.cp[{'X':0, 'Y':1, 'Z':2}[spl[0][1]]]=self.floatSC(spl[1])
+        elif spl[0][1] in ['2', '3']:
+            # M2, M3, J2, J3
+            for i in range(int(spl[0][1])):
+                self.cp[i] = self.floatSC(spl[i+1])
+        elif spl[0][1] =='S':
+            # change translation speed
+            if spl[0][0]=='M':
+                self.ms = spl[1]
+            elif spl[0][0]=='J':
+                self.js = spl[1]
+        self.addPoint(spl[0])
             
     def readLine(self, l:str) -> None:
         '''read a line into the list of points'''
         spl = splitStrip(l)
         if spl[0]=='SO':
-            if hasattr(self, 'lastLine'):
-                if self.lastLine.startswith('SO'):
-                    # turned off/on
-                    self.addPoint('')
-            li = spl[1]
-            if type(li) is str:
-                if li[1:] in self.header.vardefs:
-                    channel = self.header.vardefs[li[1:]]-1
-                else:
-                    print(self.header.vardefs)
-                    raise ValueError(f'Missing pressure channel in header: {li}')
-            else:
-                channel = int(spl[1])-1 # shopbot flags are 1-indexed, but we store 0-indexed
-            if spl[2]==1:
-                self.pressures[channel] = 1
-            else:
-                self.pressures[channel] = 0
-            if self.points[-1][f'p{int(channel)}_after'] in [0,1]:
-                self.points[-1][f'p{int(channel)}_after'] = self.pressures[channel]   # 0-indexed
+            self.readLineSO(spl)
         elif spl[0][0] in ['M', 'J']:
-            if spl[0][1] in ['X', 'Y', 'Z']:
-                # MX, MY, MZ, JX, JY, JZ
-                self.cp[{'X':0, 'Y':1, 'Z':2}[spl[0][1]]]=self.floatSC(spl[1])
-            elif spl[0][1] in ['2', '3']:
-                # M2, M3, J2, J3
-                for i in range(int(spl[0][1])):
-                    self.cp[i] = self.floatSC(spl[i+1])
-            elif spl[0][1] =='S':
-                # change translation speed
-                if spl[0][0]=='M':
-                    self.ms = spl[1]
-                elif spl[0][0]=='J':
-                    self.js = spl[1]
-            self.addPoint(spl[0])
+            self.readLineMove(spl)
         elif spl[0].startswith('PAUSE'):
             self.addPoint('PAUSE')
         elif spl[0].startswith('\'ink_speed'):

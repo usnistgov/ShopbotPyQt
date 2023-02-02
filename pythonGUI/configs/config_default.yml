@@ -1,12 +1,12 @@
 ---
 appid: usnistgov.sbgui.v1.1.0
 arduino:
-  port: COM4
   flag1pins:
     f5: 5
     f6: 6
     f7: 7
     f8: 8
+  port: COM4
   uvpins:
     in: 13
     out: 12
@@ -14,7 +14,7 @@ camera:
   cam0:
     checked: false
     diag: 1
-    flag1: 3
+    flag1: 8
     fps: 120
     name: Basler camera
     previewFPS: 15
@@ -23,7 +23,7 @@ camera:
   cam1:
     checked: false
     diag: 1
-    flag1: 5
+    flag1: 9
     fps: 15
     name: Nozzle camera
     previewFPS: 15
@@ -32,7 +32,7 @@ camera:
   cam2:
     checked: false
     diag: 1
-    flag1: 6
+    flag1: 10
     fps: 15
     name: Webcam 2
     previewFPS: 15
@@ -54,7 +54,7 @@ files:
   includeSampleInFile: true
   includeSampleInFolder: true
   includeTimeInFile: true
-  save: C:\myfolder
+  save: C://
   separator: _
   tag: test
   timeFormat: '%y%m%d_%H%M%S_%f'
@@ -66,7 +66,7 @@ fluigent:
       initDiam: 0.603
       initSpeed: 40.0
     color: '#3f8d88'
-    flag1: 1
+    flag1: 5
   channel1:
     calibration:
       flowRateFolder: C://
@@ -74,7 +74,7 @@ fluigent:
       initDiam: 0.603
       initSpeed: 5.0
     color: '#b0401e'
-    flag1: 2
+    flag1: 6
   dt: 50
   pmax: 6000
   savePressure: true
@@ -126,17 +126,17 @@ shopbot:
   currentFile: No file selected
   diag: 2
   dt: 
-      value: 10.0
-      units: 'ms'
-  flag1: 12
+    units: ms
+    value: 10.0
+  flag1: 4
   flag1max: 12
   flag1min: 1
   includeFlagInTable: true
   includePositionInTable: true
-  runSimple: 0
+  runSimple: 2
   saveDt: 
-      value: 25
-      units: 'ms'
+    units: ms
+    value: 25
   savePicMetadata: true
   sbpFiles: 
   - No file selected

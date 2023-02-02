@@ -23,7 +23,6 @@ sys.path.append(parentdir)
 sys.path.append(os.path.join(parentdir, 'SBP_files'))  # add python folder
 from sbpRead import *
 
-printDiag = False
 
 #---------------------------------------------
 
@@ -84,11 +83,11 @@ class channelWatch(QObject):
         
     def diagHeader(self) -> str:
         if self.mode==1 or self.mode==2:
-            self.diagStr.addHeader(f'{self.flag0+1}:flg dev act on')
+            self.diagStr.addHeader(f'  :              ')
     
     def diagPosRow(self, sbflag:int) -> str:
         flagOn0 = flagOn(sbflag, self.flag0)
-        s = f'{self.flag0+1}'
+        s = f'{self.flag0+1:2.0f}'
         if flagOn0:
             s = s + ':ON '
         else:
@@ -110,6 +109,8 @@ class channelWatch(QObject):
             s = s + 'sna'
         elif self.state==5:
             s = s + 'off'
+        elif self.state==6:
+            s = s + 'sno'
         if self.on:
             s = s + ' ye'
         else:
@@ -185,9 +186,8 @@ class channelWatch(QObject):
         return f'p{self.flag0}_before'
     
     @pyqtSlot(float) 
-    def updateSpeed(self, speed:float) -> None:
+    def updateSpeed(self, t) -> None:
         '''send new extrusion speed to fluigent'''
-        t = self.pw.d.target
         if t[self.beforeCol()]<0 and t[self.afterCol()]>0:
             # negative value in before flag indicates that this is a special row
             speed = float(t[self.afterCol()])
@@ -204,11 +204,12 @@ class channelWatch(QObject):
     def defineStateCamera(self) -> None:
         '''define the state for a camera action'''
         b = self.stateChange('target')
-        if not self.trustFlag:
-            self.on = False
         if b['before']==0 and b['after']==1:
             # snap camera at point
             self.state = 4
+        elif b['before']==1 and b['after']==0:
+            # turn snap off
+            self.state = 6
         else:
             # do nothing at point
             self.state = 0
@@ -302,17 +303,30 @@ class channelWatch(QObject):
             
     #----------------------
 
-    def assessSnap(self, flagOn0:bool) -> None:
-        '''snap camera at the point. we already did the trustworthy flag check'''
+    def assessSnap(self, flagOn0:bool) -> bool:
+        '''snap camera at the point. we already did the trustworthy flag check. retval=True will trigger a next point'''
         if flagOn0 and not self.on:
             if self.pw.estAtTarget() and self.pw.readAtTarget():
-                self.getSadd('SNAP', {'Read and est at target':True})
+                self.getSadd('SNAP', {'Flag on and read and est at target':True})
                 self.turnOn()
                 self.changedBy = 'point'
                 self.started = True
+                self.pw.flagReset(self.flag0, True) 
+                return True
+        return False
+    
+    def assessSnoff(self, flagOn0:bool) -> bool:
+        '''turn off the snap at the point'''
+        if not flagOn0:
+            self.getSadd('SNOFF', {'Flag off':True})
+            self.turnOff()
+            self.changedBy = 'point'
+            self.pw.flagReset(self.flag0, False) 
+            return True
+        return False
         
-    def assessTurnOn(self, flagOn0:bool) -> None:
-        '''turn on fluigent at the point. '''
+    def assessTurnOn(self, flagOn0:bool) -> bool:
+        '''turn on fluigent at the point.  retval=True will trigger a next point'''
         # allow point timings to turn pressure on     
         if self.on:
             # already on
@@ -324,10 +338,12 @@ class channelWatch(QObject):
             self.turnOn()
             self.changedBy = 'point'
             self.started = True
+        return False
+        
 
         
-    def assessTurnOff(self, flagOn0:bool) -> None:
-        '''turn off fluigent at point'''
+    def assessTurnOff(self, flagOn0:bool) -> bool:
+        '''turn off fluigent at point.  retval=True will trigger a next point'''
         if not self.on:
             # already off
             return
@@ -338,22 +354,27 @@ class channelWatch(QObject):
             self.turnOff()
             self.changedBy = 'point'
             self.ended = True
+        return False
 
     def flagOnSadd(self) -> None:
         '''send out a message that the flag has turned on pressure or initiated the snap'''
         if self.mode==1:
             # fluigent
             self.getSadd('ON ', {'Flag on':True})
-        else:
+        elif self.mode==2:
             self.getSadd('SNAP ', {'Flag on':True})
+        else:
+            self.getSadd('EMPTY ', {'Flag on':True})
             
     def flagOffSadd(self) -> None:
         '''send out a message that the flag has turned off pressure or stopped the snap'''
         if self.mode==1:
             # fluigent
             self.getSadd('OFF ', {'Flag off':True})
-        else:
+        elif self.mode==2:
             self.getSadd('SNOFF ', {'Flag off':True})
+        else:
+            self.getSadd('EMPTY ', {'Flag on':True})
             
     def assessTrusted(self, flagOn0:bool) -> bool:
         ''' reset the point timing based on the flag. return true if the arduino changed the value '''
@@ -411,6 +432,10 @@ class channelWatch(QObject):
             if not self.on:
                 self.getSadd('SNAP', {'Forced':True})
                 self.turnOn()
+        elif self.state==6:
+            if self.on:
+                self.getSadd('SNOFF', {'Forced':True})
+                self.turnOff()
         elif self.state==1:
             # turn on within crit distance of point or if we've started on the next line
             if not self.on:
@@ -442,6 +467,8 @@ class channelWatch(QObject):
         '''check the state and do actions if relevant
         sbFlag full flag value
         possible states are 0,1,4,5'''
+        
+        out = False
         if self.runSimple==1:
             self.assessPositionSimple(sbFlag)
             return
@@ -464,14 +491,17 @@ class channelWatch(QObject):
             
         if self.state==4:
             # snap camera at point
-            self.assessSnap(flagOn0)
+            out = self.assessSnap(flagOn0)
+        elif self.state==6:
+            # turn off snap
+            out = self.assessSnoff(flagOn0)
         elif self.state==1:
             # turn on within crit distance of point or if we've started on the next line
             self.assessTurnOn(flagOn0)
         elif self.state==5:
             # turn off at end
             self.assessTurnOff(flagOn0)
-        return False
+        return out
 
 
     @pyqtSlot() 
