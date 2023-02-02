@@ -49,6 +49,7 @@ class flagGrid(QGridLayout):
         self.flagLabels0 = dict([[flag0, ''] for flag0 in range(self.numFlags)])   
                     # dictionary that holds labels {flag:device name}
                     # 0=indexed
+        self.flagLabels0[3] = 'Reserved'
                 
     def unusedFlag0(self) -> int:
         '''find an unused flag'''
@@ -138,9 +139,9 @@ class flagGrid(QGridLayout):
  
     def flagTaken(self, flag0:int) -> bool:
         '''check the dictionary to see if the flag is taken'''
-        if flag0<self.flag1min-1 or flag0>self.flag1max-1:
-            # flag out of range
-            return False
+        if flag0<self.flag1min-1 or flag0>self.flag1max-1 or flag0==3:
+            # flag out of range, or special spindle flag
+            return True
         label = self.flagLabels0[flag0]
         if len(label)>0:
             logging.info(f'Flag taken: {flag0+1}: {label}')
@@ -200,6 +201,8 @@ class flagGrid(QGridLayout):
             if hasattr(self, labelname):
                 labelObj = getattr(self, labelname)
                 labelObj.setText('')
+                
+        self.flag3Device.setText('Reserved')
         
         # get flags from camBoxes and fluChannels and re-label
         if hasattr(self.sbWin, 'camBoxes'):
@@ -233,6 +236,168 @@ class flagGrid(QGridLayout):
         
 ######################################
 
+class arduinoSignals(QObject):
+    status = pyqtSignal(str, bool) # send status message back to GUI
+
+
+class arduino(QMutex):
+    '''class that connects to the arduino'''
+    
+    def __init__(self, connect:bool=True):
+        super().__init__()
+        self.signals = arduinoSignals()
+        self.uvOn = False    # this indicates whether we have commanded the UV on. still need to press physical button to allow on
+        self.uvAsked = False  # this indicates whether we have asked for the UV to turn on. if we asked for it and door is open, uvAsked is True but ovOn is false
+        self.uvpins = {}
+        self.pins = {}
+        self.connected = False
+        self.SBConnected = False
+        self.uvConnected = False
+        if connect:
+            self.connect()
+            
+    @pyqtSlot(str,bool)
+    def updateStatus(self, message:str, log:bool) -> None:
+        '''send the status back to the main window'''
+        self.signals.status.emit(message, log)
+        
+    def connect(self) -> None:
+        '''connect to the arduino'''
+        try:
+            self.board = Arduino(cfg.arduino.port)
+            it = util.Iterator(self.board)
+            it.start()
+        except:
+            print('Failed to connect to Arduino')
+            return
+        self.connected = True
+        self.connectSB()
+        self.connectUV()   
+        
+    def connectSB(self) -> None:
+        '''connect the SB output flags'''
+        # get the pin-flag correspondences from the config file
+        for f in [5,6,7,8]:
+            p = int(cfg.arduino.flag1pins[f'f{f}'])   # pin this 1-indexed flag is assigned to
+            self.board.digital[p].mode = pyfirmata.INPUT    # set this pin to receive input
+            self.board.digital[p].enable_reporting()        # set this pin to let us read it
+        time.sleep(0.1)
+        self.finishConnectingSB()  # wait 0.1 seconds before checking values
+        
+            
+    def finishConnectingSB(self) -> None:
+        '''check that the pins are actually connected'''
+        for f in [5,6,7,8]:
+            p = int(cfg.arduino.flag1pins[f'f{f}'])   # pin this 1-indexed flag is assigned to
+            val = self.board.digital[p].read()   # read value twice because the first will be empty
+            if val==True or val==False:
+                self.pins[f] = p
+            else:
+                print(f'Failed to read arduino pin {p} for flag {f}: {val}')
+        if len(self.pins)>0:
+            self.SBConnected = True
+            
+    def connectUV(self) -> None:
+        '''connect the UV interlock and output pins'''
+        if 'uvpins' in cfg.arduino:
+            for s in ['in', 'out']:
+                if s in cfg.arduino.uvpins:
+                    p = int(cfg.arduino.uvpins[s])
+                    if s=='in':
+                        self.board.digital[p].mode = pyfirmata.INPUT    # set this pin to receive input
+                        self.board.digital[p].enable_reporting()        # set this pin to let us read it
+                        time.sleep(0.1)
+                        val = self.board.digital[p].read()
+                        if val==True or val==False:
+                            self.uvpins[s] = p
+                        else:
+                            print(f'Failed to read arduino pin {p} for uv {s}', True)
+                    else:
+                        self.uvpins[s] = p
+                        self.board.digital[p].mode = pyfirmata.OUTPUT
+        if len(self.uvpins)==2:
+            self.uvConnected = True
+        self.turnOffUV()
+                        
+            
+    def readSB(self, sbFlag:int) -> int:
+        '''read the flags from the arduino and update the sbFlag'''
+        if not self.connected:
+            return
+        for f1,p in self.pins.items():
+            status = self.board.digital[p].read()   # read the pin, returns a bool
+            on = flagOn(sbFlag, f1-1)
+            if status and not on:
+                # sb3 thinks the flag is off, but hardware says it's on
+                sbFlag = sbFlag + 2**(f1-1)
+                # logging.info(f'SB3 {p} {on} and Arduino {f1} {status}: disagree')
+            elif not status and on:
+                # sb3 thinks the flag is on, but hardware says it's off
+                sbFlag = sbFlag - 2**(f1-1)
+                # logging.info(f'SB3 {p} {on} and Arduino {f1} {status}: disagree')
+        return sbFlag
+    
+    def doorsClosed(self) -> bool:
+        '''check if there are any doors open'''
+        if not self.connected or not self.uvConnected:
+            # no uv pins detected, assume doors are open
+            return False
+        sensor = self.board.digital[self.uvpins['in']].read()  # true if door is open
+        if sensor and self.uvOn:
+            # door is open
+            self.updateStatus('Turned off UV lamp: door is open', True)
+            self.turnOffUV()  # turn off uv
+        return not sensor
+    
+    def checkStatus(self) -> str:
+        '''check the door status and the lamp status'''
+        closed = self.doorsClosed()
+        if self.uvAsked and not self.uvOn and closed:
+            # we have been waiting for the door to close
+            self.turnOnUV()
+        if closed:
+            if self.uvAsked and not self.uvOn:
+                return 'waiting for door'
+            else:
+                return 'doors closed'
+        else:
+            return 'door open'
+ 
+            
+    def turnOnUV(self) -> int:
+        '''send a signal to the UV lamp to turn on uv'''
+        self.uvAsked = True
+        if not self.connected or not self.uvConnected:
+            # no uv pins detected, do nothing
+            self.updateStatus('Did not turn on UV lamp: no UV found', True)
+            return 1
+        if not self.doorsClosed():
+            self.updateStatus('Did not turn on UV lamp: door is open', True)
+            return 1
+        else:
+            self.board.digital[self.uvpins['out']].write(1)
+            self.uvOn = True
+            return 0
+            
+    def turnOffUV(self) -> int:
+        '''turn off the UV lamp'''
+        self.uvAsked = False
+        if not self.connected or not self.uvConnected:
+            # no uv pins detected, assume doors are open
+            return 1
+        self.board.digital[self.uvpins['out']].write(0)
+        self.uvOn = False
+        return 0
+        
+    def toggleUV(self) -> int:
+        '''turn uv on or off'''
+        if self.uvOn:
+            return self.turnOffUV()
+        else:
+            return self.turnOnUV()
+        
+    
+
 class SBKeySignals(QObject):
     status = pyqtSignal(str, bool) # send status message back to GUI
     flag = pyqtSignal(int)         # send current flag status back to GUI
@@ -241,9 +406,9 @@ class SBKeySignals(QObject):
     
 
 class SBKeys(QMutex):
-    '''class the holds information and functions about connecting to the shopbot and the arduino'''
+    '''class that holds information and functions about connecting to the shopbot'''
     
-    def __init__(self, diag:int):
+    def __init__(self, diag:int, ard:arduino):
         super(SBKeys,self).__init__()
         self.connected = False
         self.ready = False
@@ -258,47 +423,13 @@ class SBKeys(QMutex):
         self.signals = SBKeySignals()
         self.connectKeys()   # connect to the keys and open SB3.exe
         self.ctr = 0
-        self.initializeArduino()
-        
-        
+        self.arduino = ard
+  
     def updateStatus(self, message:str, log:bool) -> None:
         '''send the status back to the SBbox'''
         self.signals.status.emit(message, log)
-        
-            
-    def initializeArduino(self) -> None:
-        '''connect to the arduino'''
-        self.pins = {}
-        logging.info('Connecting to Arduino')
-        try:
-            self.board = Arduino(cfg.arduino.port)
-            it = util.Iterator(self.board)
-            it.start()
-        except:
-            logging.info('Failed to connect to Arduino')
-        logging.info('Connected to Arduino')
-        
-        # get the pin-flag correspondences from the config file
-        for f in [5,6,7,8]:
-            p = int(cfg.arduino.flag1pins[f'f{f}'])   # pin this 1-indexed flag is assigned to
-            self.pins[f] = p
-            self.board.digital[p].mode = pyfirmata.INPUT    # set this pin to receive input
-            self.board.digital[p].enable_reporting()        # set this pin to let us read it
-            
-    def readArduino(self, sbFlag:int) -> int:
-        '''read the flags from the arduino and update the sbFlag'''
-        for f1,p in self.pins.items():
-            status = self.board.digital[p].read()   # read the pin, returns a bool
-            on = flagOn(sbFlag, f1-1)
-            if status and not on:
-                # sb3 thinks the flag is off, but hardware says it's on
-                sbFlag = sbFlag + 2**(f1-1)
-                # logging.info(f'SB3 {p} {on} and Arduino {f1} {status}: disagree')
-            elif not status and on:
-                # sb3 thinks the flag is on, but hardware says it's off
-                sbFlag = sbFlag - 2**(f1-1)
-                # logging.info(f'SB3 {p} {on} and Arduino {f1} {status}: disagree')
-        return sbFlag
+
+    #------------------------------
         
         
     def connectKey(self, aReg, path:str, name:str):
@@ -407,7 +538,7 @@ class SBKeys(QMutex):
         return int(status)
     
     
-    def waitForSBReady(self) -> None:
+    def SBisReady(self) -> None:
         '''wait for the shopbot to be ready before starting the file'''
         self.ready=False
         status = self.sbStatus()
@@ -443,7 +574,7 @@ class SBKeys(QMutex):
             sbFlag, _ = self.queryValue('OutPutSwitches')
         except ValueError:
             return -1
-        sbFlag = self.readArduino(int(sbFlag))  # cross reference this result with arduino
+        sbFlag = self.arduino.readSB(int(sbFlag))  # cross reference this result with arduino
         
         self.prevFlag = self.currentFlag
         sbFlag = int(sbFlag)

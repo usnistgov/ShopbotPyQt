@@ -52,7 +52,7 @@ class camSettingsBox(QWidget):
                                           func=self.changeDiag)
         form.addRow("Log", self.diagGroup.layout)
         objValidator3 = QIntValidator(cfg.shopbot.flag1min,cfg.shopbot.flag1max)
-        self.flagBox = fLineEdit(form, title='SB output flag'
+        self.flagBox = fLineEdit(form, title=f'Flag ({cfg.shopbot.flag1min}-{cfg.shopbot.flag1max})'
                                  , text=str(self.camObj.flag1)
                                  , tooltip='1-indexed Shopbot output flag that triggers snaps on this camera.'
                                  , func=self.updateFlag
@@ -105,6 +105,10 @@ class camSettingsBox(QWidget):
             
     def updateFlag(self):
         flag1 = int(self.flagBox.text())
+        if self.camBox.sbWin.flagTaken(flag1-1):
+            # flag taken. reject this
+            self.flagBox.setText(str(self.camObj.flag1))
+        
         self.camObj.flag1 = flag1
         self.camBox.flag1 = flag1
         self.camBox.sbWin.flagBox.labelFlags()

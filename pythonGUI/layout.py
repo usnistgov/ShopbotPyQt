@@ -39,14 +39,15 @@ from sbpRead import SBPHeader
 class SBwindow(QMainWindow):
     '''The whole GUI window'''
     
-    def __init__(self, parent=None, meta:bool=True, sb:bool=True, flu:bool=True, cam:bool=True, file:bool=True, calib:bool=True, convert:bool=True, test:bool=False):
+    def __init__(self, parent=None, meta:bool=True, sb:bool=True, flu:bool=True, cam:bool=True, file:bool=True, calib:bool=True, convert:bool=True, uv:bool=True, test:bool=False):
         super(SBwindow, self).__init__(parent)
         
         # initialize all boxes to empty value so if we hit an error during setup and need to disconnect, we aren't trying to call empty variables
 
+        self.arduino = flags.arduino(connect=False)
         self.fileBox = files.fileBox(self, connect=False)
-        self.sbBox = shopbot.sbBox(self, connect=False)   
-        self.fluBox = fluigent.fluBox(self, connect=False)
+        self.sbBox = shopbot.sbBox(self, self.arduino, connect=False)   
+        self.fluBox = fluigent.fluBox(self, self.arduino, connect=False)
         self.logDialog = None
         self.camBoxes = cameras.camBoxes(self, connect=False)
         self.metaBox = sbprint.metaBox(self, connect=False) 
@@ -58,6 +59,7 @@ class SBwindow(QMainWindow):
         
         self.meta = meta
         self.sb = sb
+        self.uv = uv
         self.flu = flu
         self.cam = cam
         self.test = test
@@ -98,6 +100,11 @@ class SBwindow(QMainWindow):
             
     def connect(self) -> None:
         '''create the boxes. sbBox loads features from fluBox and camBoxes. fileBox loads features from sbBox and camBoxes. '''
+        
+        if self.uv or self.sb and hasattr(self, 'arduino'):
+            print('Connecting Arduino')
+            self.arduino.signals.status.connect(self.updateStatus)
+            self.arduino.connect()
         
         if self.flu and hasattr(self, 'fluBox'):
             print('Connecting Fluigent box')
@@ -183,6 +190,12 @@ class SBwindow(QMainWindow):
         '''Open the log window'''
         self.logDialog.show()
         self.logDialog.raise_()
+        
+    @pyqtSlot(str,bool)
+    def updateStatus(self, st:str, log:bool) -> None:
+        '''update the displayed device status'''
+        if log:
+            logging.info(st)
         
     #----------------
     # settings
@@ -290,7 +303,10 @@ class SBwindow(QMainWindow):
         
     def flagTaken(self, flag0:int) -> bool:
         '''check if the flag is already occupied'''
-        return self.sbBox.flagTaken(flag0)   
+        if hasattr(self, 'flagBox'):
+            return self.flagBox.flagTaken(flag0)
+        else:
+            return False
     
     #----------------
     
@@ -302,7 +318,7 @@ class SBwindow(QMainWindow):
             return
         self.fileName = fullfn
     
-    def initSaveTable(self) -> None:
+    def initSaveTable(self, channelsTriggered:dict, runSimple:dict) -> None:
         '''initialize a table that saves data during a print'''
         if (hasattr(self, 'fluBox') and self.fluBox.savePressure) or (hasattr(self, 'sbBox') and self.sbBox.savePos):
             self.saveTable = []
@@ -311,6 +327,8 @@ class SBwindow(QMainWindow):
             self.getFileName() # determine the current file name
             self.tStart = datetime.datetime.now()
             self.timer = QTimer()
+            self.channelsTriggered = channelsTriggered
+            self.runSimple = runSimple
             self.timer.timeout.connect(self.readValues)
             self.timer.start(self.sbBox.saveFreq)
             
@@ -321,11 +339,11 @@ class SBwindow(QMainWindow):
             dnow = datetime.datetime.now()
             tnow = (dnow-self.tStart).total_seconds()
             if hasattr(self, 'fluBox'):
-                plist = self.fluBox.timeRow()
+                plist = self.fluBox.timeRow(self.channelsTriggered)
             else:
                 plist = []
             if hasattr(self, 'sbBox'):
-                xyzlist = self.sbBox.timeRow()
+                xyzlist = self.sbBox.timeRow(self.runSimple)
             else:
                 xyzlist = []
             self.saveTable.append([tnow]+plist+xyzlist)
@@ -347,8 +365,8 @@ class SBwindow(QMainWindow):
             self.save = False
             with open(self.fileName, mode='w', newline='', encoding='utf-8') as c:
                 writer = csv.writer(c, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                phead = self.fluBox.timeHeader()
-                xyzhead = self.sbBox.timeHeader()
+                phead = self.fluBox.timeHeader(self.channelsTriggered)
+                xyzhead = self.sbBox.timeHeader(self.runSimple)
                 writer.writerow(['time(s)']+phead+xyzhead) # header
                 for row in self.saveTable:
                     writer.writerow(row)
