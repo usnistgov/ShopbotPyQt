@@ -438,6 +438,9 @@ class sbpCreator:
             raise ValueError('Cannot convert list of pts to array')
         return out
     
+    def convertAllPts(self) -> np.ndarray:
+        return self.convertPts(self.positions)
+    
     
     def plot(self, ele:float = 70, azi:float=35, export:bool=False, fn:str='', grids:bool=False) -> None:
         '''plot the toolpath'''
@@ -936,6 +939,7 @@ class disturb(sbpCreator):
                  , shiftFrac:float=0.5
                  , writeExtend:float=0
                  , wait1:Union[str, float]=0.5, wait2:Union[str, float]=0.5, wait3:Union[str, float]=3
+                 , numLines:int=1
                  , **kwargs):
         super(disturb, self).__init__(**kwargs)
         self.flowFlag = flowFlag
@@ -952,13 +956,13 @@ class disturb(sbpCreator):
         self.wait1 = wait1
         self.wait2 = wait2
         self.wait3 = wait3
+        self.numLines = numLines
         self.getPoints()
     
     def getPoints(self):
-        
-        '''determine the beginning and end of the write, observe, and disturb lines'''
+        '''determine the beginning and end of the 1st line (w)rite, observe, 2nd line (d)isturb, and 3rd line (e) lines'''
         self.pts = {}
-        for s in ['w0', 'wf', 'wf2', 'o', 'd0', 'df', 'df2']:
+        for s in ['w0', 'wf', 'wf2', 'o', 'd0', 'df', 'df2', 'e0', 'ef', 'ef2']:
             self.pts[s] = self.initPt.copy()
         
         # calculate write positions
@@ -968,15 +972,16 @@ class disturb(sbpCreator):
             self.writeExtend = t(-1, self.writeExtend)
         x0 = self.initPt[self.windex]
         xf = p(x0, self.writeLength)   
-        for s in ['wf', 'df']:
+        for s in ['wf', 'df', 'ef']:
             # set value of final written and disturbed points
             self.pts[s][self.windex] = xf
         
         self.pts['o'][self.windex] = f'{self.shiftFrac}*({x0})+{1-self.shiftFrac}*({xf})'  # put observe point in middle of line
         
-        
-        self.pts['wf2'] = self.pts['wf'].copy()
-        for ss in ['wf2', 'df']:
+        # extend the written line
+#         self.pts['wf2'] = self.pts['wf'].copy()
+        for ss in ['wf2', 'df2', 'ef2']:
+            self.pts[ss] = self.pts[ss[:-1]].copy()
             if not self.writeExtend==0:
                 self.pts[ss][self.windex] = p(self.pts[ss][self.windex], self.writeExtend) 
         
@@ -990,25 +995,27 @@ class disturb(sbpCreator):
         self.dindex = {'x':0, 'y':1, 'z':2}[self.distDir[-1]]
         if self.distDir[0]=='-':
             self.distLength = t(-1, self.distLength)
-        for s in ['d0', 'df']:
+        for s in ['d0', 'df', 'df2']:
             self.pts[s][self.dindex] = p(self.initPt[self.dindex], self.distLength)   # shift disturb point over
+        for s in ['e0', 'ef', 'ef2']:
+            self.pts[s][self.dindex] = p(self.initPt[self.dindex], f'2*{self.distLength}')   # shift disturb point over
             
         # for i,val in self.pts.items():
         #     print(i, [self.floatSC(j) for j in val])
             
-    def writeLine(self):
+    def writeLine(self, p:str='w'):
         '''write the initial line'''
         # write line
         if self.writeDir=='+z':
             # vertical line. come in from the top
-            self.mz(self.pts['wf2'][2])  
-            self.m2(self.pts['w0'][0], self.pts['w0'][1])
-        self.j3(*self.pts['w0'])  # move to the initial point
+            self.mz(self.pts[f'{p}f2'][2])  
+            self.m2(self.pts[f'{p}0'][0], self.pts[f'{p}0'][1])
+        self.j3(*self.pts[f'{p}0'])  # move to the initial point
         self.turnOn(self.flowFlag)  # turn on flow
-        self.m3(*self.pts['wf'])  # go to final written point
+        self.m3(*self.pts[f'{p}f'])  # go to final written point
         self.turnOff(self.flowFlag) # turn off flow
         if not self.writeExtend==0:
-            self.m3(*self.pts['wf2'])
+            self.m3(*self.pts[f'{p}f2'])
             
     def observe(self):
         '''go to the observation position'''
@@ -1020,31 +1027,41 @@ class disturb(sbpCreator):
         self.pause(self.wait3)             # wait
         self.snap(zeroJog=False, wait1=self.wait1, wait2=self.wait2, camFlag=self.camFlag)  # take another picture
         
-    def disturbLine(self):
+    def makeLine(self, p:str='w', write:bool=False):
         '''disturb the line'''
 
         if self.writeDir=='+z':
             # vertical line. come in from the top
-            self.mz(self.pts['df'][2])  
-            self.m2(self.pts['df'][0], self.pts['df'][1])
+            self.mz(self.pts[f'{p}f2'][2])  
+            self.m2(self.pts[f'{p}f2'][0], self.pts[f'{p}f2'][1])
         else:
             dfunc = 'm'+self.writeDir[-1]
-            getattr(self, dfunc)(self.pts['d0'][self.windex])  # move just in the writing direction
+            getattr(self, dfunc)(self.pts[f'{p}0'][self.windex])  # move just in the writing direction
             if not self.shiftDir==self.distDir:
                 dfunc = 'm'+self.distDir[-1]
-                getattr(self, dfunc)(self.pts['d0'][self.dindex])  # move just in the writing direction
-        self.m3(*self.pts['d0'])
-        self.m3(*self.pts['df'])
+                getattr(self, dfunc)(self.pts[f'{p}0'][self.dindex])  # move just in the disturb shift direction
+        self.m3(*self.pts[f'{p}0'])
+        if write:
+            self.turnOn(self.flowFlag)
+        self.m3(*self.pts[f'{p}f'])
+        if write:
+            self.turnOff(self.flowFlag)
+        if not self.writeExtend==0:
+            self.m3(*self.pts[f'{p}f2'])
                  
     def sbp(self):
         if self.created:
             return self.file
         
         self.created=True
-        self.writeLine()
+        self.makeLine(p='w', write=True)
         self.observe()
-        self.disturbLine()
+        self.makeLine(p='d', write=(self.numLines>1))
         self.observe()  
+        if self.numLines>1:
+            self.makeLine(p='e', write=(self.numLines>2))  # disturb at the 3rd position
+            self.observe()
+        
         return self.file
          
             
