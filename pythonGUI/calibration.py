@@ -665,7 +665,8 @@ class pCalibrationTab(QWidget):
                         for j, item in enumerate(row):
                             if columndict[j].startswith('pressure'):
                                 # convert units
-                                item = convertPressure(float(item), oldUnits, newUnits)
+                                if not item=='':
+                                    item = convertPressure(float(item), oldUnits, newUnits)
                             self.updateVal(columndict[j], tablerow, item)
                         tablerow+=1
                 else:

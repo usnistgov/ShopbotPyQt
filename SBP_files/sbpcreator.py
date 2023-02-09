@@ -939,7 +939,7 @@ class disturb(sbpCreator):
                  , shiftFrac:float=0.5
                  , writeExtend:float=0
                  , wait1:Union[str, float]=0.5, wait2:Union[str, float]=0.5, wait3:Union[str, float]=3
-                 , numLines:int=1
+                 , numLines:int=1, turnOnFrac:float=1
                  , **kwargs):
         super(disturb, self).__init__(**kwargs)
         self.flowFlag = flowFlag
@@ -957,6 +957,7 @@ class disturb(sbpCreator):
         self.wait2 = wait2
         self.wait3 = wait3
         self.numLines = numLines
+        self.turnOnFrac = turnOnFrac
         self.getPoints()
     
     def getPoints(self):
@@ -1027,6 +1028,19 @@ class disturb(sbpCreator):
         self.pause(self.wait3)             # wait
         self.snap(zeroJog=False, wait1=self.wait1, wait2=self.wait2, camFlag=self.camFlag)  # take another picture
         
+    def midpoint(self, p1:list, p2:list, frac:float) -> list:
+        '''get the midpoint between 2 points, weighted by frac'''
+        x0 = p1[0]
+        y0 = p1[1]
+        z0 = p1[2]
+        x1 = p2[0]
+        y1 = p2[1]
+        z1 = p2[2]
+        x = f'{frac}*({x0})+{1-frac}*({x1})' 
+        y = f'{frac}*({y0})+{1-frac}*({y1})' 
+        z = f'{frac}*({z0})+{1-frac}*({z1})' 
+        return [x,y,z]
+        
     def makeLine(self, p:str='w', write:bool=False):
         '''disturb the line'''
 
@@ -1034,14 +1048,26 @@ class disturb(sbpCreator):
             # vertical line. come in from the top
             self.mz(self.pts[f'{p}f2'][2])  
             self.m2(self.pts[f'{p}f2'][0], self.pts[f'{p}f2'][1])
+            if self.turnOnFrac<1 and write:
+                self.m3(*self.midpoint(self.pts[f'{p}0'], self.pts[f'{p}f2'], self.turnOnFrac))
+                self.turnOn(self.flowFlag)
         else:
             dfunc = 'm'+self.writeDir[-1]
             getattr(self, dfunc)(self.pts[f'{p}0'][self.windex])  # move just in the writing direction
             if not self.shiftDir==self.distDir:
                 dfunc = 'm'+self.distDir[-1]
+                if self.turnOnFrac<1 and write:
+                    val = self.midpoint([self.pts[f'{p}0'][self.dindex]], self.cp[self.dindex], self.turnOnFrac)
+                    getattr(self, dfunc)(val)
+                    self.turnOn(self.flowFlag)
                 getattr(self, dfunc)(self.pts[f'{p}0'][self.dindex])  # move just in the disturb shift direction
+            else:
+                if self.turnOnFrac<1 and write:
+                    self.m3(*self.midpoint(self.pts[f'{p}0'], self.cp, self.turnOnFrac))
+                    self.turnOn(self.flowFlag)
+
         self.m3(*self.pts[f'{p}0'])
-        if write:
+        if write and not (self.turnOnFrac<1):
             self.turnOn(self.flowFlag)
         self.m3(*self.pts[f'{p}f'])
         if write:

@@ -840,7 +840,7 @@ class sbBox(connectBox):
         self.sbList.activateNext() # activate the next sbp file in the list
         if self.autoPlay and self.sbList.sbpNumber()>0: # if we're in autoplay and we're not at the beginning of the list, play the next file
             self.updateStatus('Autoplay is on: Running next file.', True)
-            QTimer.singleShot(2000, self.runFile) # wait 2 seconds, then call runFile
+            QTimer.singleShot(3000, self.runFile) # wait 3 seconds, then call runFile
         else:
             self.readyState()
 

@@ -399,6 +399,7 @@ class channelWatch(QObject):
             if resetFlag:
                 self.pw.flagReset(self.flag0, True) 
                 self.changedBy = 'flag'
+                self.started = False
                 
         else:
             # flag is off
@@ -419,6 +420,7 @@ class channelWatch(QObject):
             if resetFlag:
                 self.pw.flagReset(self.flag0, False) 
                 self.changedBy = 'flag'
+                self.ended = False
         return retval
     
         
