@@ -90,7 +90,7 @@ class SBwindow(QMainWindow):
     def boxes(self) -> List:
         b = []
 
-        for s in ['settingsDialog', 'logDialog', 'convertDialog', 'fileBox', 'sbBox', 'fluBox', 'calibDialog', 'metaBox']:
+        for s in ['settingsDialog', 'logDialog', 'convertDialog', 'fileBox', 'sbBox', 'fluBox', 'calibDialog', 'metaBox', 'flagBox']:
             if hasattr(self, s):
                 b.append(getattr(self, s))
         if hasattr(self, 'camBoxes'):
@@ -291,10 +291,12 @@ class SBwindow(QMainWindow):
         except NameError:
             self.updateStatus('Failed to save speed file', True)
             return
+        
+       
 
         with open(fullfn, mode='w', newline='', encoding='utf-8') as c:
             writer = csv.writer(c, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-            
+            writer.writerow(['appid', '', cfg.appid])
             for box in self.boxes():
                 if hasattr(box, 'writeToTable'):
                     box.writeToTable(writer)

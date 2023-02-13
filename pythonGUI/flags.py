@@ -232,6 +232,13 @@ class flagGrid(QGridLayout):
         self.pins = pins
         for flag0 in range(self.numFlags):
             self.unhighlightFlag(flag0)
+            
+    def writeToTable(self, writer) -> None:
+        '''write metadata values to the table'''
+        writer.writerow(['arduino_trust', '1-indexed', list(self.pins.keys())])
+        
+    def close(self) -> None:
+        return
         
         
 ######################################
