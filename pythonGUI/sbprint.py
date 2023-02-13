@@ -3,7 +3,7 @@
 
 # external packages
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QMutex, QObject, QRunnable, QThread, QTimer
-from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget 
+from PyQt5.QtWidgets import QMessageBox, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget 
 import os, sys
 from typing import List, Dict, Tuple, Union, Any, TextIO
 import logging
@@ -136,6 +136,45 @@ class metaBox(QWidget):
         
 #----------------------------------------------------
 
+class arduinoSignals(QObject):
+    pin = pyqtSignal(int, int)   # send the pin assignment back
+    finished = pyqtSignal()
+    sendFile = pyqtSignal(str)
+    
+class findArduinoPins(QObject):
+    '''find the assigned pins on the arduino'''
+    
+    def __init__(self, arduino, window):
+        super().__init__()
+        self.arduino = arduino
+        self.signals = arduinoSignals()
+        self.spindleKiller = spindleKiller(100)
+        self.spindleKilled = False
+        self.window = window
+    
+    @pyqtSlot()
+    def run(self) -> None:
+        self.arduino.startCheck()
+        self.flag1 = 5
+        while self.flag1<9:
+            self.createDialog(self.flag1)                
+        self.arduino.checkConnect()
+        self.signals.finished.emit()
+
+    def createDialog(self, flag1:int) -> None:
+        msgBox = QMessageBox(self.window)
+        msgBox.setText(f"Turn on flag {flag1} and turn off all other flags. (1-indexed)")
+        msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+
+        returnValue = msgBox.exec()
+        if returnValue == QMessageBox.Ok:
+            self.arduino.findOnPin(flag1)
+        self.flag1 = self.flag1+1
+        return
+            
+            
+
+
 class waitSignals(QObject):
     finished = pyqtSignal()
     stopHit = pyqtSignal()
@@ -182,12 +221,14 @@ class waitForStart(QRunnable):
         self.signals = waitSignals()
         self.spindleKilled = False
         self.spindleFound = False
+        self.spindleKiller = spindleKiller(self.dt)
+        self.spindleKiller.signals.status.connect(self.updateStatus)
       
     @pyqtSlot()
     def run(self):
         while True:
             if not self.spindleFound:
-                out = self.killSpindlePopup()
+                self.spindleFound, self.spindleKilled = self.spindleKiller.killSpindlePopup()
             self.keys.lock()
             sbFlag = self.keys.getSBFlag()
             running = self.keys.runningSBP
@@ -205,7 +246,19 @@ class waitForStart(QRunnable):
         self.signals.status.emit(status, log)
             
     
-    def killSpindlePopup(self) -> None:
+    
+                
+class spindleKiller(QObject):
+    '''this finds and kills the router warning popup'''
+    
+    def __init__(self, dt):
+        super().__init__()
+        self.signals = waitSignals()
+        self.spindleKilled = False
+        self.spindleFound = False
+        self.dt = dt
+    
+    def killSpindlePopup(self) -> bool:
         '''if we use output flag 1 (1-indexed), the shopbot thinks we are starting the router/spindle and triggers a popup. Because we do not have a router/spindle on this instrument, this popup is irrelevant. This function automatically checks if the window is open and closes the window'''
         hwndMain = win32gui.FindWindow(None, 'NOW STARTING ROUTER/SPINDLE !')
         if hwndMain>0:
@@ -213,7 +266,7 @@ class waitForStart(QRunnable):
             time.sleep(self.dt/1000/2)
             self.killSpindle()
             
-        return True
+        return self.spindleFound, self.spindleKilled
        
     @pyqtSlot()
     def killSpindle(self) -> None:

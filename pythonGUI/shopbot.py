@@ -147,7 +147,11 @@ class sbSettingsBox(QWidget):
                               validator = objValidator3,
                               func = self.updateFlag1,
                                    width=w)
+        
+    
         layout.addLayout(fileForm)
+        self.findArduinoButt = fButton(layout, width=200, height=50, tooltip='Figure out which shopbot flags are connected to which arduino pins', func=self.sbBox.findArduino, title='Find arduino pins')
+        
         layout.addStretch()
         self.setLayout(layout)
         self.changeRunSimple() # run this to disable critTimeOn and critTimeOff if needed
@@ -497,6 +501,22 @@ class sbBox(connectBox):
         self.keys.lock()
         self.keys.diag = diag
         self.keys.unlock()
+        
+    def findArduino(self) -> None:
+        '''find the arduino pins that the flags are attached to.'''
+        self.disableRunButt()
+        self.updateStatus('Finding arduino pins. This may take a few seconds.', True)
+        aRunnable = findArduinoPins(self.arduino, self.sbWin)
+        aRunnable.signals.finished.connect(self.finishArduino)
+        aRunnable.signals.sendFile.connect(self.sendFileToShopbot)
+        aRunnable.run()
+
+    def finishArduino(self) -> None:
+        '''we are done checking the arduino pins'''
+        self.enableRunButt()
+        self.updateStatus(f'Done finding arduino pins: {self.arduino.pins}.', True)
+        self.flagBox.boldFlags(self.flagBox.pins)
+        
 
     #------------------------------
     
@@ -758,6 +778,7 @@ class sbBox(connectBox):
         
     def sendFileToShopbot(self, name:str):
         '''send the sbp file to the shopbot'''
+        self.updateStatus(f'Running SBP file {name}', True)
         self.printStatus = 'Sending file'
         self.keys.lock()
         appl = self.keys.sb3File

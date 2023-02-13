@@ -236,7 +236,7 @@ class fluBox(connectBox):
         
         super(fluBox, self).__init__()
         # this box is a QGroupBox. we are going to create a layout to put in the box
-        self.bTitle = 'Fluigent'    # box title
+        self.bTitle = 'Fluigent/UV'    # box title
         self.setTitle(self.bTitle)
         self.sbWin = sbWin 
         self.pchannels = []         # list of pressure channels as fluChannel objects

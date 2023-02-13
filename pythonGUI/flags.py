@@ -291,6 +291,28 @@ class arduino(QMutex):
         time.sleep(0.1)
         self.finishConnectingSB()  # wait 0.1 seconds before checking values
         
+    def startCheck(self) -> None:
+        '''set all the pins except the UV pins to input mode to check what flags they are connected to.'''
+        for p in range(2, 14):
+            if not p in cfg.arduino.uvpins.values():
+                self.board.digital[p].mode = pyfirmata.INPUT    # set this pin to receive input
+                self.board.digital[p].enable_reporting()        # set this pin to let us read it
+                
+                
+    def findOnPin(self, flag1:int) -> None:
+        '''find the arduino pin that is on. flag1 is the flag that is on. assign the new value to pins'''
+        if not self.connected:
+            return
+        if flag1 in self.pins:
+            self.pins.pop(flag1) # remove this flag from the pins dict
+        for p in range(2,14):
+            if not p in cfg.arduino.uvpins.values():
+                val = self.board.digital[p].read()  
+                if val==True:
+                    self.pins[flag1] = p
+                    return
+        
+        
             
     def finishConnectingSB(self) -> None:
         '''check that the pins are actually connected'''
@@ -301,8 +323,16 @@ class arduino(QMutex):
                 self.pins[f] = p
             else:
                 print(f'Failed to read arduino pin {p} for flag {f}: {val}')
+        self.checkConnect()
+                
+    def checkConnect(self) -> None:
+        '''check if the pins are connected'''
+        if not self.connected:
+            return
         if len(self.pins)>0:
             self.SBConnected = True
+        else:
+            self.SBConnected = False
             
     def connectUV(self) -> None:
         '''connect the UV interlock and output pins'''
@@ -383,6 +413,7 @@ class arduino(QMutex):
             return 1
         else:
             self.board.digital[self.uvpins['out']].write(1)
+            self.updateStatus('Turning on UV', True)
             self.uvOn = True
             return 0
             
@@ -394,6 +425,7 @@ class arduino(QMutex):
             return 1
         self.board.digital[self.uvpins['out']].write(0)
         self.uvOn = False
+        self.updateStatus('Turning off UV', True)
         return 0
         
     def toggleUV(self) -> int:
