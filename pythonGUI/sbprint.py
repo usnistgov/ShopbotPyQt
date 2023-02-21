@@ -221,14 +221,12 @@ class waitForStart(QRunnable):
         self.signals = waitSignals()
         self.spindleKilled = False
         self.spindleFound = False
-        self.spindleKiller = spindleKiller(self.dt)
-        self.spindleKiller.signals.status.connect(self.updateStatus)
       
     @pyqtSlot()
     def run(self):
         while True:
             if not self.spindleFound:
-                self.spindleFound, self.spindleKilled = self.spindleKiller.killSpindlePopup()
+                self.killSpindlePopup()
             self.keys.lock()
             sbFlag = self.keys.getSBFlag()
             running = self.keys.runningSBP
@@ -244,29 +242,16 @@ class waitForStart(QRunnable):
     def updateStatus(self, status:str, log:bool):
         '''send a status update back to the GUI'''
         self.signals.status.emit(status, log)
-            
+
     
-    
-                
-class spindleKiller(QObject):
-    '''this finds and kills the router warning popup'''
-    
-    def __init__(self, dt):
-        super().__init__()
-        self.signals = waitSignals()
-        self.spindleKilled = False
-        self.spindleFound = False
-        self.dt = dt
-    
-    def killSpindlePopup(self) -> bool:
+    def killSpindlePopup(self) -> None:
         '''if we use output flag 1 (1-indexed), the shopbot thinks we are starting the router/spindle and triggers a popup. Because we do not have a router/spindle on this instrument, this popup is irrelevant. This function automatically checks if the window is open and closes the window'''
         hwndMain = win32gui.FindWindow(None, 'NOW STARTING ROUTER/SPINDLE !')
         if hwndMain>0:
             self.spindleFound = True
             time.sleep(self.dt/1000/2)
             self.killSpindle()
-            
-        return self.spindleFound, self.spindleKilled
+
        
     @pyqtSlot()
     def killSpindle(self) -> None:
@@ -297,6 +282,7 @@ class printLoopSignals(QObject):
     estimate = pyqtSignal(float,float,float)   # new estimated position
     target = pyqtSignal(float,float,float)      # send current target to GUI
     targetLine = pyqtSignal(int)   # send current target line to GUI
+    speed = pyqtSignal(float)
     status = pyqtSignal(str)
     trusted = pyqtSignal(bool)  # whether we can trust the point
     
@@ -517,6 +503,7 @@ class printLoop(QObject):
             # this is a new point. update the channelWatches and update the gui
             self.signals.target.emit(*toXYZ(t))          # update gui
             self.signals.targetLine.emit(int(t['line']))
+            self.signals.speed.emit(self.pw.speed)     
             self.defineStates()
             # if self.diag>1:  
             #     self.diagPosRow(newPoint=True)

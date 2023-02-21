@@ -939,7 +939,7 @@ class disturb(sbpCreator):
                  , shiftFrac:float=0.5
                  , writeExtend:float=0
                  , wait1:Union[str, float]=0.5, wait2:Union[str, float]=0.5, wait3:Union[str, float]=3
-                 , numLines:int=1, turnOnFrac:float=1
+                 , numLines:int=1, turnOnFrac:float=1, turnOnWait:float=0, turnOffWait:float=0
                  , **kwargs):
         super(disturb, self).__init__(**kwargs)
         self.flowFlag = flowFlag
@@ -958,6 +958,8 @@ class disturb(sbpCreator):
         self.wait3 = wait3
         self.numLines = numLines
         self.turnOnFrac = turnOnFrac
+        self.turnOnWait = turnOnWait
+        self.turnOffWait = turnOffWait
         self.getPoints()
     
     def getPoints(self):
@@ -1069,11 +1071,15 @@ class disturb(sbpCreator):
         self.m3(*self.pts[f'{p}0'])
         if write and not (self.turnOnFrac<1):
             self.turnOn(self.flowFlag)
+        if self.turnOnWait>0 and write:
+            self.pause(self.turnOnWait)
         self.m3(*self.pts[f'{p}f'])
         if write:
             self.turnOff(self.flowFlag)
         if not self.writeExtend==0:
             self.m3(*self.pts[f'{p}f2'])
+        if self.turnOffWait>0 and write:
+            self.pause(self.turnOffWait)
                  
     def sbp(self):
         if self.created:

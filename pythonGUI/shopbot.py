@@ -363,6 +363,10 @@ class sbBox(connectBox):
                     out = out+[self.xt, self.yt, self.zt]
                 else:
                     out = out + ['','','']
+                if hasattr(self, 'speed'):
+                    out = out + [self.speed]
+                else:
+                    out = out+ ['']
         else:
             out = []
         if self.saveFlag:
@@ -387,7 +391,7 @@ class sbBox(connectBox):
         if self.savePos:
             out = ['x_disp(mm)', 'y_disp(mm)', 'z_disp(mm)']
             if not runSimple==1:
-                out = out+ ['x_est(mm)', 'y_est(mm)', 'z_est(mm)', 'x_target(mm)', 'y_target(mm)', 'z_target(mm)']
+                out = out+ ['x_est(mm)', 'y_est(mm)', 'z_est(mm)', 'x_target(mm)', 'y_target(mm)', 'z_target(mm)', 'speed(mm/s)']
         else:
             out = []
         if self.saveFlag:
@@ -640,6 +644,10 @@ class sbBox(connectBox):
         if hasattr(self, 'flagBox'):
             self.flagBox.updateXYZt(x,y,z)
             
+    @pyqtSlot(float)
+    def updateSpeed(self, speed:float) -> None:
+        self.speed = speed
+            
     @pyqtSlot(int)
     def updateXYZtline(self, line:int) -> None:
         self.tline = line
@@ -762,6 +770,7 @@ class sbBox(connectBox):
         self.printWorker.signals.finished.connect(self.triggerEndOfPrint)
         self.printWorker.signals.estimate.connect(self.updateXYZest)
         self.printWorker.signals.target.connect(self.updateXYZt)
+        self.printWorker.signals.speed.connect(self.updateSpeed)
         self.printWorker.signals.targetLine.connect(self.updateXYZtline)
         self.printWorker.signals.status.connect(self.updatePrintStatus)
         self.printWorker.signals.trusted.connect(self.updateTrusted)
