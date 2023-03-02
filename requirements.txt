@@ -1,5 +1,5 @@
 appdirs==1.4.4
-certifi==2021.10.8
+certifi==2022.12.07
 distlib==0.3.1
 filelock==3.0.12
 numpy==1.22.0
