@@ -49,4 +49,8 @@ new material: 11.5
 silicone_oil_812_10: 0.99275
 silicone_oil_812_11: 1.0099
 silicone_oil_812_9: 1.02096
-silicone_oil_span20_0.05_812_6: 0.9839
+silicone_oil_span20_0.5_812_6: 0.9839
+silicone_oil_span20_0.5_812_7: 0.986
+silicone_oil_span20_0.5_812_8: 1.013
+silicone_oil_span85_0.05_812_8: 1.005
+silicone_oil_span85_0.05_812_9: 1.002
