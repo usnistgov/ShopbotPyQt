@@ -1,0 +1,218 @@
+<html>
+<head>
+    <title>Arduino</title>
+  <link rel="stylesheet" href="user_guide.css">
+</head>
+<body>
+
+<iframe src="header.html" class="headerframe"></iframe>
+    
+    <h1>Arduino</h1>
+     
+    <h2>Purpose</h2>
+    <p>The Shopbot software, Sb3.exe, sends commands to the Shopbot, which are executed in order using the Shopbot's onboard controller. The Shopbot Desktop does not send any signals back to the computer. Sb3.exe attempts to predict where the Shopbot should be and displays a position and flag status. However, these predictions are often wrong. Installing an Arduino lets us receive signals for the on/off status of output flag 5-8 (1-indexed) back to the python GUI. </p>
+    
+    <p>The Arduino has a second purpose, which is a safety interlock. We can install sensors on the enclosure that detect whether doors are open and closed, and using a circuit board and an Arduino, we can tell the python GUI whether it is safe for the UV lamp to be on. </p>
+    
+    <h2>Parts list</h2>
+    <h3>Arduino/Shopbot signalling</h3>
+    <details>
+      <summary>
+          <span class="icon">▼</span><span class="open_text">Open</span><span class="close_text">Close</span>
+      </summary>
+    <table class="tg">
+        <thead>
+          <tr>
+              <th class="tg-head"><b>product</b></th>
+              <th class="tg-head"><b>qty</b></th>
+              <th class="tg-head"><b>link</b></th>
+          </tr>
+        </thead>
+        <tr>
+            <td class="tg-col">Arduino Uno</td>
+            <td class="tg-col">1</td>
+            <td class="tg-link"><a href="https://store.arduino.cc/products/arduino-uno-rev3" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none;color:black">https://store.arduino.cc/products/arduino-uno-rev3</span></a></td>
+        </tr>
+        <tr>
+            <td class="tg-col">Wire</td>
+            <td class="tg-col">10+ meter</td>
+            <td class="tg-link">22 gauge wire, single stranded, coated</td>
+        </tr>
+        <tr>
+            <td class="tg-col">PMMA (optional)</td>
+            <td class="tg-col">3 mm thick x 200 mm x 150 mm</td>
+            <td class="tg-link">For Arduino case</td>
+        </tr>
+        <tr>
+            <td class="tg-col">4-40 screws, to mount Arduino</td>
+            <td class="tg-col">6</td>
+            <td class="tg-link">Black-Oxide Alloy Steel Socket Head Screw 4-40 Thread Size, 1" Long</td>
+        </tr>
+        <tr>
+            <td class="tg-col">4-40 nuts, to mount Arduino</td>
+            <td class="tg-col">6</td>
+            <td class="tg-link">Low-Strength Steel Hex Nut Zinc-Plated, 4-40</td>
+        </tr>
+    </table>
+    </details> 
+    
+    <h3>UV interlock</h3>
+    <details>
+      <summary>
+          <span class="icon">▼</span><span class="open_text">Open</span><span class="close_text">Close</span>
+      </summary>
+    <table class="tg">
+        <thead>
+          <tr>
+              <th class="tg-head"><b>product</b></th>
+              <th class="tg-head"><b>qty</b></th>
+              <th class="tg-head"><b>link</b></th>
+          </tr>
+        </thead>
+    
+        <tr>
+            <td class="tg-col">Breadboard</td>
+            <td class="tg-col">1</td>
+            <td class="tg-link"><a href="https://www.amazon.com/BB830-Solderless-Plug-BreadBoard-tie-Points/dp/B0040Z4QN8" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none;color:black"></span>BB830 Solderless Plug-in BreadBoard</a></td>
+        </tr>
+        <tr>
+            <td class="tg-col">Breadboard power supply</td>
+            <td class="tg-col">1</td>
+            <td class="tg-link"><a href="https://www.amazon.com/SHNITPWR-Converter-Transformer-100-240V-5-5x2-5mm/dp/B07SDRDV5B/ref=sr_1_5?crid=2K6J5FD5CQC72&keywords=24v+Dc+transformer&qid=1644842561&s=electronics&sprefix=24v+dc+transformer%2Celectronics%2C47&sr=1-5" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none;color:black"></span>24V DC Power Supply Adapter</a></td>
+        </tr>
+        <tr>
+            <td class="tg-col">Proximity sensors</td>
+            <td class="tg-col">4</td>
+            <td class="tg-link"><a href="https://www.digikey.com/en/products/detail/autonics/CR18-8DN/14671222" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none;color:black"></span>CR18-8DN</a></td>
+        </tr>
+        <tr>
+            <td class="tg-col">Wire</td>
+            <td class="tg-col">10+ meter</td>
+            <td class="tg-link">22 gauge wire, single stranded, coated</td>
+        </tr>
+        <tr>
+            <td class="tg-col">BNC adaptor</td>
+            <td class="tg-col">1</td>
+            <td class="tg-link"><a href="https://www.amazon.com/uxcell-Coaxial-Camera-Connector-Terminal/dp/B07JLVMJZD/ref=sr_1_10?crid=1DCSIPXL4SUUM&keywords=BNC+connector+screw+terminal&qid=1645190441&s=hi&sprefix=bnc+connector+screw+terminal%2Ctools%2C52&sr=1-10" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none;color:black"></span>Cat5 to Coaxial BNC Connector</a></td>
+        </tr>
+        <tr>
+            <td class="tg-col">Resistor kit</td>
+            <td class="tg-col">1</td>
+            <td class="tg-link"><a href="https://www.amazon.com/Elegoo-Values-Resistor-Assortment-Compliant/dp/B072BL2VX1/ref=sr_1_3?crid=2TCIS1219M9LC&keywords=resistor+kit&qid=1644842006&sprefix=resistor+kit%2Caps%2C58&sr=8-3" target="_blank" rel="noopener noreferrer"><span style="text-decoration:none;color:black"></span>Resistor kit</a></td>
+        </tr>
+    </table>
+    </details>
+    
+    <h2>Installing the Arduino</h2>
+
+    <table>
+        <tr>
+            <td class="tabStep">1. (Suggested) <a href="https://cad.onshape.com/documents/d7a6cbf587ce56635c2544cd/w/b54c75fb0bb9c27fef8f764c/e/74ff419d51409ad900bac957?renderMode=0&uiState=649ddee3acd08d6dfa1cd2cd">3D print a case</a> for the Arduino and breadboard. Mount the case next to the printer. Glue rubber sheeting to the inside of the clamps, for best clamping efficacy.</td>
+            <td><img class="graphic" src="img/arduino_case.png" alt="An L-shaped case, with two large holes in the bottom and smaller holes in a grid on the sides. At the wide end of the L, four rectangular slots are cut out. Rectangular pieces slide into those slots, and at the bottom of each piece and each slot, a tab with two screw holes sticks out past the bottom of the L."></td>
+        </tr>
+        <tr>
+            <td class="tabStep">2. (Suggested) Laser cut a lid for the case. The outer rectangle should be 181 mm by 94.86 mm. The cutout should be 86.14 mm on the long edge and 60.953 mm on the short edge. The slot is 3.5 mm thick. 3 mm thick PMMA should suffice.</td>
+            <td><img class="graphic" src="img/arduino_lid.png" alt="An L shape with labeled dimensions. "></td>
+        </tr>
+        <tr>
+            <td class="tabStep">3. Install the Arduino in the case using 4-40 screws.</td>
+            <td><img class="graphic" src="img/arduino_case_install_a.png" alt="An arduino placed into the smaller portion of the L shaped case. "></td>
+        </tr>
+        <tr>
+            <td class="tabStep">4. Plug the Arduino into the computer using a USB cable.</td>
+            <td></td>
+        </tr>
+        
+    </table>
+    
+    <h2>Connecting the Arduino to the Shopbot</h2>
+    <table>
+        <tr>
+            <td class="tabStep">1. From the back of the Shopbot, use a 4 mm allen wrench to unscrew the 4 screws on the back part of the decking. Slide the decking towards you to remove the decking.</td>
+            <td><img class="graphic" src="img/sb_breadboard1.png" alt="A person using an allen wrench to unscrew a screw on the gray slotted plate that sits on the base of the Shopbot."></td>
+        </tr>
+        <tr>
+            <td class="tabStep">2. Use a 2.5 mm allen wrench to remove the 6 screws on the blue cover. Do not over-tighten when re-installing.</td>
+            <td><img class="graphic" src="img/sb_breadboard2.png" alt="A person using an allen wrench to unscrew a screw on the blue flat plate that sits on the base of the Shopbot."></td>
+        </tr>
+        <tr>
+            <td class="tabStep">3. Lift off the blue cover.</td>
+            <td><img class="graphic" src="img/sb_breadboard3.png" alt="A breadboard with many wires sits in a cavity at the back of the Shopbot."></td>
+        </tr>
+        <tr>
+            <td class="tabStep">4. Find the output flags OP5, OP6, OP7, and OP8 at the top left part of the breadboard. Insert a 1.5 m wire into each slot and tighten each screw.</td>
+            <td><img class="graphic" src="img/sb_breadboard4.png" alt="Six holes labeled +5V, GND, OP5, OP6, OP7, and OP8. Wires are coming out of the bottom four."></td>
+        </tr>
+        <tr>
+            <td class="tabStep">5. Feed the wires through the hole at the bottom of the breadboard cavity. Tuck them into a place where they won't get in the way of the Shopbot gantry, e.g. taped to the base of the enclosure, and feed them up to the Arduino.</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tabStep">6. Install the wires in four of the digital input/output slots on the Arduino. For example, choose inputs 5-8</td>
+            <td><img class="graphic" src="img/sb_breadboard5.png" alt="A diagram of an Arduino. A red, orange, white, and green wire are plugged into Digital pins 5,6,7 and 8."></td>
+        </tr>
+        <tr>
+            <td class="tabStep">7. Use the clamp above the Arduino USB plug to keep the output flag wires in place. Use 8-32 screws and nuts.</td>
+            <td><img class="graphic" src="img/sb_breadboard6.png" alt="A model of the Arduino case, from the edge of the L with all the clamps. An arrow points to the 3 clamp from the left."></td>
+        </tr>
+        <tr>
+            <td class="tabStep">8. Reinstall the blue cover.</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tabStep">9. Reinstall the decking.</td>
+            <td></td>
+        </tr>
+        
+    </table>
+    
+    <h2>Installing the proximity sensors</h2>
+    <table>
+        <tr>
+            <td class="tabStep">1. 3D print four <a href="https://cad.onshape.com/documents/7f8f1f4976d3cb8a6f2a1f8d/w/d0dbc0781d436453fcaf1293/e/b9a724ee5945121662deff03?renderMode=0&uiState=649deb2d25094136a895c877">sensor holders.</a></td>
+            <td><img class="graphic" src="img/sensor_holder.png" alt="A 3D model of a mount that is shaped like a sans-serif J with hard right angles. Looking at the back of the long edge of the J, there is a circular hole at the base. Looking at the short edges of the J, there are small lips to hold the J onto the frame of the enclosure."></td>
+        </tr>
+        <tr>
+            <td class="tabStep">2. Snap the sensor holders onto the top bar of the enclosure, at the hinge side of each of the 4 most frequently used doors at the front and back of the machine. Depending on the stiffness of the material chosen, you may need to unscrew the enclosure corner and slide the holder on from the end. Slide the sensor through the hole of the holder and position its face so it will be very close to the door when the door is closed. (Image shows a larger size of sensor, one of which turned out to be faulty.)</td>
+            <td><img class="graphic" src="img/sensor_clamped.jpg" alt="The mount is clamped onto the enclosure frame so the long edge is facing away from you. A sensor is sitting inside of the large hole on the long edge of the mount."></td>
+        </tr>
+        <tr>
+            <td class="tabStep">3. Feed all wires toward the Arduino case. Extend wires by connecting to single-stranded wires. Protect connections with heat-shrink tubing.</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tabStep">4. Install the breadboard using 2-4 of the clamps that you 3D printed with the Arduino case. Fix clamps using 1/4-20 screws.</td>
+            <td><img class="graphic" src="img/sb_breadboard7.png" alt="The breadboard is placed into the long side of the Arduino case."></td>
+        </tr>
+        <tr>
+            <td class="tabStep">5. Wire the sensors as shown below (note: this diagram is under development.) Hold the sensor wires in place using the top clamp.</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tabStep">6. Connect the ground and 24V wires from the breadboard into the 24V DC Power Adapter. Hold the power adapter in place using the 2nd clamp from the top. Plug the adapter into the wall.</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tabStep">7. Connect the GND to the negative terminal of the BNC connector and one of the digital I/O pins (e.g. pin 12) to the positive terminal of the BNC connector. Plug the BNC connector into the UV lamp controller (DC20).</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tabStep">8. Open the python GUI and go to settings. Go to the Arduino tab. Check that all of the pins that you used are the same as the pins in the software. Correct if necessary.</td>
+            <td></td>
+        </tr>
+    </table>
+    <img src="img/sensor_wiring.png" alt="A wiring diagram.">     
+
+    
+    
+    
+    
+    
+    
+<iframe src="footer.html" class="footerframe"></iframe>
+
+</body>
+</html>
+
+
+
