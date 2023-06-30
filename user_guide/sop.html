@@ -1,0 +1,87 @@
+<html>
+<head>
+  <title>Startup/Shutdown</title>
+  <link rel="stylesheet" href="user_guide.css">
+</head>
+    
+
+<body>
+ 
+    <iframe src="header.html" class="headerframe"></iframe>
+    
+    <h1>Start up</h1>
+    
+    <table>
+        <tr>
+            <td class="tabStep">1. Turn on the computer.</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tabStep">2. Turn on the Shopbot using the switch in the back.</td>
+            <td><img class="graphic" src="img/sb_onoff.jpg" alt="The back panel on the Shopbot Desktop. On the left, a chunky red cover flips up to reveal the on off switch. Cords are plugged into the other plugs."></td>
+        </tr>
+        <tr>
+            <td class="tabStep">3. Check that the pressure source is on. Because this instrument shares a pressure line with one of the rheometers, this line should remain on.</td>
+            <td><img class="graphic" src="img/air_source.jpg" alt="The air source comes from a pipe sticking from the ground underneath the Shopbot table. The pipe has a yellow handle. When the handle is up, the pressure is on. When it is forward, the pressure is off. The pipe connects to a regulator that should be at 7 bar. After the regulator, the line splits. One line comes forward towards you through another regulator, which goes to the rheometer. Another line splits off to the side as soft tubing, which then winds up the table to another air dryer to the Fluigent."></td>
+        </tr>
+        <tr>
+            <td class="tabStep">4. Turn on the Fluigent using the on/off button.</td>
+            <td><img class="graphic" src="img/sb_fluigent.jpg" alt="The Fluigent Line-Up series. It has three devices lined up together. The left device is shorter and contains just one button, an on off button. The other two devices have a large knob at the bottom for controlling pressure and a flat button at the top for setting pressure to 0."></td>
+        </tr>
+        <tr>
+            <td class="tabStep">5. Turn on the imaging light source(s).</td>
+            <td><img class="graphic" src="img/sb_panel.jpg" alt="The light control panel. There are two rows. On the top row, the right two devices go to two LEDs. Turn the dial to turn the LEDs on and change their intensity."></td>
+         </tr>
+        <tr>
+            <td class="tabStep">6. Install the ink reservoir and nozzle.</td>
+            <td></td>
+         </tr>
+        <tr>
+            <td class="tabStep">7. Open the Pylon software and adjust the camera exposure and white balance. Close the Pylon software.</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tabStep">8. Launch the python GUI. In Miniconda, type: <span class="code">python "MyGithubPath\ShopbotPyQt\pythonGUI\sbgui.py"</span>, replacing "MyGitHubPath" with your full github path.</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tabStep">9. Calibrate flow rates using the calibration tool.</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tabStep">10. Install a printing bath or substrate. Zero the gantry. Load shopbot file into the queue. Print. Repeat.</td>
+            <td></td>
+        </tr>
+        
+    </table>
+    
+    <h1>Shut down</h1>
+    
+    <table>
+        <tr>
+            <td class="tabStep">1. Save files to server.</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tabStep">2. Remove the ink reservoir and nozzle. Clean up any messes.</td>
+            <td></td>
+        </tr>
+        <tr>
+            <td class="tabStep">3. Turn off light sources. Check that the UV LED light is off. Turn off UV LED if the light is on.</td>
+            <td><img class="graphic" src="img/sb_panel_UV.jpg" alt="The light control panel. There are two rows. The top left device has a big red button that can be pressed and can be turned. Press the button to turn the lamp on and off. Turn the dial to change intensity. A light on the side indicates whether the UV lamp is on or off."></td>
+        </tr>
+        <tr>
+            <td class="tabStep">4. Turn off the Fluigent using the on/off button.</td>
+            <td><img class="graphic" src="img/sb_fluigent.jpg" alt="The Fluigent Line-Up series. It has three devices lined up together. The left device is shorter and contains just one button, an on off button. The other two devices have a large knob at the bottom for controlling pressure and a flat button at the top for setting pressure to 0."></td>
+        </tr>
+        <tr>
+            <td class="tabStep">5. Turn on the Shopbot using the switch in the back.</td>
+            <td><img class="graphic" src="img/sb_onoff.jpg" alt="The back panel on the Shopbot Desktop. On the left, a chunky red cover flips up to reveal the on off switch. Cords are plugged into the other plugs."></td>
+        </tr>        
+    </table>
+    
+
+    <iframe src="footer.html" class="footerframe"></iframe>
+
+</body>
+</html>
