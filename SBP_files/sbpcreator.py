@@ -543,9 +543,10 @@ class sbpCreator:
         '''Set move and jump ramp speeds. Inputs could be m=5, j=20'''
         self.file+=f'VR,{mr}, {mr}, , , {jr}, {jr}, , , {rate}, {rate}, {thresh}, {dist}, {corner}, , , {rate}\n'
         
-    def setUnits(self, **kwargs):
+    def setUnits(self, drillD:float=6.35, safez:float=10, plunge:int=0, pocket:float=10, safeA:float=0, **kwargs):
         '''Set the units to mm'''
         self.file+='VD , , 1\nVU, 157.480315, 157.480315, -157.480315\n'  # set mm, negative z is up
+        self.file+=f'VC, {drillD}, , , {safez}, {plunge}, {pocket}, {safeA}, 0, 0, 0, Z, 8\n'  # {diameter, -obsolete-, -obsolete-, safe-Z-pull-up, plunge direction, % pocket overlap, safe-A-pull-up, triggered output switch, trigger ON threshold, trigger OFF threshold, vertical axis monitored, triggered output switch #}
         self.file+='SA\n'  # set absolute
     
     
