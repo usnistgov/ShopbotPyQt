@@ -389,16 +389,16 @@ class pointWatch(QObject):
             self.tableDone = True
         return self.d.target
     
-    def incrementOnOff(self, flag0:int, s:str) -> None:
+    def incrementOnOff(self, flag0:int, s:str, val:int=1) -> None:
         '''add to the on off count'''
         for si in ['on', 'off']:
             if not flag0 in self.onoffCount[si]:
                 self.onoffCount[si][flag0]=-1
-        self.onoffCount[s][flag0]+=1
+        self.onoffCount[s][flag0]+=val
         
 
-    def flagReset(self, flag0:int, on:bool) -> None:
-        '''reset the time and find the right point because the real flag turned on'''
+    def flagReset(self, flag0:int, on:bool) -> int:
+        '''reset the time and find the right point because the real flag turned on. return 1 if error'''
         # find the points when the pressure turns on
         if on:
             b = 0
@@ -416,9 +416,14 @@ class pointWatch(QObject):
         idx = self.onoffCount[s][flag0]
         if idx>=len(df):
             print(f'Too many flag resets:{flag0+1}:{s}, {idx}/{len(df)}')
-            return
+            return 1
         # print(self.onoffCount)
         i = df.iloc[idx].name  # get the index of the point we just hit
+        if self.points.iloc[i]['line']>self.queuedLine+15:
+            # we are way ahead of the queued line. we might have hit an accidental flag flip. undo
+            self.incrementOnOff(flag0, s, val=-1)
+            return 1
+        
         if idx<len(df)-1:
             ln = df.iloc[idx+1].name
             if 5*abs(self.pointsi-ln)<abs(self.pointsi-i) and abs(self.pointsi-i)>100:
@@ -427,6 +432,7 @@ class pointWatch(QObject):
                 self.incrementOnOff(flag0, 'on')
                 self.getSadd('FLIP', {'Missed 2 flips'})
                 i = ln
+        
         self.pointsi = i
         self.printLoop.readPoint(letQueuedKill=False)        # go to the next point
         self.resetPointTime()   # mark the start of the movement as now
@@ -442,6 +448,7 @@ class pointWatch(QObject):
                 # we must have missed an on
                 self.incrementOnOff(flag0, 'on')
                 self.getSadd('FLIP', {'Missed on flip'})
+        return 0
         
             
     def findFirstPoint(self, flags:list) -> None:

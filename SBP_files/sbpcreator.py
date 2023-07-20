@@ -34,11 +34,6 @@ from sbpRead import *
 
 #------------------------------------------
 
-      
-
-
-#############-----------------------------------
-
 class sbpCreator:
     '''Holds functions necessary for making .sbp files'''
     
@@ -1024,6 +1019,10 @@ class disturb(sbpCreator):
     def observe(self):
         '''go to the observation position'''
         # observe line
+        if not self.writeDir[1]=='x':
+            # move back x 3 mm so tails are hidden
+            self.mx(p(self.cp[0],-3))
+        
         ofunc = 'm'+self.shiftDir[-1]
         getattr(self, ofunc)(self.pts['o'][self.oindex])  # move just in the observation direction
         self.m3(*self.pts['o']) # then to the observation point
@@ -1045,7 +1044,7 @@ class disturb(sbpCreator):
         return [x,y,z]
         
     def makeLine(self, p:str='w', write:bool=False):
-        '''disturb the line'''
+        '''write or disturb the line'''
 
         if self.writeDir=='+z':
             # vertical line. come in from the top
@@ -1083,6 +1082,7 @@ class disturb(sbpCreator):
             self.pause(self.turnOffWait)
                  
     def sbp(self):
+        '''create the entire sbp file'''
         if self.created:
             return self.file
         
