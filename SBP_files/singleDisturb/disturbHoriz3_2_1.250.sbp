@@ -22,18 +22,28 @@ VR,10.06, 10.06, , , 10.06, 10.06, , , 5.08, 5.08, 100, 3.81, 65, , , 5.08
 SO, &runFlag1, 1
 SO, &dummyFlag1, 1
 SO, &dummyFlag1, 0
-M2, &slideW/2, 12.375*&margin
+M2, 5.000, 64.500
+JZ, -5.000
+PAUSE &waitDPic
+SO, &basFlag1, 1
+PAUSE &waitDSnap
+SO, &basFlag1, 0
+JZ, -10.000
+PAUSE &waitDPic
+SO, &basFlag1, 1
+PAUSE &waitDSnap
+SO, &basFlag1, 0
 JZ, -0.85*&slideW
-MY, 12.375*&margin
-M3, 0.5*&slideW - 1.0, 12.375*&margin, -0.85*&slideW
+MY, 60.000
+M3, 0.1*&slideW + 3.0, 60.000, -0.85*&slideW
 SO, &flowFlag1, 1
-M3, &slideW/2 - 5.0, 12.375*&margin, -0.85*&slideW
-M3, &slideW/2 - 5.0, 12.375*&margin + 8.0, -0.85*&slideW
+M3, &slideW/2 - 5.0, 60.000, -0.85*&slideW
+M3, &slideW/2 - 5.0, 68.000, -0.85*&slideW
 SO, &flowFlag1, 0
-M3, &slideW/2 - 5.0, 12.375*&margin + 10.0, -0.85*&slideW
+M3, &slideW/2 - 5.0, 69.500, -0.85*&slideW
 MX, &slideW/2 - 8.0
 MZ, 6*&nid - 0.85*&slideW
-M3, &slideW/2 - 5.0, 12.375*&margin + 4.4, 6*&nid - 0.85*&slideW
+M3, &slideW/2 - 5.0, 64.400, 6*&nid - 0.85*&slideW
 PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
@@ -43,16 +53,16 @@ PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
 SO, &basFlag1, 0
-MY, 12.375*&margin
-M3, 0.5*&slideW - 5.0, 12.375*&margin, 5.05*&nid - 0.85*&slideW
+MY, 60.000
+M3, 0.5*&slideW - 5.0, 60.000, 5.05*&nid - 0.85*&slideW
 SO, &flowFlag1, 1
-M3, &slideW/2 - 5.0, 12.375*&margin, 1.25*&nid - 0.85*&slideW
-M3, &slideW/2 - 5.0, 12.375*&margin + 8.0, 1.25*&nid - 0.85*&slideW
+M3, &slideW/2 - 5.0, 60.000, 1.25*&nid - 0.85*&slideW
+M3, &slideW/2 - 5.0, 68.000, 1.25*&nid - 0.85*&slideW
 SO, &flowFlag1, 0
-M3, &slideW/2 - 5.0, 12.375*&margin + 10.0, 1.25*&nid - 0.85*&slideW
+M3, &slideW/2 - 5.0, 69.500, 1.25*&nid - 0.85*&slideW
 MX, &slideW/2 - 8.0
 MZ, 6*&nid - 0.85*&slideW
-M3, &slideW/2 - 5.0, 12.375*&margin + 4.4, 6*&nid - 0.85*&slideW
+M3, &slideW/2 - 5.0, 64.400, 6*&nid - 0.85*&slideW
 PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
@@ -62,13 +72,13 @@ PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
 SO, &basFlag1, 0
-MY, 12.375*&margin
-M3, &slideW/2 - 5.0, 12.375*&margin, 2.5*&nid - 0.85*&slideW
-M3, &slideW/2 - 5.0, 12.375*&margin + 8.0, 2.5*&nid - 0.85*&slideW
-M3, &slideW/2 - 5.0, 12.375*&margin + 10.0, 2.5*&nid - 0.85*&slideW
+MY, 60.000
+M3, &slideW/2 - 5.0, 60.000, 2.5*&nid - 0.85*&slideW
+M3, &slideW/2 - 5.0, 68.000, 2.5*&nid - 0.85*&slideW
+M3, &slideW/2 - 5.0, 69.500, 2.5*&nid - 0.85*&slideW
 MX, &slideW/2 - 8.0
 MZ, 6*&nid - 0.85*&slideW
-M3, &slideW/2 - 5.0, 12.375*&margin + 4.4, 6*&nid - 0.85*&slideW
+M3, &slideW/2 - 5.0, 64.400, 6*&nid - 0.85*&slideW
 PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
@@ -78,18 +88,18 @@ PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
 SO, &basFlag1, 0
-JY, 12.375*&margin
+JY, 60.000
 JZ, -0.7*&slideW
-MY, 12.375*&margin
-M3, 0.5*&slideW - 4.4, 12.375*&margin, -0.7*&slideW
+MY, 60.000
+M3, 0.5*&slideW - 4.4, 60.000, -0.7*&slideW
 SO, &flowFlag1, 1
-M3, &slideW/2 - 2.0, 12.375*&margin, -0.7*&slideW
-M3, &slideW/2 - 2.0, 12.375*&margin + 8.0, -0.7*&slideW
+M3, &slideW/2 - 2.0, 60.000, -0.7*&slideW
+M3, &slideW/2 - 2.0, 68.000, -0.7*&slideW
 SO, &flowFlag1, 0
-M3, &slideW/2 - 2.0, 12.375*&margin + 10.0, -0.7*&slideW
+M3, &slideW/2 - 2.0, 69.500, -0.7*&slideW
 MX, &slideW/2 - 5.0
 MZ, 6*&nid - 0.7*&slideW
-M3, &slideW/2 - 2.0, 12.375*&margin + 4.4, 6*&nid - 0.7*&slideW
+M3, &slideW/2 - 2.0, 64.400, 6*&nid - 0.7*&slideW
 PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
@@ -99,16 +109,16 @@ PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
 SO, &basFlag1, 0
-MY, 12.375*&margin
-M3, 0.5*&slideW - 2.0, 12.375*&margin, 5.05*&nid - 0.7*&slideW
+MY, 60.000
+M3, 0.5*&slideW - 2.0, 60.000, 5.05*&nid - 0.7*&slideW
 SO, &flowFlag1, 1
-M3, &slideW/2 - 2.0, 12.375*&margin, 1.25*&nid - 0.7*&slideW
-M3, &slideW/2 - 2.0, 12.375*&margin + 8.0, 1.25*&nid - 0.7*&slideW
+M3, &slideW/2 - 2.0, 60.000, 1.25*&nid - 0.7*&slideW
+M3, &slideW/2 - 2.0, 68.000, 1.25*&nid - 0.7*&slideW
 SO, &flowFlag1, 0
-M3, &slideW/2 - 2.0, 12.375*&margin + 10.0, 1.25*&nid - 0.7*&slideW
+M3, &slideW/2 - 2.0, 69.500, 1.25*&nid - 0.7*&slideW
 MX, &slideW/2 - 5.0
 MZ, 6*&nid - 0.7*&slideW
-M3, &slideW/2 - 2.0, 12.375*&margin + 4.4, 6*&nid - 0.7*&slideW
+M3, &slideW/2 - 2.0, 64.400, 6*&nid - 0.7*&slideW
 PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
@@ -118,13 +128,13 @@ PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
 SO, &basFlag1, 0
-MY, 12.375*&margin
-M3, &slideW/2 - 2.0, 12.375*&margin, 2.5*&nid - 0.7*&slideW
-M3, &slideW/2 - 2.0, 12.375*&margin + 8.0, 2.5*&nid - 0.7*&slideW
-M3, &slideW/2 - 2.0, 12.375*&margin + 10.0, 2.5*&nid - 0.7*&slideW
+MY, 60.000
+M3, &slideW/2 - 2.0, 60.000, 2.5*&nid - 0.7*&slideW
+M3, &slideW/2 - 2.0, 68.000, 2.5*&nid - 0.7*&slideW
+M3, &slideW/2 - 2.0, 69.500, 2.5*&nid - 0.7*&slideW
 MX, &slideW/2 - 5.0
 MZ, 6*&nid - 0.7*&slideW
-M3, &slideW/2 - 2.0, 12.375*&margin + 4.4, 6*&nid - 0.7*&slideW
+M3, &slideW/2 - 2.0, 64.400, 6*&nid - 0.7*&slideW
 PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
@@ -134,18 +144,18 @@ PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
 SO, &basFlag1, 0
-JY, 12.375*&margin
+JY, 60.000
 JZ, -0.55*&slideW
-MY, 12.375*&margin
-M3, 0.5*&slideW - 1.4, 12.375*&margin, -0.55*&slideW
+MY, 60.000
+M3, 0.5*&slideW - 1.4, 60.000, -0.55*&slideW
 SO, &flowFlag1, 1
-M3, &slideW/2 + 0.99999999999999866, 12.375*&margin, -0.55*&slideW
-M3, &slideW/2 + 0.99999999999999866, 12.375*&margin + 8.0, -0.55*&slideW
+M3, &slideW/2 + 0.99999999999999866, 60.000, -0.55*&slideW
+M3, &slideW/2 + 0.99999999999999866, 68.000, -0.55*&slideW
 SO, &flowFlag1, 0
-M3, &slideW/2 + 0.99999999999999866, 12.375*&margin + 10.0, -0.55*&slideW
+M3, &slideW/2 + 0.99999999999999866, 69.500, -0.55*&slideW
 MX, &slideW/2 - 2.0000000000000013
 MZ, 6*&nid - 0.55*&slideW
-M3, &slideW/2 + 0.99999999999999866, 12.375*&margin + 4.4, 6*&nid - 0.55*&slideW
+M3, &slideW/2 + 0.99999999999999866, 64.400, 6*&nid - 0.55*&slideW
 PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
@@ -155,16 +165,16 @@ PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
 SO, &basFlag1, 0
-MY, 12.375*&margin
-M3, 0.5*&slideW + 0.99999999999999872, 12.375*&margin, 5.05*&nid - 0.55*&slideW
+MY, 60.000
+M3, 0.5*&slideW + 0.99999999999999872, 60.000, 5.05*&nid - 0.55*&slideW
 SO, &flowFlag1, 1
-M3, &slideW/2 + 0.99999999999999866, 12.375*&margin, 1.25*&nid - 0.55*&slideW
-M3, &slideW/2 + 0.99999999999999866, 12.375*&margin + 8.0, 1.25*&nid - 0.55*&slideW
+M3, &slideW/2 + 0.99999999999999866, 60.000, 1.25*&nid - 0.55*&slideW
+M3, &slideW/2 + 0.99999999999999866, 68.000, 1.25*&nid - 0.55*&slideW
 SO, &flowFlag1, 0
-M3, &slideW/2 + 0.99999999999999866, 12.375*&margin + 10.0, 1.25*&nid - 0.55*&slideW
+M3, &slideW/2 + 0.99999999999999866, 69.500, 1.25*&nid - 0.55*&slideW
 MX, &slideW/2 - 2.0000000000000013
 MZ, 6*&nid - 0.55*&slideW
-M3, &slideW/2 + 0.99999999999999866, 12.375*&margin + 4.4, 6*&nid - 0.55*&slideW
+M3, &slideW/2 + 0.99999999999999866, 64.400, 6*&nid - 0.55*&slideW
 PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
@@ -174,13 +184,13 @@ PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
 SO, &basFlag1, 0
-MY, 12.375*&margin
-M3, &slideW/2 + 0.99999999999999866, 12.375*&margin, 2.5*&nid - 0.55*&slideW
-M3, &slideW/2 + 0.99999999999999866, 12.375*&margin + 8.0, 2.5*&nid - 0.55*&slideW
-M3, &slideW/2 + 0.99999999999999866, 12.375*&margin + 10.0, 2.5*&nid - 0.55*&slideW
+MY, 60.000
+M3, &slideW/2 + 0.99999999999999866, 60.000, 2.5*&nid - 0.55*&slideW
+M3, &slideW/2 + 0.99999999999999866, 68.000, 2.5*&nid - 0.55*&slideW
+M3, &slideW/2 + 0.99999999999999866, 69.500, 2.5*&nid - 0.55*&slideW
 MX, &slideW/2 - 2.0000000000000013
 MZ, 6*&nid - 0.55*&slideW
-M3, &slideW/2 + 0.99999999999999866, 12.375*&margin + 4.4, 6*&nid - 0.55*&slideW
+M3, &slideW/2 + 0.99999999999999866, 64.400, 6*&nid - 0.55*&slideW
 PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
@@ -190,18 +200,18 @@ PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
 SO, &basFlag1, 0
-JY, 12.375*&margin
+JY, 60.000
 JZ, -0.4*&slideW
-MY, 12.375*&margin
-M3, 0.5*&slideW + 1.5999999999999989, 12.375*&margin, -0.4*&slideW
+MY, 60.000
+M3, 0.5*&slideW + 1.5999999999999989, 60.000, -0.4*&slideW
 SO, &flowFlag1, 1
-M3, &slideW/2 + 3.9999999999999992, 12.375*&margin, -0.4*&slideW
-M3, &slideW/2 + 3.9999999999999992, 12.375*&margin + 8.0, -0.4*&slideW
+M3, &slideW/2 + 3.9999999999999992, 60.000, -0.4*&slideW
+M3, &slideW/2 + 3.9999999999999992, 68.000, -0.4*&slideW
 SO, &flowFlag1, 0
-M3, &slideW/2 + 3.9999999999999992, 12.375*&margin + 10.0, -0.4*&slideW
+M3, &slideW/2 + 3.9999999999999992, 69.500, -0.4*&slideW
 MX, &slideW/2 + 0.9999999999999992
 MZ, 6*&nid - 0.4*&slideW
-M3, &slideW/2 + 3.9999999999999992, 12.375*&margin + 4.4, 6*&nid - 0.4*&slideW
+M3, &slideW/2 + 3.9999999999999992, 64.400, 6*&nid - 0.4*&slideW
 PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
@@ -211,16 +221,16 @@ PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
 SO, &basFlag1, 0
-MY, 12.375*&margin
-M3, 0.5*&slideW + 3.9999999999999994, 12.375*&margin, 5.05*&nid - 0.4*&slideW
+MY, 60.000
+M3, 0.5*&slideW + 3.9999999999999994, 60.000, 5.05*&nid - 0.4*&slideW
 SO, &flowFlag1, 1
-M3, &slideW/2 + 3.9999999999999992, 12.375*&margin, 1.25*&nid - 0.4*&slideW
-M3, &slideW/2 + 3.9999999999999992, 12.375*&margin + 8.0, 1.25*&nid - 0.4*&slideW
+M3, &slideW/2 + 3.9999999999999992, 60.000, 1.25*&nid - 0.4*&slideW
+M3, &slideW/2 + 3.9999999999999992, 68.000, 1.25*&nid - 0.4*&slideW
 SO, &flowFlag1, 0
-M3, &slideW/2 + 3.9999999999999992, 12.375*&margin + 10.0, 1.25*&nid - 0.4*&slideW
+M3, &slideW/2 + 3.9999999999999992, 69.500, 1.25*&nid - 0.4*&slideW
 MX, &slideW/2 + 0.9999999999999992
 MZ, 6*&nid - 0.4*&slideW
-M3, &slideW/2 + 3.9999999999999992, 12.375*&margin + 4.4, 6*&nid - 0.4*&slideW
+M3, &slideW/2 + 3.9999999999999992, 64.400, 6*&nid - 0.4*&slideW
 PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
@@ -230,13 +240,13 @@ PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
 SO, &basFlag1, 0
-MY, 12.375*&margin
-M3, &slideW/2 + 3.9999999999999992, 12.375*&margin, 2.5*&nid - 0.4*&slideW
-M3, &slideW/2 + 3.9999999999999992, 12.375*&margin + 8.0, 2.5*&nid - 0.4*&slideW
-M3, &slideW/2 + 3.9999999999999992, 12.375*&margin + 10.0, 2.5*&nid - 0.4*&slideW
+MY, 60.000
+M3, &slideW/2 + 3.9999999999999992, 60.000, 2.5*&nid - 0.4*&slideW
+M3, &slideW/2 + 3.9999999999999992, 68.000, 2.5*&nid - 0.4*&slideW
+M3, &slideW/2 + 3.9999999999999992, 69.500, 2.5*&nid - 0.4*&slideW
 MX, &slideW/2 + 0.9999999999999992
 MZ, 6*&nid - 0.4*&slideW
-M3, &slideW/2 + 3.9999999999999992, 12.375*&margin + 4.4, 6*&nid - 0.4*&slideW
+M3, &slideW/2 + 3.9999999999999992, 64.400, 6*&nid - 0.4*&slideW
 PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
@@ -246,6 +256,6 @@ PAUSE &waitDPic
 SO, &basFlag1, 1
 PAUSE &waitDSnap
 SO, &basFlag1, 0
-JY, 12.375*&margin
+JY, 60.000
 JZ, 10.000
 SO, &runFlag1, 0

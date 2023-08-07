@@ -1016,6 +1016,9 @@ class disturb(sbpCreator):
         if not self.writeExtend==0:
             self.m3(*self.pts[f'{p}f2'])
             
+    def snap0(self):
+        self.snap(zeroJog=False, wait1=self.wait1, wait2=self.wait2, camFlag=self.camFlag)  # take picture
+            
     def observe(self):
         '''go to the observation position'''
         # observe line
@@ -1026,9 +1029,9 @@ class disturb(sbpCreator):
         ofunc = 'm'+self.shiftDir[-1]
         getattr(self, ofunc)(self.pts['o'][self.oindex])  # move just in the observation direction
         self.m3(*self.pts['o']) # then to the observation point
-        self.snap(zeroJog=False, wait1=self.wait1, wait2=self.wait2, camFlag=self.camFlag)  # take picture
+        self.snap0()
         self.pause(self.wait3)             # wait
-        self.snap(zeroJog=False, wait1=self.wait1, wait2=self.wait2, camFlag=self.camFlag)  # take another picture
+        self.snap0()  # take another picture
         
     def midpoint(self, p1:list, p2:list, frac:float) -> list:
         '''get the midpoint between 2 points, weighted by frac'''
