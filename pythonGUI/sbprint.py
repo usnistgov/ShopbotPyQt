@@ -13,6 +13,7 @@ import win32gui, win32api, win32con
 import time
 import datetime
 import traceback
+import pyautogui
 
 # local packages
 from config import cfg
@@ -29,10 +30,6 @@ from sbprintDiag import *
 
 
 ##################################################  
-
-
-
-    
 
 class metaBox(QWidget):
     '''This opens a window that holds metadata about the run'''
@@ -220,13 +217,12 @@ class waitForStart(QRunnable):
             self.cf = 2**(self.runFlag1-1) + 2**(self.channelsTriggered[0]) # the critical flag at which flow starts
         self.signals = waitSignals()
         self.spindleKilled = False
-        self.spindleFound = False
+        self.spindleFound = 0
       
     @pyqtSlot()
     def run(self):
         while True:
-            if not self.spindleFound:
-                self.killSpindlePopup()
+            self.killSpindlePopup()
             self.keys.lock()
             sbFlag = self.keys.getSBFlag()
             running = self.keys.runningSBP
@@ -246,11 +242,19 @@ class waitForStart(QRunnable):
     
     def killSpindlePopup(self) -> None:
         '''if we use output flag 1 (1-indexed), the shopbot thinks we are starting the router/spindle and triggers a popup. Because we do not have a router/spindle on this instrument, this popup is irrelevant. This function automatically checks if the window is open and closes the window'''
+        if self.spindleKilled==3:
+            return
         hwndMain = win32gui.FindWindow(None, 'NOW STARTING ROUTER/SPINDLE !')
         if hwndMain>0:
-            self.spindleFound = True
+            if self.spindleFound>5:
+                self.killSpindleUgly(self)   # use the riskier solution to close the spindle window
+            self.spindleFound+=1
             time.sleep(self.dt/1000/2)
-            self.killSpindle()
+            if self.spindleKilled==0:
+                self.killSpindle()
+        else:
+            if self.spindleFound>0:
+                self.spindleKilled = 3
 
        
     @pyqtSlot()
@@ -268,7 +272,14 @@ class waitForStart(QRunnable):
             else:
                 # kill the window
                 win32api.PostMessage( hwndChild, win32con.WM_KEYDOWN, win32con.VK_RETURN, 0)  
-                self.spindleKilled = True
+                self.spindleKilled = 1
+                
+    @pyqtSlot()
+    def killSpindleUgly(self) -> None:
+        '''actually kill the spindle'''
+        pyautogui.moveTo(2106, 1181)
+        pyautogui.click()
+        self.spindleKilled = 2
 
                 
 #----------------------------
