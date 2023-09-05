@@ -41,7 +41,7 @@ M3, &slideW/2 - 5.0, 38.000, -0.85*&slideW
 M3, &slideW/2 - 5.0, 46.000, -0.85*&slideW
 SO, &flowFlag1, 0
 M3, &slideW/2 - 5.0, 47.500, -0.85*&slideW
-MX, &slideW/2 - 10.0
+M2, &slideW/2 - 10.0, 49.500
 MZ, 6*&nid - 0.85*&slideW
 M3, &slideW/2 - 5.0, 42.400, 6*&nid - 0.85*&slideW
 PAUSE &waitDPic
@@ -57,7 +57,7 @@ MY, 38.000
 M3, &slideW/2 - 5.0, 38.000, 0.875*&nid - 0.85*&slideW
 M3, &slideW/2 - 5.0, 46.000, 0.875*&nid - 0.85*&slideW
 M3, &slideW/2 - 5.0, 47.500, 0.875*&nid - 0.85*&slideW
-MX, &slideW/2 - 10.0
+M2, &slideW/2 - 10.0, 49.500
 MZ, 6*&nid - 0.85*&slideW
 M3, &slideW/2 - 5.0, 42.400, 6*&nid - 0.85*&slideW
 PAUSE &waitDPic
@@ -78,7 +78,7 @@ M3, &slideW/2 - 2.0, 38.000, -0.7*&slideW
 M3, &slideW/2 - 2.0, 46.000, -0.7*&slideW
 SO, &flowFlag1, 0
 M3, &slideW/2 - 2.0, 47.500, -0.7*&slideW
-MX, &slideW/2 - 7.0
+M2, &slideW/2 - 7.0, 49.500
 MZ, 6*&nid - 0.7*&slideW
 M3, &slideW/2 - 2.0, 42.400, 6*&nid - 0.7*&slideW
 PAUSE &waitDPic
@@ -94,7 +94,7 @@ MY, 38.000
 M3, &slideW/2 - 2.0, 38.000, 0.875*&nid - 0.7*&slideW
 M3, &slideW/2 - 2.0, 46.000, 0.875*&nid - 0.7*&slideW
 M3, &slideW/2 - 2.0, 47.500, 0.875*&nid - 0.7*&slideW
-MX, &slideW/2 - 7.0
+M2, &slideW/2 - 7.0, 49.500
 MZ, 6*&nid - 0.7*&slideW
 M3, &slideW/2 - 2.0, 42.400, 6*&nid - 0.7*&slideW
 PAUSE &waitDPic
@@ -115,7 +115,7 @@ M3, &slideW/2 + 0.99999999999999866, 38.000, -0.55*&slideW
 M3, &slideW/2 + 0.99999999999999866, 46.000, -0.55*&slideW
 SO, &flowFlag1, 0
 M3, &slideW/2 + 0.99999999999999866, 47.500, -0.55*&slideW
-MX, &slideW/2 - 4.0000000000000013
+M2, &slideW/2 - 4.0000000000000013, 49.500
 MZ, 6*&nid - 0.55*&slideW
 M3, &slideW/2 + 0.99999999999999866, 42.400, 6*&nid - 0.55*&slideW
 PAUSE &waitDPic
@@ -131,7 +131,7 @@ MY, 38.000
 M3, &slideW/2 + 0.99999999999999866, 38.000, 0.875*&nid - 0.55*&slideW
 M3, &slideW/2 + 0.99999999999999866, 46.000, 0.875*&nid - 0.55*&slideW
 M3, &slideW/2 + 0.99999999999999866, 47.500, 0.875*&nid - 0.55*&slideW
-MX, &slideW/2 - 4.0000000000000013
+M2, &slideW/2 - 4.0000000000000013, 49.500
 MZ, 6*&nid - 0.55*&slideW
 M3, &slideW/2 + 0.99999999999999866, 42.400, 6*&nid - 0.55*&slideW
 PAUSE &waitDPic
@@ -152,7 +152,7 @@ M3, &slideW/2 + 3.9999999999999992, 38.000, -0.4*&slideW
 M3, &slideW/2 + 3.9999999999999992, 46.000, -0.4*&slideW
 SO, &flowFlag1, 0
 M3, &slideW/2 + 3.9999999999999992, 47.500, -0.4*&slideW
-MX, &slideW/2 - 1.0000000000000008
+M2, &slideW/2 - 1.0000000000000008, 49.500
 MZ, 6*&nid - 0.4*&slideW
 M3, &slideW/2 + 3.9999999999999992, 42.400, 6*&nid - 0.4*&slideW
 PAUSE &waitDPic
@@ -168,7 +168,7 @@ MY, 38.000
 M3, &slideW/2 + 3.9999999999999992, 38.000, 0.875*&nid - 0.4*&slideW
 M3, &slideW/2 + 3.9999999999999992, 46.000, 0.875*&nid - 0.4*&slideW
 M3, &slideW/2 + 3.9999999999999992, 47.500, 0.875*&nid - 0.4*&slideW
-MX, &slideW/2 - 1.0000000000000008
+M2, &slideW/2 - 1.0000000000000008, 49.500
 MZ, 6*&nid - 0.4*&slideW
 M3, &slideW/2 + 3.9999999999999992, 42.400, 6*&nid - 0.4*&slideW
 PAUSE &waitDPic

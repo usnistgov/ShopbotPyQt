@@ -936,7 +936,7 @@ class disturb(sbpCreator):
                  , writeExtend:float=0
                  , wait1:Union[str, float]=0.5, wait2:Union[str, float]=0.5, wait3:Union[str, float]=3
                  , numLines:int=1, turnOnFrac:float=1, turnOnWait:float=0, turnOffWait:float=0
-                 , backShift:float=-5
+                 , backShift:float=-5, backsideShift:float=2
                  , **kwargs):
         super(disturb, self).__init__(**kwargs)
         self.flowFlag = flowFlag
@@ -958,6 +958,7 @@ class disturb(sbpCreator):
         self.turnOnWait = turnOnWait
         self.turnOffWait = turnOffWait
         self.backShift = backShift
+        self.backsideShift = backsideShift
         self.getPoints()
     
     def getPoints(self):
@@ -1024,9 +1025,12 @@ class disturb(sbpCreator):
     def observe(self):
         '''go to the observation position'''
         # observe line
-        if not self.writeDir[1]=='x':
+        if self.writeDir[1]=='z':
             # move back x 3 mm so tails are hidden
             self.mx(p(self.cp[0],self.backShift))
+        elif self.writeDir[1]=='y':
+            # move back and over x 3 mm so tails are hidden
+            self.m2(p(self.cp[0],self.backShift), p(self.cp[1], self.backsideShift))
         
         ofunc = 'm'+self.shiftDir[-1]
         getattr(self, ofunc)(self.pts['o'][self.oindex])  # move just in the observation direction
