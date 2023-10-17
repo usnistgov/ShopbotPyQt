@@ -1031,6 +1031,8 @@ class disturb(sbpCreator):
         elif self.writeDir[1]=='y':
             # move back and over x 3 mm so tails are hidden
             self.m2(p(self.cp[0],self.backShift), p(self.cp[1], self.backsideShift))
+        elif self.writeDir=='+x':
+            self.mz(p(self.cp[2],self.backShift))
         
         ofunc = 'm'+self.shiftDir[-1]
         getattr(self, ofunc)(self.pts['o'][self.oindex])  # move just in the observation direction

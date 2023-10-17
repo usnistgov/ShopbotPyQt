@@ -1,0 +1,24 @@
+&slideW = 25.000
+&slideH = 75.000
+&margin = 5.000
+&spacing = 5.000
+&nid = 0.603
+&nd = 0.907
+&downdisp = 0.000
+&waitDPic = 0.750
+&waitDSnap = 0.250
+&waitDO = 3.000
+&runFlag1 = 4.000
+&basFlag1 = 8.000
+&flowFlag1 = 5.000
+&dummyFlag1 = 1.000
+VD , , 1
+VU, 157.480315, 157.480315, -157.480315
+VC, 6.35, , , 10, 0, 10, 0, 0, 0, 0, Z, 8
+SA
+MS, 10, 10
+JS, 20, 20
+VR,10.06, 10.06, , , 10.06, 10.06, , , 5.08, 5.08, 100, 3.81, 65, , , 5.08
+SO, &runFlag1, 1
+JY, 160
+SO, &runFlag1, 0

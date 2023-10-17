@@ -429,6 +429,8 @@ class pCalibrationTab(QWidget):
     @pyqtSlot(float)
     def updateSpeedAndPressure(self, speed:float) -> None:
         '''update the speed label and recalculate pressures'''
+        if not speed>0:
+            return
         self.updateSpeed(speed)   # update the speed in the calibration box
         self.plot.calcPressure()  # calculate the new pressure 
         self.copyPressure()       # store that pressure in the run box

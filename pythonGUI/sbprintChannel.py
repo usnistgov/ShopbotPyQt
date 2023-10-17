@@ -185,16 +185,25 @@ class channelWatch(QObject):
     def beforeCol(self) -> str:
         return f'p{self.flag0}_before'
     
-    @pyqtSlot(float) 
-    def updateSpeed(self, t) -> None:
+    def sendSpeed(self, speed:float) -> None:
+        print(speed)
+        self.signals.updateSpeed.emit(speed)
+    
+    @pyqtSlot(dict)
+    def updateSpeed(self, t:dict) -> None:
         '''send new extrusion speed to fluigent'''
-        if t[self.beforeCol()]<0 and t[self.afterCol()]>0:
-            # negative value in before flag indicates that this is a special row
-            speed = float(t[self.afterCol()])
-            self.signals.updateSpeed.emit(speed)
-            if self.on:
-                # if pressure is on, go to that pressure
-                self.signals.goToPressure.emit(1)
+        beforecol = float(t[self.beforeCol()])
+        speed = float(str(t[self.afterCol()]))
+        if beforecol>=0:
+            return
+        if not speed>0:
+            return
+        # negative value in before flag indicates that this is a special row
+        self.sendSpeed(speed)
+        if not self.on:
+            return
+        # if pressure is on, go to that pressure
+        self.signals.goToPressure.emit(1)
                 
     def stateChange(self, s):
         '''get the state of this flag at the beginning of the line'''

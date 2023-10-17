@@ -247,7 +247,7 @@ class waitForStart(QRunnable):
         hwndMain = win32gui.FindWindow(None, 'NOW STARTING ROUTER/SPINDLE !')
         if hwndMain>0:
             if self.spindleFound>5:
-                self.killSpindleUgly(self)   # use the riskier solution to close the spindle window
+                self.killSpindleUgly()   # use the riskier solution to close the spindle window
             self.spindleFound+=1
             time.sleep(self.dt/1000/2)
             if self.spindleKilled==0:
@@ -476,7 +476,8 @@ class printLoop(QObject):
         self.readKeys()
         if not self.runSimple==1:
             est = self.pw.d.estimate
-            self.signals.estimate.emit(est[0], est[1], est[2])  # update the estimate in the display
+            if len(est)>0 and type(est) is list:
+                self.signals.estimate.emit(est[0], est[1], est[2])  # update the estimate in the display
             # don't need to update the read point in display because flags.py already did it
             # determine if we can go onto the next point
         self.diagPosRow(newPoint=False)             # get diagnostic row
@@ -485,7 +486,7 @@ class printLoop(QObject):
     #---------------------------------
     # each new point
 
-    def updateSpeeds(self, t):
+    def updateSpeeds(self, t:dict):
         '''update flow speeds'''
         for flag0, cw in self.channelWatches.items():
             cw.updateSpeed(t)
@@ -505,7 +506,7 @@ class printLoop(QObject):
             return
         if pd.isna(t['speed']):
             # this is just a flow speed step. adjust speeds and go to the next point
-            self.updateSpeeds(t)
+            self.updateSpeeds(dict(t))
             if self.diag>1:
                 self.diagStr.addStatus(f'Update flow speed')
             self.readPoint()

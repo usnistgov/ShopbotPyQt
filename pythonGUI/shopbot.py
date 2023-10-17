@@ -807,9 +807,9 @@ class sbBox(connectBox):
             return
 
         # start the cameras if any flow is triggered in the run
-        if min(self.channels0Triggered)<len(self.sbWin.fluBox.pchannels):
+        if len(self.channels0Triggered)>0 and min(self.channels0Triggered)<len(self.sbWin.fluBox.pchannels):
             self.sbWin.camBoxes.startRecording()
-        if self.savePicMetadata or self.sbWin.fluBox.pressureTriggered(self.channels0Triggered):
+        if self.savePicMetadata or (len(self.channels0Triggered)>0 and self.sbWin.fluBox.pressureTriggered(self.channels0Triggered)):
             # only save speeds and pressures if there is extrusion or if the checkbox is marked
             self.sbWin.saveMetaData()    # save metadata
             self.sbWin.initSaveTable(self.channels0Triggered, self.runSimple)   # save table of pressures
