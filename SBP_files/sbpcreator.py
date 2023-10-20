@@ -1125,3 +1125,127 @@ class pics(sbpCreator):
         
     
         
+class fileGroup:
+    '''create a group of files'''
+    
+    def __init__(self, dv:defVars, spacingList:list=[0.5, 0.625, 0.75, 0.875, 1, 1.25], **kwargs):
+        self.dv = dv
+        self.total2 = copy.deepcopy(dv)
+        self.total2 = self.total2 + startingPoint(0,0,0)
+        self.total2.prime('&dummyFlag1', runFlag1='&runFlag1')
+        self.spacingList = spacingList
+        
+
+                
+            
+            
+class underGroup(fileGroup):
+    '''create a group of under files'''
+    
+    def __init__(self, SBPFOLDER, dv:defVars, dfactor:float, vf:float, numLines:int, ylast:float=5, z0fracList:list=[0.8, 0.6, 0.4]
+                 , x0:str=f'&slideW/2-&margin*1', writeLength:int=8, shiftFrac:float=0.4
+                 , writeExtend:float=3, wait1:float=0.25, wait2:float=0.25, wait3:float=3, **kwargs):
+        super().__init__(dv, **kwargs)
+        self.x0 = x0
+        self.writeLength = writeLength
+        self.shiftFrac=shiftFrac
+        self.writeExtend=writeExtend
+        self.wait1=wait1
+        self.wait2=wait2
+        self.wait3=wait3
+        self.ylast = ylast
+        self.dfactor = dfactor
+        self.vf = vf
+        self.numLines = numLines
+        self.z0fracList = z0fracList
+        self.dest = f'&nid*{self.dfactor}'
+        self.SBPFOLDER = SBPFOLDER
+        
+    def makeFile(self):
+        for i,spacing in enumerate(self.spacingList):
+            self.makeSpacingFile(i,spacing)
+
+
+    def makeSpacingFile(self, i:int, spacing:float, **kwargs):
+        '''make a file for a single spacing'''
+        total = copy.deepcopy(self.dv)
+        vs = self.vf/self.dfactor**2
+
+        if i==0:
+            total = total + startingPoint(0,0,0)
+        else:
+            total = total + startingPoint(self.di.cp[0], self.di.cp[1], self.di.cp[2])
+
+        y00 = f'&margin+{self.ylast}-{(0.8-0.4)/0.1}*&nid-2*&nid'
+        total.j2(self.x0, y00)
+        self.total2.j2(self.x0, y00)
+        total.prime('&dummyFlag1', runFlag1='&runFlag1')
+        total.setInkSpeed(4, self.vf)
+        total.setSpeeds(m=vs, j=20)
+        # total.jz(f'-0.8*&slideW')
+        # total2.jz(f'-0.8*&slideW')
+
+        if self.vf==10:
+            if self.dfactor==0.75:
+                turnOnFrac=0.01
+            elif self.dfactor==1:
+                turnOnFrac = 0.01
+            elif self.dfactor>1:
+                turnOnFrac = 0.9
+        elif self.vf==15:
+            if self.dfactor==0.75:
+                turnOnFrac = 0.7
+            else:
+                turnOnFrac = 1
+        elif self.vf==20:
+            if self.dfactor==0.75:
+                turnOnFrac = 0.5
+            else:
+                turnOnFrac = 1
+        elif self.vf==25:
+            if self.dfactor==0.75:
+                turnOnFrac = 1
+            else:
+                turnOnFrac = 1
+
+        for z0frac in self.z0fracList:
+            # write line 1
+            total= self.addLevel(z0frac, spacing, turnOnFrac, total)
+            
+        self.ylast = self.di.cp[1]
+        self.ylast = 15+10*i
+        total.jz(10)
+        self.total2.jz(10)
+        total.turnOff('&runFlag1')
+        total.export(os.path.join(self.SBPFOLDER,'singleDisturbUnder',  f'disturbUnder_{self.numLines}_{spacing:.3f}_VF_{self.vf:.2f}_VS_{vs:.2f}.sbp'), [])
+        
+    def addLevel(self, z0frac:float, spacing:float, turnOnFrac:float, total):
+        y0 = f'&nid*16+{self.ylast}-{(z0frac-0.3)/0.2}*&nid*5'
+        z0 = f'-{1.2-z0frac}*&slideW'
+
+        di = disturb(flowFlag='&flowFlag1', camFlag='&basFlag1'
+                        , writeDir='+x', writeLength=self.writeLength
+                        , shiftDir='+y', shiftLength='7*&nid'
+                        , distDir='+y', distLength=f'{self.dest}*{spacing}' 
+                        , initPt=[self.x0, y0, z0], shiftFrac=self.shiftFrac, writeExtend=self.writeExtend
+                        , wait1=self.wait1, wait2=self.wait2, wait3=self.wait3, lastPt=total
+                        , numLines=self.numLines, turnOnFrac=turnOnFrac, turnOnWait=0, backShift=2)
+        if z0frac==self.z0fracList[0]:
+            # take background iamges
+            di.j3(self.x0, y0, -7.5)
+            di.snap0()
+            di.j3(f'{self.x0}+2', f'{y0}+2', -10)
+            di.snap0()
+        di.j3(self.x0, y0, f'-{1.2-(z0frac+0.1)}*&slideW')
+        di.sbp()
+        di.jz(f'-{1.2-(z0frac-0.01)}*&slideW')  # go halfway to next layer
+        di.jx(self.x0)
+
+        total = total + di
+        self.total2 = self.total2+di
+        self.di = di
+        return total
+        
+    def plot(self, **kwargs):
+        self.total2.plot(**kwargs)
+    
